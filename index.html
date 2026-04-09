@@ -158,8 +158,7 @@ button{font-family:inherit;}
       </div>
     </div>
     <button class="logout-btn" onclick="copyCalUrl()" id="cal-btn" style="display:none;background:none;border:1px solid var(--acc);color:var(--acc);">📅 Mon calendrier</button>
-    <button class="logout-btn" onclick="showDesidStatus()" id="desid-status-btn" style="display:none;background:none;border:1px solid #64748b;color:#94a3b8;">📋 Mes demandes</button>
-    <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">+ Desiderata</button>
+    <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">📋 Mes desiderata</button>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </div>
   <div class="month-bar">
@@ -169,15 +168,6 @@ button{font-family:inherit;}
     <span class="exch-pill" id="exch-pill" onclick="togglePanel()">0 échange</span>
   </div>
   <div id="grid-area"><div class="ld"><div class="sp"></div>Chargement du planning...</div></div>
-</div>
-
-<!-- DESIDERATA STATUS PANEL -->
-<div id="desid-status-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;max-height:70vh;background:#0f172a;border-top:1px solid #334155;border-radius:18px 18px 0 0;padding:16px;overflow-y:auto;z-index:10;box-shadow:0 -8px 32px rgba(0,0,0,.5);">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-    <div style="font-size:15px;font-weight:700;color:#e2e8f0;">📋 Mes demandes de desiderata</div>
-    <button onclick="document.getElementById('desid-status-panel').style.display='none'" style="background:#334155;border:none;color:#e2e8f0;border-radius:8px;padding:6px 12px;cursor:pointer;">✕</button>
-  </div>
-  <div id="desid-status-list"><div style="color:#64748b;text-align:center;padding:20px;">Chargement...</div></div>
 </div>
 
 <!-- EXCHANGE PANEL -->
@@ -190,63 +180,35 @@ button{font-family:inherit;}
 </div>
 
 <!-- DESIDERATA MODAL -->
-<div id="desid-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;overflow-y:auto;">
-  <div style="max-width:520px;margin:0 auto;padding:12px 12px 60px;">
-    <!-- Header fixe -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0 8px;">
-      <div style="font-size:16px;font-weight:800;color:#fff;" id="desid-title">📋 Desiderata</div>
-      <button onclick="closeDesiderata()" style="background:#334155;border:none;color:#e2e8f0;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:14px;">✕ Fermer</button>
+<div id="desid-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeDesiderata()">
+  <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:40px auto;padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:700;" id="desid-title">📋 Desiderata</div>
+      <button onclick="closeDesiderata()" style="background:none;border:none;color:var(--t3);font-size:18px;cursor:pointer;">✕</button>
     </div>
-    <div id="desid-deadline-info" style="background:#1e293b;border-radius:10px;padding:10px 14px;font-size:13px;color:#a5b4fc;margin-bottom:12px;border:1px solid #334155;"></div>
-
-    <!-- CONGÉS -->
-    <div style="background:#1e293b;border:1px solid #334155;border-radius:14px;padding:16px;margin-bottom:12px;">
-      <h2 style="font-size:15px;font-weight:700;color:#93c5fd;margin-bottom:12px;">🏖 Congés souhaités</h2>
-      <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block;">Cliquez sur un 1er jour puis sur le dernier jour de la période</span>
-      <div style="background:#0f172a;border-radius:10px;padding:12px;margin-bottom:8px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <button onclick="vCgM(-1)" style="background:#334155;border:none;color:#e2e8f0;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:20px;">‹</button>
-          <span style="font-size:15px;font-weight:700;" id="vCgT"></span>
-          <button onclick="vCgM(1)" style="background:#334155;border:none;color:#e2e8f0;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:20px;">›</button>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;" id="vCgG"></div>
-      </div>
-      <div style="font-size:12px;color:#64748b;font-style:italic;margin-top:6px;" id="vCgH">Cliquez pour débuter une période.</div>
-      <div style="margin-top:8px;" id="vCgL"></div>
+    <div id="desid-deadline-info" style="background:var(--bg2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--t2);margin-bottom:16px;"></div>
+    <!-- Congés -->
+    <div style="font-size:12px;font-weight:600;margin-bottom:6px;">🏖 Congés</div>
+    <div id="desid-cg-list" style="margin-bottom:6px;"></div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <input type="date" id="desid-cg-start" style="flex:1;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:6px;color:var(--t1);font-size:12px;">
+      <input type="date" id="desid-cg-end" style="flex:1;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:6px;color:var(--t1);font-size:12px;">
+      <button onclick="addDesidCg()" style="background:var(--acc);color:#000;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;">+ Ajouter</button>
     </div>
-
-    <!-- REPOS PONCTUELS -->
-    <div style="background:#1e293b;border:1px solid #334155;border-radius:14px;padding:16px;margin-bottom:12px;">
-      <h2 style="font-size:15px;font-weight:700;color:#93c5fd;margin-bottom:12px;">😴 Repos souhaités</h2>
-      <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block;">Sélection multiple — cliquez sur les jours</span>
-      <div style="background:#0f172a;border-radius:10px;padding:12px;margin-bottom:8px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <button onclick="vRpM(-1)" style="background:#334155;border:none;color:#e2e8f0;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:20px;">‹</button>
-          <span style="font-size:15px;font-weight:700;" id="vRpT"></span>
-          <button onclick="vRpM(1)" style="background:#334155;border:none;color:#e2e8f0;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:20px;">›</button>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;" id="vRpG"></div>
-      </div>
-      <div style="margin-top:10px;background:#1e293b;border-radius:10px;padding:10px 12px;font-size:13px;color:#a5b4fc;line-height:1.8;min-height:42px;" id="vRpI">Aucun jour sélectionné</div>
+    <!-- Indispos -->
+    <div style="font-size:12px;font-weight:600;margin-bottom:6px;">🚫 Jours indisponibles</div>
+    <div id="desid-ind-list" style="margin-bottom:6px;"></div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <input type="date" id="desid-ind-date" style="flex:1;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:6px;color:var(--t1);font-size:12px;">
+      <button onclick="addDesidInd()" style="background:var(--acc);color:#000;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;">+ Ajouter</button>
     </div>
-
-    <!-- PRÉFÉRENCES -->
-    <div style="background:#1e293b;border:1px solid #334155;border-radius:14px;padding:16px;margin-bottom:12px;">
-      <h2 style="font-size:15px;font-weight:700;color:#93c5fd;margin-bottom:12px;">⏰ Préférences de postes</h2>
-      <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block;">Chaque préférence est liée à une date précise</span>
-      <div id="vPfL"></div>
-      <div id="vPfV" style="margin-top:8px;"></div>
-      <button onclick="vAddPf()" style="display:block;width:100%;background:transparent;border:2px dashed #334155;color:#64748b;border-radius:10px;padding:12px;cursor:pointer;font-size:14px;margin-top:6px;text-align:center;">+ Ajouter une préférence</button>
+    <!-- Remarques -->
+    <div style="font-size:12px;font-weight:600;margin-bottom:6px;">💬 Remarques</div>
+    <textarea id="desid-rem" style="width:100%;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:8px;color:var(--t1);font-size:12px;resize:vertical;min-height:60px;margin-bottom:14px;" placeholder="Informations complémentaires..."></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="closeDesiderata()" style="background:none;border:1px solid var(--b);color:var(--t2);border-radius:8px;padding:9px 18px;cursor:pointer;font-size:13px;">Annuler</button>
+      <button onclick="submitDesiderata()" style="background:var(--acc);color:#000;border:none;border-radius:8px;padding:9px 18px;font-weight:700;cursor:pointer;font-size:13px;">📤 Envoyer</button>
     </div>
-
-    <!-- REMARQUES -->
-    <div style="background:#1e293b;border:1px solid #334155;border-radius:14px;padding:16px;margin-bottom:12px;">
-      <h2 style="font-size:15px;font-weight:700;color:#93c5fd;margin-bottom:12px;">💬 Remarques libres</h2>
-      <textarea id="desid-rem" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px;color:#e2e8f0;font-size:15px;height:90px;resize:vertical;" placeholder="Informations complémentaires..."></textarea>
-    </div>
-
-    <div id="desid-valert" style="display:none;margin-bottom:12px;"></div>
-    <button id="desid-submit-btn" onclick="submitDesiderata()" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:14px;padding:18px;font-size:17px;font-weight:700;cursor:pointer;">📤 Envoyer mes desiderata</button>
   </div>
 </div>
 
@@ -256,21 +218,15 @@ button{font-family:inherit;}
     <div class="modal-t" id="mt">Proposer un échange</div>
     <div class="modal-s" id="ms"></div>
     <div class="mfield">
-      <span class="mlbl">Destinataire</span>
+      <span class="mlbl">Type de demande</span>
       <div class="mradio-g">
-        <div class="mradio on" id="r-all" onclick="setTarget('all')">👥 Tous les médecins</div>
-        <div class="mradio" id="r-specific" onclick="setTarget('specific')">👤 Un médecin en particulier</div>
+        <div class="mradio on" id="r-exch" onclick="setType('exchange')">🔄 Échange</div>
+        <div class="mradio" id="r-don" onclick="setType('donation')">🎁 Don de poste</div>
       </div>
-    </div>
-    <div class="mfield" id="m-doctor-field" style="display:none;">
-      <span class="mlbl">Choisir le médecin</span>
-      <select id="m-target-doc" class="mtxt" style="height:auto;padding:10px;">
-        <option value="">— Sélectionner —</option>
-      </select>
     </div>
     <div class="mfield">
       <span class="mlbl">Message (optionnel)</span>
-      <textarea class="mtxt" id="m-msg" placeholder="Précisez vos disponibilités ou contraintes..."></textarea>
+      <textarea class="mtxt" id="m-msg" placeholder="Précisez si vous cherchez un échange particulier..."></textarea>
     </div>
     <div class="macts">
       <button class="mcancel" onclick="closeModal()">Annuler</button>
@@ -297,7 +253,7 @@ const CFG = {
 let sb, doctors=[], me=null, selectedDoc=null;
 let planning=null, exchanges=[];
 let cy=new Date().getFullYear(), cm=new Date().getMonth();
-let mDate=null, mPost=null, mTargetAll=true, mTargetDocId=null;
+let mDate=null, mPost=null, mType='exchange';
 let rtChannel=null;
 
 const MO=['Janvier','Février','Mars','Avril','Mai','Juin',
@@ -385,228 +341,119 @@ function logout(){
   document.querySelectorAll('.doc-card').forEach(c=>c.classList.remove('sel'));
   document.getElementById('cal-btn').style.display='none';
   document.getElementById('desid-btn').style.display='none';
-  document.getElementById('desid-status-btn').style.display='none';
-  document.getElementById('desid-status-panel').style.display='none';
 }
 
 // Desiderata state
-// ── DESIDERATA avec calendriers ──
-let _vCgY,_vCgM,_vCgStart=null,_vCgPeriods=[];
-let _vRpY,_vRpM,_vRpSel={};
-let _vPfN=0,_vPfVal=[];
-let _vDesidQ,_vDesidYear;
+let _desidCgs=[], _desidInds=[];
 
-const VMO=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-const VJH=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-const VJS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-const VPL=['Journée','Soirée','Nuit','Non garde'];
-
-function vIsFerie(dk){
-  const d=new Date(dk+'T12:00:00'),y=d.getFullYear(),m=d.getMonth()+1,j=d.getDate();
-  const fixes=[[1,1],[5,1],[7,21],[8,15],[11,1],[11,11],[12,25]];
-  for(const f of fixes) if(m===f[0]&&j===f[1]) return true;
-  const a=y%19,b=Math.floor(y/100),c=y%100,dd=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25);
-  const g=Math.floor((b-f+1)/3),h=(19*a+b-dd-g+15)%30,k=Math.floor(c/4),l=c%4;
-  const n=(32+2*e+2*k-h-l)%7,p=Math.floor((a+11*h+22*n)/451);
-  const pm=Math.floor((h+n-7*p+114)/31),pj=(h+n-7*p+114)%31+1;
-  const paq=new Date(y,pm-1,pj);
-  for(const o of [1,39,49,50]){const t=new Date(paq.getTime()+o*86400000);if(t.getFullYear()===y&&t.getMonth()+1===m&&t.getDate()===j)return true;}
-  return false;
-}
-function vDk(y,m,d){return y+'-'+('0'+(m+1)).slice(-2)+'-'+('0'+d).slice(-2);}
-function vFmt(dk){const dt=new Date(dk+'T12:00:00');return VJS[dt.getDay()]+' '+dt.getDate()+'/'+(dt.getMonth()+1)+'/'+dt.getFullYear();}
-
-function vDrawCg(){
-  document.getElementById('vCgT').textContent=VMO[_vCgM]+' '+_vCgY;
-  const g=document.getElementById('vCgG');let h='';
-  VJH.forEach(j=>{h+=`<div style="text-align:center;font-size:11px;color:#64748b;padding:4px 0;font-weight:600;">${j}</div>`;});
-  const fw=new Date(_vCgY,_vCgM,1).getDay()||7;
-  for(let i=1;i<fw;i++) h+=`<div></div>`;
-  const dm=new Date(_vCgY,_vCgM+1,0).getDate();
-  for(let d=1;d<=dm;d++){
-    const dk=vDk(_vCgY,_vCgM,d),dw=new Date(_vCgY,_vCgM,d).getDay();
-    const inP=_vCgPeriods.some(p=>dk>=p.s&&dk<=p.e);
-    const isPend=_vCgStart&&dk===_vCgStart;
-    let bg='',col='#e2e8f0',fw2='400',bc='transparent';
-    if(inP){bg='#4f46e5';col='#fff';fw2='700';bc='#818cf8';}
-    else if(isPend){bg='#6366f1';col='#fff';}
-    else if(dw===0||dw===6){bg='#1a1f35';col='#64748b';}
-    if(vIsFerie(dk)&&!inP&&!isPend){bg='#1a1a00';col='#f59e0b';}
-    h+=`<div onclick="vCgClick('${dk}')" style="text-align:center;padding:9px 2px;border-radius:6px;cursor:pointer;font-size:13px;border:2px solid ${bc};background:${bg};color:${col};font-weight:${fw2};">${d}</div>`;
-  }
-  g.innerHTML=h;
-}
-function vCgClick(dk){
-  if(!_vCgStart){_vCgStart=dk;document.getElementById('vCgH').textContent='Cliquez sur le dernier jour de la période (ou le même pour un jour unique).';}
-  else{const s=_vCgStart<dk?_vCgStart:dk,e=_vCgStart<dk?dk:_vCgStart;_vCgPeriods.push({s,e});_vCgStart=null;document.getElementById('vCgH').textContent='Période ajoutée. Cliquez pour en ajouter une autre.';vRenderCgL();}
-  vDrawCg();
-}
-function vRenderCgL(){
-  document.getElementById('vCgL').innerHTML=_vCgPeriods.map((p,i)=>
-    `<div style="display:flex;align-items:center;gap:8px;background:#0f172a;border-radius:8px;padding:8px 10px;margin-bottom:6px;">
-      <span style="flex:1;font-size:13px;">${p.s===p.e?vFmt(p.s):vFmt(p.s)+' → '+vFmt(p.e)}</span>
-      <button onclick="_vCgPeriods.splice(${i},1);vDrawCg();vRenderCgL()" style="background:transparent;border:none;color:#f87171;cursor:pointer;font-size:18px;padding:2px 6px;">×</button>
-    </div>`).join('');
-}
-function vCgM(d){_vCgM+=d;if(_vCgM<0){_vCgM=11;_vCgY--;}if(_vCgM>11){_vCgM=0;_vCgY++;}vDrawCg();}
-
-function vDrawRp(){
-  document.getElementById('vRpT').textContent=VMO[_vRpM]+' '+_vRpY;
-  const g=document.getElementById('vRpG');let h='';
-  VJH.forEach(j=>{h+=`<div style="text-align:center;font-size:11px;color:#64748b;padding:4px 0;font-weight:600;">${j}</div>`;});
-  const fw=new Date(_vRpY,_vRpM,1).getDay()||7;
-  for(let i=1;i<fw;i++) h+=`<div></div>`;
-  const dm=new Date(_vRpY,_vRpM+1,0).getDate();
-  for(let d=1;d<=dm;d++){
-    const dk=vDk(_vRpY,_vRpM,d),dw=new Date(_vRpY,_vRpM,d).getDay();
-    const sel=!!_vRpSel[dk];
-    let bg=sel?'#4f46e5':'',col=sel?'#fff':(dw===0||dw===6?'#64748b':'#e2e8f0');
-    if(!sel&&vIsFerie(dk)){bg='#1a1a00';col='#f59e0b';}
-    h+=`<div onclick="vRpClick('${dk}')" style="text-align:center;padding:9px 2px;border-radius:6px;cursor:pointer;font-size:13px;background:${bg};color:${col};">${d}</div>`;
-  }
-  g.innerHTML=h;
-  const keys=Object.keys(_vRpSel).sort();
-  document.getElementById('vRpI').innerHTML=keys.length
-    ?'<b>'+keys.length+'</b> jour(s) : '+keys.map(dk=>{const dt=new Date(dk+'T12:00:00');return VJS[dt.getDay()]+' <b>'+dt.getDate()+'/'+(dt.getMonth()+1)+'</b>';}).join(' · ')
-    :'Aucun jour sélectionné';
-}
-function vRpClick(dk){if(_vRpSel[dk])delete _vRpSel[dk];else _vRpSel[dk]=1;vDrawRp();}
-function vRpM(d){_vRpM+=d;if(_vRpM<0){_vRpM=11;_vRpY--;}if(_vRpM>11){_vRpM=0;_vRpY++;}vDrawRp();}
-
-function vAddPf(){
-  const n=++_vPfN,id='vpf'+n;
-  const div=document.createElement('div');
-  div.id='rvpf'+id;div.style.cssText='display:flex;gap:8px;margin-bottom:10px;align-items:flex-start;';
-  const pd=document.createElement('div');pd.style.cssText='width:150px;flex-shrink:0;';
-  pd.innerHTML=`<span style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">Date</span><input type="date" id="${id}d" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px;color:#e2e8f0;font-size:15px;">`;
-  const pt=document.createElement('div');pt.style.flex='1';
-  const td=document.createElement('div');td.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;';
-  VPL.forEach(p=>{const t=document.createElement('span');t.style.cssText='background:#334155;color:#e2e8f0;border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;border:2px solid transparent;';t.textContent=p;t.onclick=function(){this.style.background=this.style.background==='#4f46e5'?'#334155':'#4f46e5';this.style.borderColor=this.style.background==='#4f46e5'?'#818cf8':'transparent';};td.appendChild(t);});
-  pt.innerHTML=`<span style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">Préférence</span>`;pt.appendChild(td);
-  const vb=document.createElement('button');vb.style.cssText='background:#16a34a;border:none;color:#fff;border-radius:8px;padding:10px 12px;cursor:pointer;font-size:16px;align-self:flex-end;';vb.textContent='✓';
-  const rb=document.createElement('button');rb.style.cssText='background:#334155;border:none;color:#f87171;border-radius:8px;padding:10px 12px;cursor:pointer;font-size:18px;align-self:flex-end;';rb.textContent='×';
-  div.appendChild(pd);div.appendChild(pt);div.appendChild(vb);div.appendChild(rb);
-  rb.onclick=()=>div.remove();
-  vb.onclick=()=>{
-    const dv=document.getElementById(id+'d');if(!dv||!dv.value){alert('Veuillez saisir une date.');return;}
-    const tags=[];td.querySelectorAll('span').forEach(t=>{if(t.style.background==='#4f46e5')tags.push(t.textContent);});
-    if(!tags.length){alert('Veuillez sélectionner une préférence.');return;}
-    const dt=new Date(dv.value+'T12:00:00');
-    const lbl=VJS[dt.getDay()]+' '+dt.getDate()+'/'+(dt.getMonth()+1)+' : '+tags.join(', ');
-    _vPfVal.push({date:dv.value,tags,label:lbl});div.remove();vRenderPfV();
-  };
-  document.getElementById('vPfL').appendChild(div);
-}
-function vRenderPfV(){
-  document.getElementById('vPfV').innerHTML=_vPfVal.map((f,i)=>
-    `<div style="display:flex;align-items:center;gap:8px;background:#0f172a;border-radius:8px;padding:8px 10px;margin-bottom:6px;">
-      <span style="flex:1;font-size:13px;">⏰ ${f.label}</span>
-      <button onclick="_vPfVal.splice(${i},1);vRenderPfV()" style="background:transparent;border:none;color:#f87171;cursor:pointer;font-size:18px;padding:2px 6px;">×</button>
-    </div>`).join('');
-}
-
-function openDesiderata(){
+async function openDesiderata(){
   if(!me) return;
-  // Reset state
-  _vCgPeriods=[];_vCgStart=null;_vRpSel={};_vPfVal=[];_vPfN=0;
-  document.getElementById('vCgL').innerHTML='';
-  document.getElementById('vPfL').innerHTML='';
-  document.getElementById('vPfV').innerHTML='';
+  _desidCgs=[]; _desidInds=[];
+  renderDesidLists();
   document.getElementById('desid-rem').value='';
-  document.getElementById('vCgH').textContent='Cliquez pour débuter une période.';
-  document.getElementById('vRpI').textContent='Aucun jour sélectionné';
-  // Trimestre suivant
+  // Trouver le prochain trimestre
   const now=new Date();
   const nextQ=Math.floor(now.getMonth()/3)+2;
-  _vDesidYear=nextQ>4?now.getFullYear()+1:now.getFullYear();
-  _vDesidQ=nextQ>4?1:nextQ;
-  const qLabel=['T1','T2','T3','T4'][_vDesidQ-1];
-  const qStartM=(_vDesidQ-1)*3;
-  // Init calendars sur le 1er mois du trimestre cible
-  _vCgY=_vDesidYear;_vCgM=qStartM;
-  _vRpY=_vDesidYear;_vRpM=qStartM;
-  vDrawCg();vDrawRp();
-  // Deadline
-  document.getElementById('desid-title').textContent='📋 Desiderata '+qLabel+' '+_vDesidYear;
+  const nextQYear=nextQ>4?now.getFullYear()+1:now.getFullYear();
+  const nextQNum=nextQ>4?1:nextQ;
+  const qLabel=['T1','T2','T3','T4'][nextQNum-1];
+  const qKey='t'+nextQNum;
+  document.getElementById('desid-title').textContent='📋 Desiderata '+qLabel+' '+nextQYear;
+  document.getElementById('desid-bg').style.display='block';
+  document.getElementById('desid-bg').dataset.quarter=nextQNum;
+  document.getElementById('desid-bg').dataset.year=nextQYear;
   const info=document.getElementById('desid-deadline-info');
+  info.innerHTML='⏳ Chargement de la date limite...';
+  info.style.background='';
+  // 1. Lire depuis hospital_config (source principale)
   let deadline=null;
-  if(planning&&planning.desiderata_deadline) deadline=planning.desiderata_deadline;
+  try{
+    const {data}=await sb.from('hospital_config').select('desiderata_deadlines').eq('hospital_id',CFG.hospital).maybeSingle();
+    if(data?.desiderata_deadlines?.[qKey]) deadline=data.desiderata_deadlines[qKey];
+  }catch(e){}
+  // 2. Fallback : chercher dans planning_months du trimestre précédent
+  if(!deadline){
+    try{
+      const prevQNum=nextQNum===1?4:nextQNum-1;
+      const prevQYear=nextQNum===1?nextQYear-1:nextQYear;
+      const prevQStart=(prevQNum-1)*3;
+      const {data}=await sb.from('planning_months')
+        .select('desiderata_deadline')
+        .eq('hospital_id',CFG.hospital)
+        .eq('year',prevQYear)
+        .gte('month',prevQStart)
+        .lte('month',prevQStart+2)
+        .not('desiderata_deadline','is',null)
+        .limit(1)
+        .maybeSingle();
+      if(data?.desiderata_deadline) deadline=data.desiderata_deadline;
+    }catch(e){}
+  }
   if(deadline){
     const dl=new Date(deadline+'T23:59:59');
-    const isPast=dl<now;
-    info.style.border=isPast?'1px solid #ef4444':'1px solid #22c55e';
-    info.innerHTML=isPast?`⛔ Date limite dépassée (${deadline}) — soumission fermée.`:`📅 Date limite : <b>${deadline}</b>`;
-    document.getElementById('desid-submit-btn').style.display=isPast?'none':'block';
+    const isPast=dl<new Date();
+    info.style.background=isPast?'rgba(255,80,80,.1)':'rgba(34,197,94,.1)';
+    info.innerHTML=isPast
+      ?`⛔ Date limite dépassée (${deadline}) — soumission fermée.`
+      :`📅 Date limite de soumission : <b>${deadline}</b>`;
+    document.querySelector('#desid-bg button[onclick="submitDesiderata()"]').style.display=isPast?'none':'';
   } else {
-    info.innerHTML='ℹ Aucune date limite définie.';
-    document.getElementById('desid-submit-btn').style.display='block';
+    info.style.background='';
+    info.innerHTML='ℹ Aucune date limite définie par le gestionnaire.';
   }
-  document.getElementById('desid-valert').style.display='none';
-  document.getElementById('desid-bg').style.display='block';
-  window.scrollTo(0,0);
 }
 
 function closeDesiderata(){
   document.getElementById('desid-bg').style.display='none';
 }
 
-async function showDesidStatus(){
-  const panel=document.getElementById('desid-status-panel');
-  const list=document.getElementById('desid-status-list');
-  panel.style.display='block';
-  list.innerHTML='<div style="color:#64748b;text-align:center;padding:20px;">Chargement...</div>';
-  try{
-    const {data,error}=await sb.from('desiderata_requests')
-      .select('*').eq('doctor_id',me.id).eq('hospital_id',CFG.hospital)
-      .order('submitted_at',{ascending:false});
-    if(error) throw error;
-    if(!data||!data.length){
-      list.innerHTML='<div style="color:#64748b;text-align:center;padding:20px;">Aucune demande soumise.</div>';
-      return;
-    }
-    const STATUS={pending:'⏳ En attente de validation',validated:'✅ Validée',rejected:'✗ Refusée'};
-    const STATUS_C={pending:'#f59e0b',validated:'#22c55e',rejected:'#ef4444'};
-    const qLabel=['T1','T2','T3','T4'];
-    const fmtD=dk=>{if(!dk)return '?';const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
-    list.innerHTML=data.map(r=>{
-      const cgs=r.conges||[];
-      const ind=r.indispos||[];
-      const prf=r.prefs||[];
-      let detail='';
-      if(cgs.length) detail+=`<div style="margin-bottom:4px;">🏖 <b>Congés :</b> ${cgs.map(c=>c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)).join(', ')}</div>`;
-      if(ind.length) detail+=`<div style="margin-bottom:4px;">😴 <b>Repos :</b> ${ind.map(i=>fmtD(i.date)).join(', ')}</div>`;
-      if(prf.length) detail+=`<div style="margin-bottom:4px;">⏰ <b>Préférences :</b> ${prf.map(p=>fmtD(p.date)+' : '+p.tags.join(', ')).join(' · ')}</div>`;
-      if(r.remarques) detail+=`<div style="background:rgba(245,158,11,.08);border-left:3px solid #f59e0b;border-radius:0 6px 6px 0;padding:7px 10px;font-size:12px;margin-top:6px;white-space:pre-wrap;">💬 ${r.remarques}</div>`;
-      return `<div style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px;margin-bottom:10px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <span style="font-size:13px;font-weight:700;color:#e2e8f0;">${qLabel[(r.quarter||1)-1]} ${r.year}</span>
-          <span style="font-size:12px;font-weight:700;color:${STATUS_C[r.status]||'#64748b'};">${STATUS[r.status]||r.status}</span>
-        </div>
-        <div style="font-size:12px;color:#94a3b8;line-height:1.8;">${detail||'<i>Aucun détail</i>'}</div>
-        <div style="font-size:10px;color:#475569;margin-top:8px;">Soumis le ${new Date(r.submitted_at).toLocaleDateString('fr-BE')}</div>
-      </div>`;
-    }).join('');
-  }catch(e){
-    list.innerHTML=`<div style="color:#ef4444;padding:20px;">Erreur : ${e.message}</div>`;
-  }
+function addDesidCg(){
+  const s=document.getElementById('desid-cg-start').value;
+  const e=document.getElementById('desid-cg-end').value||s;
+  if(!s){alert('Veuillez sélectionner une date de début.');return;}
+  _desidCgs.push({start:s,end:e});
+  renderDesidLists();
+}
+
+function addDesidInd(){
+  const d=document.getElementById('desid-ind-date').value;
+  if(!d){alert('Veuillez sélectionner une date.');return;}
+  if(_desidInds.find(i=>i.date===d)){alert('Cette date est déjà ajoutée.');return;}
+  _desidInds.push({date:d});
+  renderDesidLists();
+}
+
+function renderDesidLists(){
+  const fmtD=dk=>{const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
+  document.getElementById('desid-cg-list').innerHTML=_desidCgs.map((c,i)=>
+    `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg2);border-radius:6px;margin-bottom:4px;font-size:12px;">
+      <span style="flex:1;">🏖 ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}</span>
+      <button onclick="_desidCgs.splice(${i},1);renderDesidLists()" style="background:none;border:none;color:var(--err);cursor:pointer;font-size:14px;">✕</button>
+    </div>`).join('');
+  document.getElementById('desid-ind-list').innerHTML=_desidInds.map((d,i)=>
+    `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg2);border-radius:6px;margin-bottom:4px;font-size:12px;">
+      <span style="flex:1;">🚫 ${fmtD(d.date)}</span>
+      <button onclick="_desidInds.splice(${i},1);renderDesidLists()" style="background:none;border:none;color:var(--err);cursor:pointer;font-size:14px;">✕</button>
+    </div>`).join('');
 }
 
 async function submitDesiderata(){
   if(!me) return;
-  const rem=document.getElementById('desid-rem').value.trim();
-  const repos=Object.keys(_vRpSel).sort();
-  if(!_vCgPeriods.length&&!repos.length&&!_vPfVal.length&&!rem){
-    alert('Veuillez remplir au moins une section.');return;
+  if(!_desidCgs.length&&!_desidInds.length&&!document.getElementById('desid-rem').value.trim()){
+    alert('Veuillez ajouter au moins un congé, une indisponibilité ou une remarque.');return;
   }
+  const bg=document.getElementById('desid-bg');
+  const quarter=parseInt(bg.dataset.quarter);
+  const year=parseInt(bg.dataset.year);
   const {error}=await sb.from('desiderata_requests').insert({
     hospital_id:CFG.hospital,
     doctor_id:me.id,
     doctor_name:me.firstname+' '+me.lastname,
-    year:_vDesidYear, quarter:_vDesidQ,
-    conges:_vCgPeriods.map(p=>({start:p.s,end:p.e})),
-    indispos:repos.map(d=>({date:d})),
-    prefs:_vPfVal.map(f=>({date:f.date,tags:f.tags})),
-    remarques:rem,
+    year, quarter,
+    conges:_desidCgs,
+    indispos:_desidInds,
+    prefs:[],
+    remarques:document.getElementById('desid-rem').value.trim(),
     status:'pending'
   });
   if(error){alert('Erreur : '+error.message);return;}
@@ -639,7 +486,6 @@ function showMain(){
   document.getElementById('scr-main').style.display='flex';
   document.getElementById('cal-btn').style.display='';
   document.getElementById('desid-btn').style.display='';
-  document.getElementById('desid-status-btn').style.display='';
   const av=document.getElementById('tb-av');
   av.textContent=ini(me,doctors);av.style.background=me.color+'33';av.style.color=me.color;
   document.getElementById('tb-nm').textContent=me.firstname+' '+me.lastname;
@@ -655,26 +501,16 @@ function showMain(){
 async function loadAll(){
   document.getElementById('grid-area').innerHTML='<div class="ld"><div class="sp"></div>Chargement...</div>';
   try{
-    // Deadline : stockée dans les mois du trimestre EN COURS
-    const now=new Date();
-    const curQ=Math.floor(now.getMonth()/3)+1;
-    const curQStartM=(curQ-1)*3; // 1er mois du trimestre actuel (0-indexed)
-    const curQEndM=curQStartM+2;  // dernier mois
-
-    const [pr,dr,xr,dlr]=await Promise.all([
+    const [pr,dr,xr]=await Promise.all([
       sb.from('planning_months').select('shifts,posts').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
       sb.from('doctors').select('id,firstname,lastname,role,color').eq('active',true),
-      sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false}),
-      sb.from('planning_months').select('desiderata_deadline').eq('hospital_id',CFG.hospital).eq('year',now.getFullYear()).gte('month',curQStartM).lte('month',curQEndM).not('desiderata_deadline','is',null).limit(1).maybeSingle()
+      sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
     ]);
     if(pr.error)throw pr.error;
     doctors=dr.data||[];
     exchanges=xr.data||[];
     planning=pr.data||null;
-    // Injecter la deadline du prochain trimestre dans planning pour openDesiderata()
-    if(!planning) planning={};
-    if(dlr.data&&dlr.data.desiderata_deadline) planning.desiderata_deadline=dlr.data.desiderata_deadline;
-    if(!planning.shifts){
+    if(!planning){
       document.getElementById('grid-area').innerHTML='<div class="ld"><div>Planning non disponible pour ce mois.</div><div style="color:var(--t3)">Contactez le gestionnaire de planning.</div></div>';
     }else{
       renderGrid();
@@ -736,12 +572,11 @@ function renderGrid(){
       h+='<tr>';
       h+=`<td class="pc"><span class="pdot" style="background:${p.color||'#888'}"></span><span class="pn">${p.full||p.name}</span><span class="ph">${p.start}–${p.end}</span></td>`;
       for(let d=1;d<=d2;d++){
-        const dk=dkStr(cy,cm,d),dw=new Date(dk+'T12:00:00').getDay(),we=dw===0||dw===6||isFerie(dk);
+        const dk=dkStr(cy,cm,d),dw=new Date(dk+'T12:00:00').getDay(),we=dw===0||dw===6;
         const isTd=dk===today;
+        if(!isActive(p,dk)){h+=`<td class="c-inactive${isTd?' c-today':''}"></td>`;continue;}
         const docId=(shifts[dk]||{})[p.id];
         const doc=docId?doctors.find(x=>x.id===docId):null;
-        // Masquer seulement si le poste est inactif ET aucune affectation
-        if(!isActive(p,dk)&&!doc){h+=`<td class="c-inactive${isTd?' c-today':''}"></td>`;continue;}
         if(!doc){h+=`<td class="${we?'c-we':''}${isTd?' c-today':''}"></td>`;continue;}
         const isMe2=doc.id===me.id;
         const hasX=exchanges.some(r=>r.proposer_date===dk&&r.proposer_post===p.id&&r.status==='open');
@@ -780,18 +615,10 @@ function togglePanel(){
 
 function renderPanel(){
   const l=document.getElementById('exch-list');
-  // Filtrer : afficher seulement les échanges ouverts à tous, ou ciblant le médecin connecté, ou créés par lui
-  const visible=exchanges.filter(r=>{
-    if(r.proposer_id===me.id) return true; // mes propres demandes
-    if(r.acceptor_id===me.id) return true; // j'ai accepté
-    if(r.target_doctor_id&&r.target_doctor_id!==me.id) return false; // ciblé à quelqu'un d'autre
-    return true; // ouvert à tous
-  });
-  if(!visible.length){l.innerHTML='<div class="ld">Aucune demande en cours</div>';return;}
-  l.innerHTML=visible.map(r=>{
+  if(!exchanges.length){l.innerHTML='<div class="ld">Aucune demande en cours</div>';return;}
+  l.innerHTML=exchanges.map(r=>{
     const prop=doctors.find(d=>d.id===r.proposer_id);
     const acc=r.acceptor_id?doctors.find(d=>d.id===r.acceptor_id):null;
-    const target=r.target_doctor_id?doctors.find(d=>d.id===r.target_doctor_id):null;
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
@@ -801,13 +628,12 @@ function renderPanel(){
     let stLbl='';
     if(r.status==='accepted'&&!isMe2&&!isMeAcc)stLbl='<span class="xstatus accepted">En attente de confirmation</span>';
     if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">✓ Confirmé</span>';
-    const targetLbl=target?`<br>👤 Destinataire : <b>${target.firstname} ${target.lastname}</b>`:'';
     return `<div class="xcard">
       <div class="xcard-hdr">
         <div style="font-size:12px;font-weight:600;">${prop?prop.firstname+' '+prop.lastname:'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
-        <span class="xbadge exch">🔄 Échange</span>
+        <span class="xbadge ${r.type==='donation'?'don':'exch'}">${r.type==='donation'?'🎁 Don':'🔄 Échange'}</span>
       </div>
-      <div class="xinfo">${post?post.full||post.name:r.proposer_post} · ${fmtDate(r.proposer_date)}${targetLbl}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
+      <div class="xinfo">${post?post.full||post.name:r.proposer_post} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
       ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
@@ -842,7 +668,7 @@ async function cancelX(id){
 // MODAL
 // ══════════════════════════════════════════════════════════
 function openModal(dk,pid){
-  mDate=dk;mPost=pid;mTargetAll=true;mTargetDocId=null;setTarget('all');
+  mDate=dk;mPost=pid;mType='exchange';setType('exchange');
   const post=planning?.posts?.find(p=>p.id===pid);
   document.getElementById('ms').textContent=(post?post.full||post.name:pid)+' · '+fmtDate(dk);
   document.getElementById('m-msg').value='';
@@ -851,41 +677,27 @@ function openModal(dk,pid){
 
 function closeModal(){document.getElementById('modal-bg').classList.remove('show');}
 
-function setTarget(t){
-  mTargetAll=(t==='all');
-  document.getElementById('r-all').classList.toggle('on',mTargetAll);
-  document.getElementById('r-specific').classList.toggle('on',!mTargetAll);
-  const field=document.getElementById('m-doctor-field');
-  field.style.display=mTargetAll?'none':'block';
-  if(!mTargetAll){
-    // Populate doctor list excluding self
-    const sel=document.getElementById('m-target-doc');
-    sel.innerHTML='<option value="">— Sélectionner —</option>';
-    doctors.filter(d=>d.id!==me.id).sort((a,b)=>a.lastname.localeCompare(b.lastname))
-      .forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.firstname+' '+d.lastname+' ('+d.role+')';sel.appendChild(o);});
-  }
+function setType(t){
+  mType=t;
+  document.getElementById('r-exch').classList.toggle('on',t==='exchange');
+  document.getElementById('r-don').classList.toggle('on',t==='donation');
 }
 
 async function submitExchange(){
   if(!mDate||!mPost)return;
-  if(!mTargetAll){
-    mTargetDocId=parseInt(document.getElementById('m-target-doc').value)||null;
-    if(!mTargetDocId){alert('Veuillez sélectionner un médecin.');return;}
-  }
   try{
     const {error}=await sb.from('exchange_requests').insert({
       hospital_id:CFG.hospital,proposer_id:me.id,
       proposer_date:mDate,proposer_post:mPost,
-      type:'exchange',status:'open',
-      target_doctor_id:mTargetAll?null:mTargetDocId,
+      type:mType,status:'open',
       message:document.getElementById('m-msg').value.trim()||null
     });
     if(error)throw error;
     closeModal();
-    const msg=mTargetAll?'Demande envoyée à tous les médecins.':'Demande envoyée au médecin sélectionné.';
-    toast(msg);
+    toast('Demande envoyée ! Visible par tous les médecins.');
   }catch(e){toast('Erreur : '+e.message,true);}
 }
+
 // ══════════════════════════════════════════════════════════
 // NAV
 // ══════════════════════════════════════════════════════════
@@ -900,30 +712,10 @@ function dkStr(y,m,d){return y+'-'+('0'+(m+1)).slice(-2)+'-'+('0'+d).slice(-2);}
 
 function fmtDate(dk){const d=new Date(dk+'T12:00:00');return DS[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();}
 
-function isFerie(dk){
-  const d=new Date(dk+'T12:00:00'),y=d.getFullYear(),m=d.getMonth()+1,j=d.getDate();
-  const fixes=[[1,1],[5,1],[7,21],[8,15],[11,1],[11,11],[12,25]];
-  for(const f of fixes) if(m===f[0]&&j===f[1]) return true;
-  const a=y%19,b=Math.floor(y/100),c=y%100,dd=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25);
-  const g=Math.floor((b-f+1)/3),h=(19*a+b-dd-g+15)%30,k=Math.floor(c/4),l=c%4;
-  const n=(32+2*e+2*k-h-l)%7,p=Math.floor((a+11*h+22*n)/451);
-  const pm=Math.floor((h+n-7*p+114)/31),pj=(h+n-7*p+114)%31+1;
-  const paq=new Date(y,pm-1,pj);
-  for(const o of [1,39,49,50]){const t=new Date(paq.getTime()+o*86400000);if(t.getFullYear()===y&&t.getMonth()+1===m&&t.getDate()===j)return true;}
-  return false;
-}
-
 function isActive(post,dk){
-  const av=post.avail||'all',dw=new Date(dk+'T12:00:00').getDay();
-  const isJF=isFerie(dk);
-  // Les jours fériés sont traités comme des weekends (sam+dim)
-  const we=dw===0||dw===6||isJF;
-  if(av==='all')return true;
-  if(av==='wd')return!we;
-  if(av==='we')return we;
-  // Jours fériés : on affiche aussi les postes sat et sun
-  if(av==='sat')return dw===6||isJF;
-  if(av==='sun')return dw===0||isJF;
+  const av=post.avail||'all',dw=new Date(dk+'T12:00:00').getDay(),we=dw===0||dw===6;
+  if(av==='all')return true;if(av==='wd')return!we;if(av==='we')return we;
+  if(av==='sat')return dw===6;if(av==='sun')return dw===0;
   if(av.includes(','))return av.split(',').map(Number).includes(dw);
   const n=parseInt(av);return!isNaN(n)&&dw===n;
 }
