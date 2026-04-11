@@ -218,15 +218,19 @@ button{font-family:inherit;}
     <div class="modal-t" id="mt">Proposer un échange</div>
     <div class="modal-s" id="ms"></div>
     <div class="mfield">
-      <span class="mlbl">Type de demande</span>
+      <span class="mlbl">Destinataire</span>
       <div class="mradio-g">
-        <div class="mradio on" id="r-exch" onclick="setType('exchange')">🔄 Échange</div>
-        <div class="mradio" id="r-don" onclick="setType('donation')">🎁 Don de poste</div>
+        <div class="mradio on" id="r-all" onclick="setTarget('all')">👥 Tous les médecins</div>
+        <div class="mradio" id="r-specific" onclick="setTarget('specific')">👤 Médecin en particulier</div>
       </div>
+    </div>
+    <div class="mfield" id="m-target-wrap" style="display:none;">
+      <span class="mlbl">Choisir le médecin</span>
+      <select id="m-target-doc" class="mtxt" style="padding:8px;font-size:13px;"></select>
     </div>
     <div class="mfield">
       <span class="mlbl">Message (optionnel)</span>
-      <textarea class="mtxt" id="m-msg" placeholder="Précisez si vous cherchez un échange particulier..."></textarea>
+      <textarea class="mtxt" id="m-msg" placeholder="Précisez votre demande..."></textarea>
     </div>
     <div class="macts">
       <button class="mcancel" onclick="closeModal()">Annuler</button>
@@ -253,7 +257,7 @@ const CFG = {
 let sb, doctors=[], me=null, selectedDoc=null;
 let planning=null, exchanges=[];
 let cy=new Date().getFullYear(), cm=new Date().getMonth();
-let mDate=null, mPost=null, mType='exchange';
+let mDate=null, mPost=null;
 let rtChannel=null;
 
 const MO=['Janvier','Février','Mars','Avril','Mai','Juin',
@@ -631,7 +635,7 @@ function renderPanel(){
     return `<div class="xcard">
       <div class="xcard-hdr">
         <div style="font-size:12px;font-weight:600;">${prop?prop.firstname+' '+prop.lastname:'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
-        <span class="xbadge ${r.type==='donation'?'don':'exch'}">${r.type==='donation'?'🎁 Don':'🔄 Échange'}</span>
+        <span class="xbadge exch">🔄 Échange</span>
       </div>
       <div class="xinfo">${post?post.full||post.name:r.proposer_post} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
       ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
@@ -668,33 +672,41 @@ async function cancelX(id){
 // MODAL
 // ══════════════════════════════════════════════════════════
 function openModal(dk,pid){
-  mDate=dk;mPost=pid;mType='exchange';setType('exchange');
+  mDate=dk;mPost=pid;
   const post=planning?.posts?.find(p=>p.id===pid);
   document.getElementById('ms').textContent=(post?post.full||post.name:pid)+' · '+fmtDate(dk);
   document.getElementById('m-msg').value='';
+  setTarget('all');
+  // Remplir le sélecteur de médecins (hors soi-même)
+  const sel=document.getElementById('m-target-doc');
+  sel.innerHTML=doctors.filter(d=>d.id!==me.id).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
   document.getElementById('modal-bg').classList.add('show');
 }
 
 function closeModal(){document.getElementById('modal-bg').classList.remove('show');}
 
-function setType(t){
-  mType=t;
-  document.getElementById('r-exch').classList.toggle('on',t==='exchange');
-  document.getElementById('r-don').classList.toggle('on',t==='donation');
+let mTarget='all';
+function setTarget(t){
+  mTarget=t;
+  document.getElementById('r-all').classList.toggle('on',t==='all');
+  document.getElementById('r-specific').classList.toggle('on',t==='specific');
+  document.getElementById('m-target-wrap').style.display=t==='specific'?'':'none';
 }
 
 async function submitExchange(){
   if(!mDate||!mPost)return;
+  const targetDocId=mTarget==='specific'?parseInt(document.getElementById('m-target-doc').value):null;
   try{
     const {error}=await sb.from('exchange_requests').insert({
       hospital_id:CFG.hospital,proposer_id:me.id,
       proposer_date:mDate,proposer_post:mPost,
-      type:mType,status:'open',
+      type:'exchange',status:'open',
+      target_doctor_id:targetDocId,
       message:document.getElementById('m-msg').value.trim()||null
     });
     if(error)throw error;
     closeModal();
-    toast('Demande envoyée ! Visible par tous les médecins.');
+    toast(targetDocId?'Demande envoyée au médecin ciblé !':'Demande envoyée à tous les médecins !');
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
