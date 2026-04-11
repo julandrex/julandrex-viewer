@@ -158,7 +158,8 @@ button{font-family:inherit;}
       </div>
     </div>
     <button class="logout-btn" onclick="copyCalUrl()" id="cal-btn" style="display:none;background:none;border:1px solid var(--acc);color:var(--acc);">📅 Mon calendrier</button>
-    <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">📋 Mes desiderata</button>
+    <button class="logout-btn" onclick="openMesDemandes()" id="demandes-btn" style="display:none;background:none;border:1px solid #a78bfa;color:#a78bfa;">📋 Mes demandes</button>
+    <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">+ Desiderata</button>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </div>
   <div class="month-bar">
@@ -180,35 +181,80 @@ button{font-family:inherit;}
 </div>
 
 <!-- DESIDERATA MODAL -->
-<div id="desid-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeDesiderata()">
-  <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:40px auto;padding:20px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+<style>
+.jcal{background:var(--bg2);border-radius:10px;padding:10px 12px;margin-bottom:8px;}
+.jcal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.jcal-ttl{font-size:13px;font-weight:700;color:var(--t1);}
+.jcal-nav{background:none;border:1px solid var(--b);color:var(--t2);border-radius:5px;padding:1px 9px;cursor:pointer;font-size:15px;line-height:1.4;}
+.jcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.jcal-dow{text-align:center;font-size:9px;font-weight:700;color:var(--t3);padding:2px 0 4px;}
+.jcal-d{text-align:center;font-size:11px;padding:5px 1px;border-radius:5px;cursor:pointer;color:var(--t2);user-select:none;}
+.jcal-d:hover:not(.jcal-x){background:var(--b);}
+.jcal-d.jcal-x{color:var(--bg3);cursor:default;}
+.jcal-d.jcal-sel{background:var(--acc)!important;color:#000!important;font-weight:700;}
+.jcal-d.jcal-range{background:rgba(201,152,58,.22);}
+.jcal-d.jcal-today{outline:1px solid var(--acc);}
+.jcal-d.jcal-mark{background:#7c3aed33;color:#a78bfa;font-weight:700;}
+.jcal-hint{font-size:10px;color:var(--t3);margin-top:6px;}
+</style>
+
+<div id="desid-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeDesiderata()">
+  <div style="background:var(--bg1);border-radius:14px;max-width:540px;margin:30px auto;padding:20px;box-sizing:border-box;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <div style="font-size:15px;font-weight:700;" id="desid-title">📋 Desiderata</div>
-      <button onclick="closeDesiderata()" style="background:none;border:none;color:var(--t3);font-size:18px;cursor:pointer;">✕</button>
+      <button onclick="closeDesiderata()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
     </div>
-    <div id="desid-deadline-info" style="background:var(--bg2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--t2);margin-bottom:16px;"></div>
-    <!-- Congés -->
-    <div style="font-size:12px;font-weight:600;margin-bottom:6px;">🏖 Congés</div>
-    <div id="desid-cg-list" style="margin-bottom:6px;"></div>
-    <div style="display:flex;gap:6px;margin-bottom:14px;">
-      <input type="date" id="desid-cg-start" style="flex:1;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:6px;color:var(--t1);font-size:12px;">
-      <input type="date" id="desid-cg-end" style="flex:1;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:6px;color:var(--t1);font-size:12px;">
-      <button onclick="addDesidCg()" style="background:var(--acc);color:#000;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;">+ Ajouter</button>
+    <div id="desid-deadline-info" style="background:var(--bg2);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--t2);margin-bottom:14px;"></div>
+
+    <!-- CALENDRIER CONGÉS -->
+    <div style="font-size:12px;font-weight:700;color:var(--acc);margin-bottom:6px;">🏖 Congés &mdash; cliquez début puis fin de période</div>
+    <div class="jcal">
+      <div class="jcal-hdr">
+        <button class="jcal-nav" onclick="jcalNav('cg',-1)">‹</button>
+        <div class="jcal-ttl" id="jcal-cg-lbl"></div>
+        <button class="jcal-nav" onclick="jcalNav('cg',1)">›</button>
+      </div>
+      <div class="jcal-grid" id="jcal-cg-grid"></div>
+      <div class="jcal-hint" id="jcal-cg-hint">Cliquez une date pour début, une autre pour fin</div>
     </div>
-    <!-- Indispos -->
-    <div style="font-size:12px;font-weight:600;margin-bottom:6px;">🚫 Jours indisponibles</div>
-    <div id="desid-ind-list" style="margin-bottom:6px;"></div>
-    <div style="display:flex;gap:6px;margin-bottom:14px;">
-      <input type="date" id="desid-ind-date" style="flex:1;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:6px;color:var(--t1);font-size:12px;">
-      <button onclick="addDesidInd()" style="background:var(--acc);color:#000;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;">+ Ajouter</button>
+    <div id="desid-cg-list" style="margin-bottom:12px;"></div>
+
+    <!-- CALENDRIER INDISPOS -->
+    <div style="font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:6px;">🚫 Indisponibilités — cliquez les jours concernés</div>
+    <div class="jcal">
+      <div class="jcal-hdr">
+        <button class="jcal-nav" onclick="jcalNav('ind',-1)">‹</button>
+        <div class="jcal-ttl" id="jcal-ind-lbl"></div>
+        <button class="jcal-nav" onclick="jcalNav('ind',1)">›</button>
+      </div>
+      <div class="jcal-grid" id="jcal-ind-grid"></div>
+      <div class="jcal-hint">Cliquez pour marquer / démarquer un jour</div>
     </div>
+    <div id="desid-ind-list" style="margin-bottom:12px;"></div>
+
+    <!-- champs cachés conservés pour compatibilité JS -->
+    <input type="date" id="desid-cg-start" style="display:none;">
+    <input type="date" id="desid-cg-end" style="display:none;">
+    <input type="date" id="desid-ind-date" style="display:none;">
+
     <!-- Remarques -->
     <div style="font-size:12px;font-weight:600;margin-bottom:6px;">💬 Remarques</div>
-    <textarea id="desid-rem" style="width:100%;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:8px;color:var(--t1);font-size:12px;resize:vertical;min-height:60px;margin-bottom:14px;" placeholder="Informations complémentaires..."></textarea>
+    <textarea id="desid-rem" style="width:100%;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:8px;color:var(--t1);font-size:12px;resize:vertical;min-height:60px;margin-bottom:14px;box-sizing:border-box;" placeholder="Informations complémentaires..."></textarea>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button onclick="closeDesiderata()" style="background:none;border:1px solid var(--b);color:var(--t2);border-radius:8px;padding:9px 18px;cursor:pointer;font-size:13px;">Annuler</button>
       <button onclick="submitDesiderata()" style="background:var(--acc);color:#000;border:none;border-radius:8px;padding:9px 18px;font-weight:700;cursor:pointer;font-size:13px;">📤 Envoyer</button>
     </div>
+  </div>
+</div>
+
+<!-- PANEL MES DEMANDES -->
+<div id="demandes-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMesDemandes()">
+  <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:700;">📋 Mes demandes de desiderata</div>
+      <button onclick="closeMesDemandes()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="demandes-list"></div>
   </div>
 </div>
 
@@ -345,6 +391,7 @@ function logout(){
   document.querySelectorAll('.doc-card').forEach(c=>c.classList.remove('sel'));
   document.getElementById('cal-btn').style.display='none';
   document.getElementById('desid-btn').style.display='none';
+  document.getElementById('demandes-btn').style.display='none';
 }
 
 // Desiderata state
@@ -366,6 +413,12 @@ async function openDesiderata(){
   document.getElementById('desid-bg').style.display='block';
   document.getElementById('desid-bg').dataset.quarter=nextQNum;
   document.getElementById('desid-bg').dataset.year=nextQYear;
+  // Initialiser les calendriers sur le trimestre cible
+  const qStartMonth=(nextQNum-1)*3;
+  _jcalCgY=nextQYear; _jcalCgM=qStartMonth;
+  _jcalIndY=nextQYear; _jcalIndM=qStartMonth;
+  _cgSelStart=null;
+  jcalRender('cg'); jcalRender('ind');
   const info=document.getElementById('desid-deadline-info');
   info.innerHTML='⏳ Chargement de la date limite...';
   info.style.background='';
@@ -409,22 +462,102 @@ async function openDesiderata(){
 
 function closeDesiderata(){
   document.getElementById('desid-bg').style.display='none';
+  _cgSelStart=null;
+}
+
+// ── Calendrier state ──
+let _jcalCgY=new Date().getFullYear(), _jcalCgM=new Date().getMonth();
+let _jcalIndY=new Date().getFullYear(), _jcalIndM=new Date().getMonth();
+let _cgSelStart=null; // date intermédiaire (début de congé cliqué)
+const DCAL_DS=['Di','Lu','Ma','Me','Je','Ve','Sa'];
+const DCAL_MO=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+function jcalNav(type,dir){
+  if(type==='cg'){
+    _jcalCgM+=dir;
+    if(_jcalCgM>11){_jcalCgM=0;_jcalCgY++;}
+    if(_jcalCgM<0){_jcalCgM=11;_jcalCgY--;}
+    jcalRender('cg');
+  } else {
+    _jcalIndM+=dir;
+    if(_jcalIndM>11){_jcalIndM=0;_jcalIndY++;}
+    if(_jcalIndM<0){_jcalIndM=11;_jcalIndY--;}
+    jcalRender('ind');
+  }
+}
+
+function jcalRender(type){
+  const isCg=type==='cg';
+  const y=isCg?_jcalCgY:_jcalIndY, m=isCg?_jcalCgM:_jcalIndM;
+  const lbl=document.getElementById('jcal-'+type+'-lbl');
+  const grid=document.getElementById('jcal-'+type+'-grid');
+  if(!lbl||!grid) return;
+  lbl.textContent=DCAL_MO[m]+' '+y;
+  const today=new Date().toISOString().slice(0,10);
+  const d1=new Date(y,m,1).getDay(); // jour du 1er (0=Di)
+  const dmax=new Date(y,m+1,0).getDate();
+  let html=DCAL_DS.map(d=>`<div class="jcal-dow">${d}</div>`).join('');
+  // cellules vides avant le 1er
+  for(let i=0;i<d1;i++) html+=`<div class="jcal-d jcal-x"></div>`;
+  for(let d=1;d<=dmax;d++){
+    const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    let cls='jcal-d';
+    if(dk===today) cls+=' jcal-today';
+    if(isCg){
+      // vérifier si dans une plage
+      const inRange=_desidCgs.some(c=>dk>=c.start&&dk<=c.end);
+      const isStart=_desidCgs.some(c=>dk===c.start)||dk===_cgSelStart;
+      const isEnd=_desidCgs.some(c=>dk===c.end);
+      if(isStart||isEnd) cls+=' jcal-sel';
+      else if(inRange) cls+=' jcal-range';
+    } else {
+      if(_desidInds.find(i=>i.date===dk)) cls+=' jcal-mark';
+    }
+    const fn=isCg?`jcalClickCg('${dk}')`:`jcalClickInd('${dk}')`;
+    html+=`<div class="${cls}" onclick="${fn}">${d}</div>`;
+  }
+  grid.innerHTML=html;
+}
+
+function jcalClickCg(dk){
+  if(!_cgSelStart){
+    _cgSelStart=dk;
+    const hint=document.getElementById('jcal-cg-hint');
+    if(hint) hint.textContent='Cliquez la date de fin (ou la même date pour un jour unique)';
+    jcalRender('cg');
+  } else {
+    const s=_cgSelStart<dk?_cgSelStart:dk;
+    const e=_cgSelStart<dk?dk:_cgSelStart;
+    _desidCgs.push({start:s,end:e});
+    _cgSelStart=null;
+    const hint=document.getElementById('jcal-cg-hint');
+    if(hint) hint.textContent='Cliquez une date pour début, une autre pour fin';
+    renderDesidLists();
+    jcalRender('cg');
+  }
+}
+
+function jcalClickInd(dk){
+  const idx=_desidInds.findIndex(i=>i.date===dk);
+  if(idx>=0) _desidInds.splice(idx,1);
+  else _desidInds.push({date:dk});
+  renderDesidLists();
+  jcalRender('ind');
 }
 
 function addDesidCg(){
   const s=document.getElementById('desid-cg-start').value;
   const e=document.getElementById('desid-cg-end').value||s;
-  if(!s){alert('Veuillez sélectionner une date de début.');return;}
+  if(!s) return;
   _desidCgs.push({start:s,end:e});
-  renderDesidLists();
+  renderDesidLists(); jcalRender('cg');
 }
 
 function addDesidInd(){
   const d=document.getElementById('desid-ind-date').value;
-  if(!d){alert('Veuillez sélectionner une date.');return;}
-  if(_desidInds.find(i=>i.date===d)){alert('Cette date est déjà ajoutée.');return;}
+  if(!d||_desidInds.find(i=>i.date===d)) return;
   _desidInds.push({date:d});
-  renderDesidLists();
+  renderDesidLists(); jcalRender('ind');
 }
 
 function renderDesidLists(){
@@ -432,12 +565,12 @@ function renderDesidLists(){
   document.getElementById('desid-cg-list').innerHTML=_desidCgs.map((c,i)=>
     `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg2);border-radius:6px;margin-bottom:4px;font-size:12px;">
       <span style="flex:1;">🏖 ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}</span>
-      <button onclick="_desidCgs.splice(${i},1);renderDesidLists()" style="background:none;border:none;color:var(--err);cursor:pointer;font-size:14px;">✕</button>
+      <button onclick="_desidCgs.splice(${i},1);renderDesidLists();jcalRender('cg')" style="background:none;border:none;color:var(--err);cursor:pointer;font-size:14px;">✕</button>
     </div>`).join('');
   document.getElementById('desid-ind-list').innerHTML=_desidInds.map((d,i)=>
     `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg2);border-radius:6px;margin-bottom:4px;font-size:12px;">
       <span style="flex:1;">🚫 ${fmtD(d.date)}</span>
-      <button onclick="_desidInds.splice(${i},1);renderDesidLists()" style="background:none;border:none;color:var(--err);cursor:pointer;font-size:14px;">✕</button>
+      <button onclick="_desidInds.splice(${i},1);renderDesidLists();jcalRender('ind')" style="background:none;border:none;color:var(--err);cursor:pointer;font-size:14px;">✕</button>
     </div>`).join('');
 }
 
@@ -465,6 +598,57 @@ async function submitDesiderata(){
   toast('✅ Desiderata envoyés au gestionnaire !');
 }
 
+// ══════════════════════════════════════════════════════════
+// MES DEMANDES
+// ══════════════════════════════════════════════════════════
+async function openMesDemandes(){
+  if(!me) return;
+  document.getElementById('demandes-bg').style.display='block';
+  const list=document.getElementById('demandes-list');
+  list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">⏳ Chargement...</div>';
+  try{
+    const {data,error}=await sb.from('desiderata_requests')
+      .select('*')
+      .eq('hospital_id',CFG.hospital)
+      .eq('doctor_id',me.id)
+      .order('created_at',{ascending:false});
+    if(error) throw error;
+    if(!data||!data.length){
+      list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">Aucune demande soumise.</div>';
+      return;
+    }
+    const fmtD=dk=>{const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
+    const fmtDt=s=>new Date(s).toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const stBadge=st=>{
+      if(st==='pending') return '<span style="background:#fbbf2433;color:#fbbf24;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">⏳ En attente</span>';
+      if(st==='validated'||st==='accepted') return '<span style="background:#22c55e33;color:#22c55e;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">✅ Validée</span>';
+      if(st==='refused'||st==='rejected') return '<span style="background:#ef444433;color:#ef4444;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">✗ Refusée</span>';
+      return `<span style="background:var(--bg3);color:var(--t3);font-size:11px;border-radius:6px;padding:2px 8px;">${st}</span>`;
+    };
+    const Q=['T1','T2','T3','T4'];
+    list.innerHTML=data.map(r=>{
+      const cgs=(r.conges||[]).map(c=>`🏖 ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}`).join('<br>');
+      const inds=(r.indispos||[]).map(i=>`🚫 ${fmtD(i.date||i.start)}`).join('<br>');
+      const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">💬 ${r.remarques}</div>`:'';
+      return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:10px;border-left:3px solid ${r.status==='pending'?'#fbbf24':r.status==='validated'||r.status==='accepted'?'#22c55e':'#ef4444'};">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:13px;font-weight:700;">${Q[(r.quarter||1)-1]} ${r.year}</span>
+          ${stBadge(r.status)}
+        </div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.8;">${[cgs,inds].filter(Boolean).join('<br>')||'<i>Aucun détail</i>'}</div>
+        ${rem}
+        <div style="font-size:10px;color:var(--t3);margin-top:6px;">Soumis le ${fmtDt(r.created_at||r.submitted_at)}</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    list.innerHTML=`<div style="color:var(--err);padding:10px;">Erreur : ${e.message}</div>`;
+  }
+}
+
+function closeMesDemandes(){
+  document.getElementById('demandes-bg').style.display='none';
+}
+
 function copyCalUrl(){
   if(!me) return;
   const base='https://zzqbcjtrtisexyokezaq.supabase.co/functions/v1/ical';
@@ -490,6 +674,7 @@ function showMain(){
   document.getElementById('scr-main').style.display='flex';
   document.getElementById('cal-btn').style.display='';
   document.getElementById('desid-btn').style.display='';
+  document.getElementById('demandes-btn').style.display='';
   const av=document.getElementById('tb-av');
   av.textContent=ini(me,doctors);av.style.background=me.color+'33';av.style.color=me.color;
   document.getElementById('tb-nm').textContent=me.firstname+' '+me.lastname;
