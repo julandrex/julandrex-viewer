@@ -182,68 +182,121 @@ button{font-family:inherit;}
 
 <!-- DESIDERATA MODAL -->
 <style>
-.jcal{background:var(--bg2);border-radius:10px;padding:10px 12px;margin-bottom:8px;}
-.jcal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-.jcal-ttl{font-size:13px;font-weight:700;color:var(--t1);}
-.jcal-nav{background:none;border:1px solid var(--b);color:var(--t2);border-radius:5px;padding:1px 9px;cursor:pointer;font-size:15px;line-height:1.4;}
-.jcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-.jcal-dow{text-align:center;font-size:9px;font-weight:700;color:var(--t3);padding:2px 0 4px;}
-.jcal-d{text-align:center;font-size:11px;padding:5px 1px;border-radius:5px;cursor:pointer;color:var(--t2);user-select:none;}
-.jcal-d:hover:not(.jcal-x){background:var(--b);}
-.jcal-d.jcal-x{color:var(--bg3);cursor:default;}
-.jcal-d.jcal-sel{background:var(--acc)!important;color:#000!important;font-weight:700;}
-.jcal-d.jcal-range{background:rgba(201,152,58,.22);}
-.jcal-d.jcal-today{outline:1px solid var(--acc);}
-.jcal-d.jcal-mark{background:#7c3aed33;color:#a78bfa;font-weight:700;}
-.jcal-hint{font-size:10px;color:var(--t3);margin-top:6px;}
+.jcal2{background:#1a2332;border-radius:12px;padding:16px;margin-bottom:4px;}
+.jcal2-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.jcal2-ttl{font-size:14px;font-weight:700;color:#e2e8f0;letter-spacing:.3px;}
+.jcal2-nav{background:#243044;border:none;color:#94a3b8;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px;transition:background .15s;}
+.jcal2-nav:hover{background:#2d3d54;color:#e2e8f0;}
+.jcal2-sub{font-size:10px;font-weight:700;letter-spacing:.8px;color:#64748b;margin-bottom:10px;}
+.jcal2-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.jcal2-dow{text-align:center;font-size:10px;font-weight:700;color:#64748b;padding:3px 0 6px;}
+.jcal2-d{text-align:center;font-size:12px;padding:7px 2px;border-radius:6px;cursor:pointer;color:#94a3b8;user-select:none;transition:background .1s;}
+.jcal2-d:hover:not(.jcal2-x):not(.jcal2-we){background:#2d3d54;}
+.jcal2-d.jcal2-x{color:#1e293b;cursor:default;}
+.jcal2-d.jcal2-we{color:#334155;cursor:default;}
+.jcal2-d.jcal2-today{color:#c9983a;font-weight:700;}
+.jcal2-d.jcal2-sel{background:#c9983a!important;color:#000!important;font-weight:700;}
+.jcal2-d.jcal2-range{background:rgba(201,152,58,.18);color:#e2e8f0;}
+.jcal2-d.jcal2-mark{background:#7c3aed55;color:#a78bfa;font-weight:700;}
+.jcal2-hint{font-size:11px;color:#64748b;margin-top:10px;font-style:italic;}
+.dsec{background:#111c2d;border-radius:12px;padding:16px;margin-bottom:12px;}
+.dsec-ttl{font-size:14px;font-weight:700;color:#e2e8f0;margin-bottom:4px;}
+.dsec-sub{font-size:10px;font-weight:700;letter-spacing:.8px;color:#64748b;margin-bottom:12px;}
+.dsec-add{width:100%;background:transparent;border:1.5px dashed #2d3d54;color:#64748b;border-radius:8px;padding:10px;cursor:pointer;font-size:13px;transition:all .15s;}
+.dsec-add:hover{border-color:#4a6080;color:#94a3b8;}
+.dtag{display:inline-flex;align-items:center;gap:6px;background:#1e3a5f;color:#93c5fd;border-radius:20px;padding:4px 10px;font-size:12px;margin:3px;}
+.dtag button{background:none;border:none;color:#93c5fd;cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 2px;}
 </style>
 
-<div id="desid-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeDesiderata()">
-  <div style="background:var(--bg1);border-radius:14px;max-width:540px;margin:30px auto;padding:20px;box-sizing:border-box;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div style="font-size:15px;font-weight:700;" id="desid-title">📋 Desiderata</div>
-      <button onclick="closeDesiderata()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
-    </div>
-    <div id="desid-deadline-info" style="background:var(--bg2);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--t2);margin-bottom:14px;"></div>
+<div id="desid-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeDesiderata()">
+  <div style="max-width:500px;margin:20px auto;padding:0 12px 60px;box-sizing:border-box;">
 
-    <!-- CALENDRIER CONGÉS -->
-    <div style="font-size:12px;font-weight:700;color:var(--acc);margin-bottom:6px;">🏖 Congés &mdash; cliquez début puis fin de période</div>
-    <div class="jcal">
-      <div class="jcal-hdr">
-        <button class="jcal-nav" onclick="jcalNav('cg',-1)">‹</button>
-        <div class="jcal-ttl" id="jcal-cg-lbl"></div>
-        <button class="jcal-nav" onclick="jcalNav('cg',1)">›</button>
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 4px 12px;">
+      <div style="font-size:17px;font-weight:800;color:#e2e8f0;" id="desid-title">📋 Desiderata T3 2026</div>
+      <button onclick="closeDesiderata()" style="background:#1e293b;border:none;color:#94a3b8;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:20px;line-height:1;">✕</button>
+    </div>
+    <div id="desid-deadline-info" style="background:#1e3a5f;border-radius:10px;padding:10px 14px;font-size:12px;color:#93c5fd;margin-bottom:14px;"></div>
+
+    <!-- CONGÉS -->
+    <div class="dsec">
+      <div class="dsec-ttl">🏖 Congés souhaités</div>
+      <div class="dsec-sub">CLIQUEZ SUR UN 1ER JOUR PUIS SUR LE DERNIER JOUR DE LA PÉRIODE</div>
+      <div class="jcal2">
+        <div class="jcal2-hdr">
+          <button class="jcal2-nav" onclick="jcalNav('cg',-1)">‹</button>
+          <div class="jcal2-ttl" id="jcal-cg-lbl"></div>
+          <button class="jcal2-nav" onclick="jcalNav('cg',1)">›</button>
+        </div>
+        <div class="jcal2-grid" id="jcal-cg-grid"></div>
+        <div class="jcal2-hint" id="jcal-cg-hint">Cliquez pour débuter une période.</div>
       </div>
-      <div class="jcal-grid" id="jcal-cg-grid"></div>
-      <div class="jcal-hint" id="jcal-cg-hint">Cliquez une date pour début, une autre pour fin</div>
+      <div id="desid-cg-list" style="margin-top:8px;"></div>
     </div>
-    <div id="desid-cg-list" style="margin-bottom:12px;"></div>
 
-    <!-- CALENDRIER INDISPOS -->
-    <div style="font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:6px;">🚫 Indisponibilités — cliquez les jours concernés</div>
-    <div class="jcal">
-      <div class="jcal-hdr">
-        <button class="jcal-nav" onclick="jcalNav('ind',-1)">‹</button>
-        <div class="jcal-ttl" id="jcal-ind-lbl"></div>
-        <button class="jcal-nav" onclick="jcalNav('ind',1)">›</button>
+    <!-- FORMATIONS -->
+    <div class="dsec">
+      <div class="dsec-ttl">🎓 Formations</div>
+      <div class="dsec-sub"></div>
+      <div id="desid-form-list" style="margin-bottom:8px;"></div>
+      <button class="dsec-add" onclick="addDesidFormation()">+ Ajouter une formation</button>
+      <div id="desid-form-input-wrap" style="display:none;margin-top:8px;">
+        <input type="text" id="desid-form-txt" placeholder="Description de la formation..." style="width:100%;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:8px 10px;color:#e2e8f0;font-size:12px;box-sizing:border-box;">
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <input type="date" id="desid-form-date" style="flex:1;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:7px;color:#e2e8f0;font-size:12px;">
+          <button onclick="confirmDesidFormation()" style="background:#c9983a;color:#000;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;">✓</button>
+          <button onclick="cancelDesidFormation()" style="background:#1e293b;border:none;color:#94a3b8;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:12px;">✕</button>
+        </div>
       </div>
-      <div class="jcal-grid" id="jcal-ind-grid"></div>
-      <div class="jcal-hint">Cliquez pour marquer / démarquer un jour</div>
     </div>
-    <div id="desid-ind-list" style="margin-bottom:12px;"></div>
 
-    <!-- champs cachés conservés pour compatibilité JS -->
+    <!-- REPOS -->
+    <div class="dsec">
+      <div class="dsec-ttl">😴 Repos souhaités</div>
+      <div class="dsec-sub">SÉLECTION MULTIPLE — CLIQUEZ SUR LES JOURS</div>
+      <div class="jcal2">
+        <div class="jcal2-hdr">
+          <button class="jcal2-nav" onclick="jcalNav('ind',-1)">‹</button>
+          <div class="jcal2-ttl" id="jcal-ind-lbl"></div>
+          <button class="jcal2-nav" onclick="jcalNav('ind',1)">›</button>
+        </div>
+        <div class="jcal2-grid" id="jcal-ind-grid"></div>
+      </div>
+      <div id="desid-ind-list" style="margin-top:8px;font-size:12px;color:#94a3b8;"></div>
+    </div>
+
+    <!-- PRÉFÉRENCES -->
+    <div class="dsec">
+      <div class="dsec-ttl">🔔 Préférences de postes</div>
+      <div class="dsec-sub">CHAQUE PRÉFÉRENCE EST LIÉE À UNE DATE PRÉCISE</div>
+      <div id="desid-pref-list" style="margin-bottom:8px;"></div>
+      <button class="dsec-add" onclick="addDesidPref()">+ Ajouter une préférence</button>
+      <div id="desid-pref-input-wrap" style="display:none;margin-top:8px;">
+        <input type="date" id="desid-pref-date" style="width:100%;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:8px 10px;color:#e2e8f0;font-size:12px;box-sizing:border-box;margin-bottom:6px;">
+        <input type="text" id="desid-pref-txt" placeholder="Poste souhaité (ex: COORD, SMUR...)" style="width:100%;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:8px 10px;color:#e2e8f0;font-size:12px;box-sizing:border-box;">
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <button onclick="confirmDesidPref()" style="background:#c9983a;color:#000;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;">✓ Ajouter</button>
+          <button onclick="cancelDesidPref()" style="background:#1e293b;border:none;color:#94a3b8;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:12px;">Annuler</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REMARQUES -->
+    <div class="dsec">
+      <div class="dsec-ttl">💬 Remarques libres</div>
+      <textarea id="desid-rem" style="width:100%;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:10px;color:#e2e8f0;font-size:12px;resize:vertical;min-height:80px;box-sizing:border-box;" placeholder="Informations complémentaires..."></textarea>
+    </div>
+
+    <!-- Boutons -->
+    <div style="display:flex;gap:10px;justify-content:flex-end;padding:4px 0 20px;">
+      <button onclick="closeDesiderata()" style="background:none;border:1px solid #2d3d54;color:#94a3b8;border-radius:10px;padding:11px 22px;cursor:pointer;font-size:13px;">Annuler</button>
+      <button onclick="submitDesiderata()" style="background:#c9983a;color:#000;border:none;border-radius:10px;padding:11px 22px;font-weight:700;cursor:pointer;font-size:13px;">📤 Envoyer</button>
+    </div>
+
+    <!-- champs cachés compatibilité -->
     <input type="date" id="desid-cg-start" style="display:none;">
     <input type="date" id="desid-cg-end" style="display:none;">
     <input type="date" id="desid-ind-date" style="display:none;">
-
-    <!-- Remarques -->
-    <div style="font-size:12px;font-weight:600;margin-bottom:6px;">💬 Remarques</div>
-    <textarea id="desid-rem" style="width:100%;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:8px;color:var(--t1);font-size:12px;resize:vertical;min-height:60px;margin-bottom:14px;box-sizing:border-box;" placeholder="Informations complémentaires..."></textarea>
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button onclick="closeDesiderata()" style="background:none;border:1px solid var(--b);color:var(--t2);border-radius:8px;padding:9px 18px;cursor:pointer;font-size:13px;">Annuler</button>
-      <button onclick="submitDesiderata()" style="background:var(--acc);color:#000;border:none;border-radius:8px;padding:9px 18px;font-weight:700;cursor:pointer;font-size:13px;">📤 Envoyer</button>
-    </div>
   </div>
 </div>
 
@@ -395,11 +448,12 @@ function logout(){
 }
 
 // Desiderata state
-let _desidCgs=[], _desidInds=[];
+let _desidCgs=[], _desidInds=[], _desidForms=[], _desidPrefs=[];
 
 async function openDesiderata(){
   if(!me) return;
-  _desidCgs=[]; _desidInds=[];
+  _desidCgs=[]; _desidInds=[]; _desidForms=[]; _desidPrefs=[];
+  _cgSelStart=null;
   renderDesidLists();
   document.getElementById('desid-rem').value='';
   // Trouver le prochain trimestre
@@ -413,49 +467,39 @@ async function openDesiderata(){
   document.getElementById('desid-bg').style.display='block';
   document.getElementById('desid-bg').dataset.quarter=nextQNum;
   document.getElementById('desid-bg').dataset.year=nextQYear;
-  // Initialiser les calendriers sur le trimestre cible
+  // Init calendriers sur le 1er mois du trimestre
   const qStartMonth=(nextQNum-1)*3;
   _jcalCgY=nextQYear; _jcalCgM=qStartMonth;
   _jcalIndY=nextQYear; _jcalIndM=qStartMonth;
-  _cgSelStart=null;
   jcalRender('cg'); jcalRender('ind');
+  // Deadline
   const info=document.getElementById('desid-deadline-info');
   info.innerHTML='⏳ Chargement de la date limite...';
-  info.style.background='';
-  // 1. Lire depuis hospital_config (source principale)
   let deadline=null;
   try{
     const {data}=await sb.from('hospital_config').select('desiderata_deadlines').eq('hospital_id',CFG.hospital).maybeSingle();
     if(data?.desiderata_deadlines?.[qKey]) deadline=data.desiderata_deadlines[qKey];
   }catch(e){}
-  // 2. Fallback : chercher dans planning_months du trimestre précédent
   if(!deadline){
     try{
       const prevQNum=nextQNum===1?4:nextQNum-1;
       const prevQYear=nextQNum===1?nextQYear-1:nextQYear;
       const prevQStart=(prevQNum-1)*3;
       const {data}=await sb.from('planning_months')
-        .select('desiderata_deadline')
-        .eq('hospital_id',CFG.hospital)
-        .eq('year',prevQYear)
-        .gte('month',prevQStart)
-        .lte('month',prevQStart+2)
-        .not('desiderata_deadline','is',null)
-        .limit(1)
-        .maybeSingle();
+        .select('desiderata_deadline').eq('hospital_id',CFG.hospital).eq('year',prevQYear)
+        .gte('month',prevQStart).lte('month',prevQStart+2)
+        .not('desiderata_deadline','is',null).limit(1).maybeSingle();
       if(data?.desiderata_deadline) deadline=data.desiderata_deadline;
     }catch(e){}
   }
   if(deadline){
     const dl=new Date(deadline+'T23:59:59');
     const isPast=dl<new Date();
-    info.style.background=isPast?'rgba(255,80,80,.1)':'rgba(34,197,94,.1)';
     info.innerHTML=isPast
       ?`⛔ Date limite dépassée (${deadline}) — soumission fermée.`
-      :`📅 Date limite de soumission : <b>${deadline}</b>`;
+      :`📅 Date limite de soumission : ${deadline}`;
     document.querySelector('#desid-bg button[onclick="submitDesiderata()"]').style.display=isPast?'none':'';
   } else {
-    info.style.background='';
     info.innerHTML='ℹ Aucune date limite définie par le gestionnaire.';
   }
 }
@@ -468,22 +512,22 @@ function closeDesiderata(){
 // ── Calendrier state ──
 let _jcalCgY=new Date().getFullYear(), _jcalCgM=new Date().getMonth();
 let _jcalIndY=new Date().getFullYear(), _jcalIndM=new Date().getMonth();
-let _cgSelStart=null; // date intermédiaire (début de congé cliqué)
-const DCAL_DS=['Di','Lu','Ma','Me','Je','Ve','Sa'];
+let _cgSelStart=null;
 const DCAL_MO=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+// Semaine Lun-Mar-Mer-Jeu-Ven-Sam-Dim
+const DCAL_DS2=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 
 function jcalNav(type,dir){
   if(type==='cg'){
     _jcalCgM+=dir;
     if(_jcalCgM>11){_jcalCgM=0;_jcalCgY++;}
     if(_jcalCgM<0){_jcalCgM=11;_jcalCgY--;}
-    jcalRender('cg');
   } else {
     _jcalIndM+=dir;
     if(_jcalIndM>11){_jcalIndM=0;_jcalIndY++;}
     if(_jcalIndM<0){_jcalIndM=11;_jcalIndY--;}
-    jcalRender('ind');
   }
+  jcalRender(type);
 }
 
 function jcalRender(type){
@@ -494,27 +538,31 @@ function jcalRender(type){
   if(!lbl||!grid) return;
   lbl.textContent=DCAL_MO[m]+' '+y;
   const today=new Date().toISOString().slice(0,10);
-  const d1=new Date(y,m,1).getDay(); // jour du 1er (0=Di)
   const dmax=new Date(y,m+1,0).getDate();
-  let html=DCAL_DS.map(d=>`<div class="jcal-dow">${d}</div>`).join('');
-  // cellules vides avant le 1er
-  for(let i=0;i<d1;i++) html+=`<div class="jcal-d jcal-x"></div>`;
+  // getDay() : 0=Di,1=Lu,...,6=Sa → décalage Lun=0
+  let d1dow=new Date(y,m,1).getDay(); // 0=Di
+  // convertir en index Lun-based: Lun=0,...,Di=6
+  const d1lun=(d1dow+6)%7;
+  let html=DCAL_DS2.map(d=>`<div class="jcal2-dow">${d}</div>`).join('');
+  for(let i=0;i<d1lun;i++) html+=`<div class="jcal2-d jcal2-x"></div>`;
   for(let d=1;d<=dmax;d++){
     const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    let cls='jcal-d';
-    if(dk===today) cls+=' jcal-today';
+    const dow=new Date(dk+'T12:00:00').getDay(); // 0=Di,6=Sa
+    const isWe=dow===0||dow===6;
+    let cls='jcal2-d';
+    if(isWe) cls+=' jcal2-we';
+    if(dk===today) cls+=' jcal2-today';
     if(isCg){
-      // vérifier si dans une plage
       const inRange=_desidCgs.some(c=>dk>=c.start&&dk<=c.end);
-      const isStart=_desidCgs.some(c=>dk===c.start)||dk===_cgSelStart;
-      const isEnd=_desidCgs.some(c=>dk===c.end);
-      if(isStart||isEnd) cls+=' jcal-sel';
-      else if(inRange) cls+=' jcal-range';
+      const isEnd=_desidCgs.some(c=>dk===c.end||dk===c.start)||dk===_cgSelStart;
+      if(isEnd&&!isWe) cls+=' jcal2-sel';
+      else if(inRange&&!isWe) cls+=' jcal2-range';
     } else {
-      if(_desidInds.find(i=>i.date===dk)) cls+=' jcal-mark';
+      if(!isWe&&_desidInds.find(i=>i.date===dk)) cls+=' jcal2-mark';
     }
-    const fn=isCg?`jcalClickCg('${dk}')`:`jcalClickInd('${dk}')`;
-    html+=`<div class="${cls}" onclick="${fn}">${d}</div>`;
+    const clickable=!isWe;
+    const fn=clickable?(isCg?`jcalClickCg('${dk}')`:`jcalClickInd('${dk}')`):null;
+    html+=`<div class="${cls}"${fn?` onclick="${fn}"`:''}>${d}</div>`;
   }
   grid.innerHTML=html;
 }
@@ -523,17 +571,16 @@ function jcalClickCg(dk){
   if(!_cgSelStart){
     _cgSelStart=dk;
     const hint=document.getElementById('jcal-cg-hint');
-    if(hint) hint.textContent='Cliquez la date de fin (ou la même date pour un jour unique)';
+    if(hint) hint.textContent='Cliquez sur le dernier jour de la période';
     jcalRender('cg');
   } else {
-    const s=_cgSelStart<dk?_cgSelStart:dk;
-    const e=_cgSelStart<dk?dk:_cgSelStart;
+    const s=_cgSelStart<=dk?_cgSelStart:dk;
+    const e=_cgSelStart<=dk?dk:_cgSelStart;
     _desidCgs.push({start:s,end:e});
     _cgSelStart=null;
     const hint=document.getElementById('jcal-cg-hint');
-    if(hint) hint.textContent='Cliquez une date pour début, une autre pour fin';
-    renderDesidLists();
-    jcalRender('cg');
+    if(hint) hint.textContent='Cliquez pour débuter une période.';
+    renderDesidLists(); jcalRender('cg');
   }
 }
 
@@ -541,8 +588,7 @@ function jcalClickInd(dk){
   const idx=_desidInds.findIndex(i=>i.date===dk);
   if(idx>=0) _desidInds.splice(idx,1);
   else _desidInds.push({date:dk});
-  renderDesidLists();
-  jcalRender('ind');
+  renderDesidLists(); jcalRender('ind');
 }
 
 function addDesidCg(){
@@ -560,24 +606,64 @@ function addDesidInd(){
   renderDesidLists(); jcalRender('ind');
 }
 
+// Formations
+function addDesidFormation(){
+  document.getElementById('desid-form-input-wrap').style.display='';
+  document.getElementById('desid-form-txt').focus();
+}
+function cancelDesidFormation(){ document.getElementById('desid-form-input-wrap').style.display='none'; }
+function confirmDesidFormation(){
+  const txt=document.getElementById('desid-form-txt').value.trim();
+  const date=document.getElementById('desid-form-date').value;
+  if(!txt) return;
+  _desidForms.push({desc:txt,date:date||null});
+  document.getElementById('desid-form-txt').value='';
+  document.getElementById('desid-form-date').value='';
+  document.getElementById('desid-form-input-wrap').style.display='none';
+  renderDesidLists();
+}
+
+// Préférences
+function addDesidPref(){
+  document.getElementById('desid-pref-input-wrap').style.display='';
+  document.getElementById('desid-pref-date').focus();
+}
+function cancelDesidPref(){ document.getElementById('desid-pref-input-wrap').style.display='none'; }
+function confirmDesidPref(){
+  const date=document.getElementById('desid-pref-date').value;
+  const txt=document.getElementById('desid-pref-txt').value.trim();
+  if(!date||!txt) return;
+  _desidPrefs.push({date,poste:txt});
+  document.getElementById('desid-pref-date').value='';
+  document.getElementById('desid-pref-txt').value='';
+  document.getElementById('desid-pref-input-wrap').style.display='none';
+  renderDesidLists();
+}
+
 function renderDesidLists(){
-  const fmtD=dk=>{const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
+  const fmtD=dk=>{if(!dk)return'';const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
+  // Congés
   document.getElementById('desid-cg-list').innerHTML=_desidCgs.map((c,i)=>
-    `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg2);border-radius:6px;margin-bottom:4px;font-size:12px;">
-      <span style="flex:1;">🏖 ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}</span>
-      <button onclick="_desidCgs.splice(${i},1);renderDesidLists();jcalRender('cg')" style="background:none;border:none;color:var(--err);cursor:pointer;font-size:14px;">✕</button>
-    </div>`).join('');
-  document.getElementById('desid-ind-list').innerHTML=_desidInds.map((d,i)=>
-    `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg2);border-radius:6px;margin-bottom:4px;font-size:12px;">
-      <span style="flex:1;">🚫 ${fmtD(d.date)}</span>
-      <button onclick="_desidInds.splice(${i},1);renderDesidLists();jcalRender('ind')" style="background:none;border:none;color:var(--err);cursor:pointer;font-size:14px;">✕</button>
-    </div>`).join('');
+    `<div class="dtag">🏖 ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}<button onclick="_desidCgs.splice(${i},1);renderDesidLists();jcalRender('cg')">✕</button></div>`
+  ).join('');
+  // Indispos
+  const indTxt=_desidInds.length?_desidInds.map(d=>fmtD(d.date)).join(', '):'Aucun jour sélectionné';
+  document.getElementById('desid-ind-list').innerHTML=
+    `<div style="font-size:11px;color:${_desidInds.length?'#a78bfa':'#64748b'};margin-top:4px;">${indTxt}</div>`;
+  // Formations
+  document.getElementById('desid-form-list').innerHTML=_desidForms.map((f,i)=>
+    `<div class="dtag">🎓 ${f.desc}${f.date?' ('+fmtD(f.date)+')':''}<button onclick="_desidForms.splice(${i},1);renderDesidLists()">✕</button></div>`
+  ).join('');
+  // Préférences
+  document.getElementById('desid-pref-list').innerHTML=_desidPrefs.map((p,i)=>
+    `<div class="dtag">🔔 ${fmtD(p.date)} — ${p.poste}<button onclick="_desidPrefs.splice(${i},1);renderDesidLists()">✕</button></div>`
+  ).join('');
 }
 
 async function submitDesiderata(){
   if(!me) return;
-  if(!_desidCgs.length&&!_desidInds.length&&!document.getElementById('desid-rem').value.trim()){
-    alert('Veuillez ajouter au moins un congé, une indisponibilité ou une remarque.');return;
+  if(!_desidCgs.length&&!_desidInds.length&&!_desidForms.length&&!_desidPrefs.length&&!document.getElementById('desid-rem').value.trim()){
+    alert('Veuillez remplir au moins une section.');return;
   }
   const bg=document.getElementById('desid-bg');
   const quarter=parseInt(bg.dataset.quarter);
@@ -589,7 +675,7 @@ async function submitDesiderata(){
     year, quarter,
     conges:_desidCgs,
     indispos:_desidInds,
-    prefs:[],
+    prefs:_desidPrefs,
     remarques:document.getElementById('desid-rem').value.trim(),
     status:'pending'
   });
