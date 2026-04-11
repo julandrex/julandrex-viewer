@@ -697,7 +697,7 @@ async function openMesDemandes(){
       .select('*')
       .eq('hospital_id',CFG.hospital)
       .eq('doctor_id',me.id)
-      .order('created_at',{ascending:false});
+      .order('submitted_at',{ascending:false});
     if(error) throw error;
     if(!data||!data.length){
       list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">Aucune demande soumise.</div>';
@@ -723,7 +723,7 @@ async function openMesDemandes(){
         </div>
         <div style="font-size:12px;color:var(--t2);line-height:1.8;">${[cgs,inds].filter(Boolean).join('<br>')||'<i>Aucun détail</i>'}</div>
         ${rem}
-        <div style="font-size:10px;color:var(--t3);margin-top:6px;">Soumis le ${fmtDt(r.created_at||r.submitted_at)}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:6px;">Soumis le ${fmtDt(r.submitted_at||r.created_at||r.updated_at)}</div>
       </div>`;
     }).join('');
   }catch(e){
