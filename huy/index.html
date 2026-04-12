@@ -384,7 +384,7 @@ async function init(){
 // ══════════════════════════════════════════════════════════
 async function loadDoctors(){
   try{
-    const {data,error}=await sb.from('doctors').select('id,firstname,lastname,role,color,pin').eq('active',true).order('role').order('lastname');
+    const {data,error}=await sb.from('doctors').select('id,firstname,lastname,role,color,pin').eq('active',true).eq('hospital_id',CFG.hospital).order('role').order('lastname');
     if(error)throw error;
     doctors=data||[];
     renderLoginDocs();
@@ -778,7 +778,7 @@ async function loadAll(){
   try{
     const [pr,dr,xr]=await Promise.all([
       sb.from('planning_months').select('shifts,posts').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
-      sb.from('doctors').select('id,firstname,lastname,role,color').eq('active',true),
+      sb.from('doctors').select('id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
       sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
     ]);
     if(pr.error)throw pr.error;
