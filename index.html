@@ -576,6 +576,14 @@ function jcalClickCg(dk){
   } else {
     const s=_cgSelStart<=dk?_cgSelStart:dk;
     const e=_cgSelStart<=dk?dk:_cgSelStart;
+    const overlap=_desidCgs.some(c=>!(e<c.start||s>c.end));
+    if(overlap){
+      _cgSelStart=null;
+      const hint=document.getElementById('jcal-cg-hint');
+      if(hint) hint.textContent='⚠ Cette période chevauche une période déjà sélectionnée.';
+      jcalRender('cg');
+      return;
+    }
     _desidCgs.push({start:s,end:e});
     _cgSelStart=null;
     const hint=document.getElementById('jcal-cg-hint');
@@ -595,6 +603,8 @@ function addDesidCg(){
   const s=document.getElementById('desid-cg-start').value;
   const e=document.getElementById('desid-cg-end').value||s;
   if(!s) return;
+  const overlap=_desidCgs.some(c=>!(e<c.start||s>c.end));
+  if(overlap) return;
   _desidCgs.push({start:s,end:e});
   renderDesidLists(); jcalRender('cg');
 }
