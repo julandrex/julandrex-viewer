@@ -268,17 +268,17 @@ button{font-family:inherit;}
     <!-- PRÉFÉRENCES -->
     <div class="dsec">
       <div class="dsec-ttl">🔔 Préférences de postes</div>
-      <div class="dsec-sub">CHAQUE PRÉFÉRENCE EST LIÉE À UNE DATE PRÉCISE</div>
-      <div id="desid-pref-list" style="margin-bottom:8px;"></div>
-      <button class="dsec-add" onclick="addDesidPref()">+ Ajouter une préférence</button>
-      <div id="desid-pref-input-wrap" style="display:none;margin-top:8px;">
-        <input type="date" id="desid-pref-date" style="width:100%;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:8px 10px;color:#e2e8f0;font-size:12px;box-sizing:border-box;margin-bottom:6px;">
-        <input type="text" id="desid-pref-txt" placeholder="Poste souhaité (ex: COORD, SMUR...)" style="width:100%;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:8px 10px;color:#e2e8f0;font-size:12px;box-sizing:border-box;">
-        <div style="display:flex;gap:6px;margin-top:6px;">
-          <button onclick="confirmDesidPref()" style="background:#c9983a;color:#000;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;">✓ Ajouter</button>
-          <button onclick="cancelDesidPref()" style="background:#1e293b;border:none;color:#94a3b8;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:12px;">Annuler</button>
-        </div>
+      <div class="dsec-sub">CLIQUEZ SUR UN POSTE POUR UN JOUR DONNÉ</div>
+      <!-- Nav mois -->
+      <div class="jcal2-hdr" style="margin-bottom:8px;">
+        <button class="jcal2-nav" onclick="jcalNav('pref',-1)">‹</button>
+        <div class="jcal2-ttl" id="jcal-pref-lbl"></div>
+        <button class="jcal2-nav" onclick="jcalNav('pref',1)">›</button>
       </div>
+      <!-- Grille postes × jours -->
+      <div id="desid-pref-grid" style="overflow-x:auto;"></div>
+      <!-- Récap sélections -->
+      <div id="desid-pref-list" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;"></div>
     </div>
 
     <!-- REMARQUES -->
@@ -471,7 +471,10 @@ async function openDesiderata(){
   const qStartMonth=(nextQNum-1)*3;
   _jcalCgY=nextQYear; _jcalCgM=qStartMonth;
   _jcalIndY=nextQYear; _jcalIndM=qStartMonth;
-  jcalRender('cg'); jcalRender('ind');
+  _jcalPrefY=nextQYear; _jcalPrefM=qStartMonth;
+  _jcalPrefY=nextQYear; _jcalPrefM=qStartMonth;
+  _jcalIndY=nextQYear; _jcalIndM=qStartMonth;
+  jcalRender('cg'); jcalRender('ind'); jcalRender('pref'); jcalRender('pref');
   // Deadline
   const info=document.getElementById('desid-deadline-info');
   info.innerHTML='⏳ Chargement de la date limite...';
@@ -522,6 +525,10 @@ function jcalNav(type,dir){
     _jcalCgM+=dir;
     if(_jcalCgM>11){_jcalCgM=0;_jcalCgY++;}
     if(_jcalCgM<0){_jcalCgM=11;_jcalCgY--;}
+  } else if(type==='pref'){
+    _jcalPrefM+=dir;
+    if(_jcalPrefM>11){_jcalPrefM=0;_jcalPrefY++;}
+    if(_jcalPrefM<0){_jcalPrefM=11;_jcalPrefY--;}
   } else {
     _jcalIndM+=dir;
     if(_jcalIndM>11){_jcalIndM=0;_jcalIndY++;}
@@ -531,6 +538,7 @@ function jcalNav(type,dir){
 }
 
 function jcalRender(type){
+  if(type==='pref'){ jcalRender_pref(); return; }
   const isCg=type==='cg';
   const y=isCg?_jcalCgY:_jcalIndY, m=isCg?_jcalCgM:_jcalIndM;
   const lbl=document.getElementById('jcal-'+type+'-lbl');
@@ -633,22 +641,61 @@ function confirmDesidFormation(){
   renderDesidLists();
 }
 
-// Préférences
-function addDesidPref(){
-  document.getElementById('desid-pref-input-wrap').style.display='';
-  document.getElementById('desid-pref-date').focus();
-}
-function cancelDesidPref(){ document.getElementById('desid-pref-input-wrap').style.display='none'; }
-function confirmDesidPref(){
-  const date=document.getElementById('desid-pref-date').value;
-  const txt=document.getElementById('desid-pref-txt').value.trim();
-  if(!date||!txt) return;
-  _desidPrefs.push({date,poste:txt});
-  document.getElementById('desid-pref-date').value='';
-  document.getElementById('desid-pref-txt').value='';
-  document.getElementById('desid-pref-input-wrap').style.display='none';
+// Préférences — grille postes × jours
+let _jcalPrefY=new Date().getFullYear(), _jcalPrefM=new Date().getMonth();
+
+function jcalRender_pref(){
+  const y=_jcalPrefY, m=_jcalPrefM;
+  const lbl=document.getElementById('jcal-pref-lbl');
+  const grid=document.getElementById('desid-pref-grid');
+  if(!lbl||!grid) return;
+  lbl.textContent=DCAL_MO[m]+' '+y;
+  const availPosts = (typeof planning !== 'undefined' && planning?.posts)
+    ? planning.posts.filter(p=>p.section!=='we')
+    : [{id:'coord',name:'COORD'},{id:'smur-j',name:'SMUR'},{id:'satmu-j',name:'SATMU'},{id:'a',name:'A'},{id:'b',name:'B'},{id:'c',name:'C'},{id:'d',name:'D'},{id:'pm16',name:'16-00'}];
+  const dmax=new Date(y,m+1,0).getDate();
+  const today=new Date().toISOString().slice(0,10);
+  const days=[];
+  for(let d=1;d<=dmax;d++){
+    const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const dw=new Date(dk+'T12:00:00').getDay();
+    if(dw!==0&&dw!==6) days.push({dk,d,dw});
+  }
+  const DS2=['Lu','Ma','Me','Je','Ve'];
+  let h=`<table style="border-collapse:collapse;font-size:11px;width:100%;">`;
+  h+=`<thead><tr><th style="background:#1a2332;padding:4px 6px;text-align:left;color:#64748b;white-space:nowrap;position:sticky;left:0;z-index:2;">Poste</th>`;
+  days.forEach(({dk,d,dw})=>{
+    const isT=dk===today;
+    h+=`<th style="background:#1a2332;padding:3px 2px;text-align:center;min-width:28px;color:${isT?'#c9983a':'#64748b'};font-weight:${isT?'700':'400'};">
+      <div>${d}</div><div style="font-size:9px;">${DS2[dw-1]}</div></th>`;
+  });
+  h+=`</tr></thead><tbody>`;
+  availPosts.forEach(p=>{
+    h+=`<tr><td style="background:#111c2d;padding:4px 6px;white-space:nowrap;color:${p.color||'#93c5fd'};font-weight:600;position:sticky;left:0;z-index:1;">${p.name||p.id}</td>`;
+    days.forEach(({dk})=>{
+      const sel=_desidPrefs.some(x=>x.date===dk&&x.poste===p.id);
+      h+=`<td onclick="toggleDesidPref('${dk}','${p.id}','${p.name||p.id}')"
+        style="padding:2px;text-align:center;cursor:pointer;background:${sel?'#c9983a22':'transparent'};border:1px solid ${sel?'#c9983a':'#1e293b'};border-radius:3px;">
+        ${sel?`<span style="color:#c9983a;font-size:10px;font-weight:700;">✓</span>`:''}
+      </td>`;
+    });
+    h+=`</tr>`;
+  });
+  h+=`</tbody></table>`;
+  grid.innerHTML=h;
   renderDesidLists();
 }
+
+function toggleDesidPref(dk,postId,postName){
+  const idx=_desidPrefs.findIndex(x=>x.date===dk&&x.poste===postId);
+  if(idx>=0) _desidPrefs.splice(idx,1);
+  else _desidPrefs.push({date:dk,poste:postId,posteName:postName});
+  jcalRender('pref');
+}
+
+function addDesidPref(){ /* no-op — grille interactive */ }
+function cancelDesidPref(){ /* no-op */ }
+function confirmDesidPref(){ /* no-op */ }
 
 function renderDesidLists(){
   const fmtD=dk=>{if(!dk)return'';const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
@@ -666,7 +713,7 @@ function renderDesidLists(){
   ).join('');
   // Préférences
   document.getElementById('desid-pref-list').innerHTML=_desidPrefs.map((p,i)=>
-    `<div class="dtag">🔔 ${fmtD(p.date)} — ${p.poste}<button onclick="_desidPrefs.splice(${i},1);renderDesidLists()">✕</button></div>`
+    `<div class="dtag">🔔 ${fmtD(p.date)} — ${p.posteName||p.poste}<button onclick="_desidPrefs.splice(${i},1);renderDesidLists();jcalRender('pref')">✕</button></div>`
   ).join('');
 }
 
