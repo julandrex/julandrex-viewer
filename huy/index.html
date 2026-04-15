@@ -159,6 +159,7 @@ button{font-family:inherit;}
     </div>
     <button class="logout-btn" onclick="copyCalUrl()" id="cal-btn" style="display:none;background:none;border:1px solid var(--acc);color:var(--acc);">📅 Mon calendrier</button>
     <button class="logout-btn" onclick="openMesDemandes()" id="demandes-btn" style="display:none;background:none;border:1px solid #a78bfa;color:#a78bfa;">📋 Mes demandes</button>
+    <button class="logout-btn" onclick="openMesEchanges()" id="echanges-btn" style="display:none;background:none;border:1px solid #22c55e;color:#22c55e;">🔄 Mes échanges</button>
     <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">+ Desiderata</button>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </div>
@@ -452,6 +453,7 @@ function logout(){
   document.getElementById('cal-btn').style.display='none';
   document.getElementById('desid-btn').style.display='none';
   document.getElementById('demandes-btn').style.display='none';
+  document.getElementById('echanges-btn').style.display='none';
 }
 
 // Desiderata state
@@ -844,6 +846,7 @@ function showMain(){
   document.getElementById('cal-btn').style.display='';
   document.getElementById('desid-btn').style.display='';
   document.getElementById('demandes-btn').style.display='';
+  document.getElementById('echanges-btn').style.display='';
   const av=document.getElementById('tb-av');
   av.textContent=ini(me,doctors);av.style.background=me.color+'33';av.style.color=me.color;
   document.getElementById('tb-nm').textContent=me.firstname+' '+me.lastname;
@@ -1154,7 +1157,71 @@ function toast(msg,err){
   t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);
 }
 
+
+// ══════════════════════════════════════════════════════════
+// MES ÉCHANGES
+// ══════════════════════════════════════════════════════════
+async function openMesEchanges(){
+  if(!me) return;
+  document.getElementById('mesechanges-bg').style.display='block';
+  const list=document.getElementById('mesechanges-list');
+  list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">⏳ Chargement...</div>';
+  try{
+    const {data,error}=await sb.from('exchange_requests')
+      .select('*').eq('hospital_id',CFG.hospital).eq('proposer_id',me.id)
+      .order('created_at',{ascending:false});
+    if(error) throw error;
+    if(!data||!data.length){
+      list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">Aucune demande d'échange en cours.</div>';
+      return;
+    }
+    const fmtD=dk=>{const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
+    list.innerHTML=data.map(r=>{
+      const post=planning?.posts?.find(p=>p.id===r.proposer_post);
+      const postName=post?.full||post?.name||r.proposer_post;
+      const acc=r.acceptor_id?doctors.find(d=>d.id===r.acceptor_id):null;
+      const accName=acc?acc.firstname+' '+acc.lastname:null;
+      // Badge statut
+      let badge='',color='';
+      if(r.status==='open'){
+        badge='⏳ En attente de réponse';color='#f59e0b';
+      } else if(r.status==='accepted'){
+        badge='✅ Acceptée par '+(accName||'un médecin');color='#22c55e';
+      } else if(r.status==='confirmed'){
+        badge='✔ Validée par le gestionnaire';color='#22c55e';
+      } else if(r.status==='cancelled'){
+        badge='✗ Annulée par le gestionnaire';color='#ef4444';
+      }
+      const borderColor=r.status==='open'?'#f59e0b':r.status==='cancelled'?'#ef4444':'#22c55e';
+      return `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid ${borderColor};">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:13px;font-weight:700;">📅 ${fmtD(r.proposer_date)} — ${postName}</span>
+          <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:6px;background:${borderColor}22;color:${color};">${badge}</span>
+        </div>
+        ${r.message?`<div style="font-size:11px;color:var(--t3);font-style:italic;margin-bottom:6px;">"${r.message}"</div>`:''}
+        ${r.status==='open'?`<button onclick="cancelX('${r.id}');closeMesEchanges();" style="background:transparent;border:1px solid var(--b);color:var(--t3);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">Annuler</button>`:''}
+      </div>`;
+    }).join('');
+  }catch(e){
+    list.innerHTML=`<div style="color:var(--err);padding:10px;">Erreur : ${e.message}</div>`;
+  }
+}
+function closeMesEchanges(){
+  document.getElementById('mesechanges-bg').style.display='none';
+}
+
 init();
 </script>
+
+<!-- MES ECHANGES PANEL -->
+<div id="mesechanges-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMesEchanges()">
+  <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:700;">🔄 Mes demandes d'échange</div>
+      <button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="mesechanges-list"></div>
+  </div>
+</div>
 </body>
 </html>
