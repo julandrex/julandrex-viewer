@@ -126,6 +126,13 @@ button{font-family:inherit;}
 .sp{width:18px;height:18px;border:2px solid var(--b);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
+<meta name="theme-color" content="#0f2847">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Julandrex">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 
@@ -161,6 +168,11 @@ button{font-family:inherit;}
     <button class="logout-btn" onclick="openMesDemandes()" id="demandes-btn" style="display:none;background:none;border:1px solid #a78bfa;color:#a78bfa;">📋 Mes demandes</button>
     <button class="logout-btn" onclick="openMesEchanges()" id="echanges-btn" style="display:none;background:none;border:1px solid #22c55e;color:#22c55e;">🔄 Mes échanges</button>
     <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">+ Desiderata</button>
+    
+<button id="btnPushToggle" onclick="togglePushSubscription()" title="Notifications"
+  style="display:none;background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:13px;transition:all 0.2s;align-items:center;gap:4px;">
+  🔕 Notif.
+</button>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </div>
   <div class="month-bar">
@@ -1212,17 +1224,91 @@ function closeMesEchanges(){
 
 init();
 
+
+// ══ PWA + PUSH NOTIFICATIONS ══════════════════════════════════════════
+const VAPID_PUBLIC_KEY = 'BBbUZ2rQ18MQmQknkJdbWyvIbcdlhSLERAjoIT7fxVfxoecYzvFz07TDGZ7m-v24yCYvj4OnRgzhli41ObaJG_o';
+
+async function initServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    await navigator.serviceWorker.register('./sw.js', { scope: './' });
+  } catch(e) { console.warn('[SW]', e); }
+}
+
+function urlBase64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const base64 = (b64 + pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw = atob(base64);
+  return new Uint8Array([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function isPushSubscribed() {
+  if (!('serviceWorker' in navigator)) return false;
+  const reg = await navigator.serviceWorker.ready;
+  return !!(await reg.pushManager.getSubscription());
+}
+
+async function subscribeToPush() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { showToast('Notifications refusées', 'warning'); return; }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    const { error } = await supabase.from('push_subscriptions').upsert({
+      doctor_id: currentDoctorId, hospital: HOSPITAL,
+      subscription: sub.toJSON(), endpoint: sub.endpoint
+    }, { onConflict: 'endpoint' });
+    if (error) throw error;
+    showToast('🔔 Notifications activées', 'success');
+    updatePushButton(true);
+  } catch(e) { showToast('Erreur notifications: ' + e.message, 'error'); }
+}
+
+async function unsubscribeFromPush() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+      await sub.unsubscribe();
+    }
+    showToast('🔕 Notifications désactivées', 'info');
+    updatePushButton(false);
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+async function togglePushSubscription() {
+  if (!currentDoctorId) { showToast('Connectez-vous d\'abord', 'warning'); return; }
+  (await isPushSubscribed()) ? await unsubscribeFromPush() : await subscribeToPush();
+}
+
+async function updatePushButton(subscribed) {
+  const btn = document.getElementById('btnPushToggle');
+  if (!btn) return;
+  if (subscribed === undefined) subscribed = await isPushSubscribed();
+  btn.textContent = subscribed ? '🔔 Notif. ON' : '🔕 Notif. OFF';
+  btn.style.borderColor = subscribed ? '#c9983a' : 'rgba(255,255,255,0.3)';
+  btn.style.color = subscribed ? '#c9983a' : '#fff';
+}
+
+async function initPushUI() {
+  if (!('PushManager' in window)) return;
+  const btn = document.getElementById('btnPushToggle');
+  if (btn) btn.style.display = 'inline-flex';
+  await updatePushButton();
+}
+
+window.addEventListener('load', () => { initServiceWorker(); });
+// ══ FIN PUSH ══════════════════════════════════════════════════════════
+// Patch showMain pour appeler initPushUI après login
+(function() {
+  const _orig = window.showMain;
+  if (typeof _orig === 'function') {
+    window.showMain = function() { _orig.apply(this, arguments); initPushUI(); };
+  }
+})();
+
 </script>
-
-<!-- MES ECHANGES PANEL -->
-<div id="mesechanges-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMesEchanges()">
-  <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-size:15px;font-weight:700;">🔄 Mes demandes d'échange</div>
-      <button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
-    </div>
-    <div id="mesechanges-list"></div>
-  </div>
-</div>
-
-</body>
