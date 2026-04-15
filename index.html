@@ -1078,11 +1078,11 @@ async function submitExchange(){
     }).catch(()=>{});
     if(targetDocId){
       // Échange ciblé → notifier uniquement ce médecin
-      sb.from('doctors').select('email,firstname,lastname').eq('id',targetDocId).eq('hospital_id',CFG.hospital).maybeSingle()
+      sb.from('doctors').select('id,email,firstname,lastname').eq('id',targetDocId).maybeSingle()
         .then(({data:d})=>{ if(d?.email) _sendNotif(d.email,d.firstname+' '+d.lastname,d.id); });
     } else {
       // Échange ouvert à tous → notifier tous les médecins actifs avec un email
-      sb.from('doctors').select('email,firstname,lastname').eq('active',true).eq('hospital_id',CFG.hospital).not('email','is',null)
+      sb.from('doctors').select('id,email,firstname,lastname').eq('active',true).eq('hospital_id',CFG.hospital).not('email','is',null)
         .then(({data:docs})=>{ (docs||[]).filter(d=>d.email&&d.id!==me.id).forEach(d=>_sendNotif(d.email,d.firstname+' '+d.lastname,d.id)); });
     }
   }catch(e){toast('Erreur : '+e.message,true);}
