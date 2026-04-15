@@ -401,6 +401,12 @@ function renderLoginDocs(){
       <div class="doc-av" style="background:${d.color}33;color:${d.color};">${ini(d,doctors)}</div>
       <div><div class="doc-nm">${d.lastname}</div><div class="doc-rl">${shortRole(d.role)}</div></div>
     </div>`).join('');
+  // Pré-sélection via paramètre URL ?doc=ID (lien email)
+  const _urlDoc = new URLSearchParams(window.location.search).get('doc');
+  if(_urlDoc){
+    const _preId = parseInt(_urlDoc);
+    if(doctors.find(d=>d.id===_preId)) setTimeout(()=>selectDoc(_preId), 50);
+  }
 }
 
 function selectDoc(id){
