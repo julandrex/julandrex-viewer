@@ -347,7 +347,8 @@ button{font-family:inherit;}
 const CFG = {
   url: 'https://zzqbcjtrtisexyokezaq.supabase.co',
   key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cWJjanRydGlzZXh5b2tlemFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDg1MzgsImV4cCI6MjA5MDc4NDUzOH0.m8DBLJ1T3gOYuZL9sGUDmrTvUHAZ6tRAIfJYIVUzGIE',
-  hospital: 'citadelle'
+  hospital: 'citadelle',
+  gest_email: 'sorcegiuseppepro@gmail.com'
 };
 
 // ══════════════════════════════════════════════════════════
@@ -1041,6 +1042,27 @@ async function submitExchange(){
     if(error)throw error;
     closeModal();
     toast(targetDocId?'Demande envoyée au médecin ciblé !':'Demande envoyée à tous les médecins !');
+    // Notifier le gestionnaire
+    if(CFG.gest_email){
+      const post=planning?.posts?.find(p=>p.id===mPost);
+      fetch(CFG.url+'/functions/v1/send-notification',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':CFG.key},
+        body:JSON.stringify({
+          type:'exchange_requested',
+          to_email:CFG.gest_email,
+          to_name:'Gestionnaire',
+          hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
+          data:{
+            proposer_name:me.firstname+' '+me.lastname,
+            post_name:post?.full||post?.name||mPost,
+            date:mDate,
+            target_doc_id:targetDocId,
+            message:document.getElementById('m-msg').value.trim()||null
+          }
+        })
+      }).catch(()=>{});
+    }
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
