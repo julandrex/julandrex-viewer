@@ -1262,6 +1262,7 @@ async function subscribeToPush() {
       subscription: sub.toJSON(), endpoint: sub.endpoint
     }, { onConflict: 'endpoint' });
     if (error) throw error;
+    const b=document.getElementById('btnPushToggle'); if(b) b.style.display='inline-flex';
     showToast('🔔 Notifications activées', 'success');
     updatePushButton(true);
   } catch(e) { showToast('Erreur notifications: ' + e.message, 'error'); }
@@ -1289,6 +1290,7 @@ async function updatePushButton(subscribed) {
   const btn = document.getElementById('btnPushToggle');
   if (!btn) return;
   if (subscribed === undefined) subscribed = await isPushSubscribed();
+  btn.style.display = 'inline-flex';
   btn.textContent = subscribed ? '🔔 Notif. ON' : '🔕 Notif. OFF';
   btn.style.borderColor = subscribed ? '#c9983a' : 'rgba(255,255,255,0.3)';
   btn.style.color = subscribed ? '#c9983a' : '#fff';
