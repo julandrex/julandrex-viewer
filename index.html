@@ -981,9 +981,32 @@ function renderPanel(){
 
 async function acceptX(id){
   try{
+    // Récupérer les infos de la demande avant update
+    const {data:xr}=await sb.from('exchange_requests').select('proposer_id,proposer_date,proposer_post').eq('id',id).maybeSingle();
     const {error}=await sb.from('exchange_requests').update({status:'accepted',acceptor_id:me.id,accepted_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
     toast('Demande acceptée — en attente de confirmation.');
+    // Notifier le gestionnaire
+    if(CFG.gest_email && xr){
+      const post=planning?.posts?.find(p=>p.id===xr.proposer_post);
+      // Récupérer le nom du proposant
+      const {data:proposer}=await sb.from('doctors').select('firstname,lastname').eq('id',xr.proposer_id).maybeSingle();
+      fetch(CFG.url+'/functions/v1/send-notification',{
+        method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
+        body:JSON.stringify({
+          type:'exchange_accepted',
+          to_email:CFG.gest_email,
+          to_name:'Gestionnaire',
+          hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
+          data:{
+            acceptor_name:me.firstname+' '+me.lastname,
+            proposer_name:proposer?proposer.firstname+' '+proposer.lastname:'?',
+            post_name:post?.full||post?.name||xr.proposer_post,
+            date:xr.proposer_date
+          }
+        })
+      }).catch(()=>{});
+    }
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
@@ -1049,18 +1072,18 @@ async function submitExchange(){
       hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
       data:{proposer_name:me.firstname+' '+me.lastname,post_name:post?.full||post?.name||mPost,date:mDate,message:document.getElementById('m-msg').value.trim()||null}
     };
-    const _sendNotif=(email,name)=>fetch(CFG.url+'/functions/v1/send-notification',{
+    const _sendNotif=(email,name,docId)=>fetch(CFG.url+'/functions/v1/send-notification',{
       method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
-      body:JSON.stringify({..._notifData,to_email:email,to_name:name})
+      body:JSON.stringify({..._notifData,to_email:email,to_name:name,doctor_id:docId})
     }).catch(()=>{});
     if(targetDocId){
       // Échange ciblé → notifier uniquement ce médecin
       sb.from('doctors').select('email,firstname,lastname').eq('id',targetDocId).eq('hospital_id',CFG.hospital).maybeSingle()
-        .then(({data:d})=>{ if(d?.email) _sendNotif(d.email,d.firstname+' '+d.lastname); });
+        .then(({data:d})=>{ if(d?.email) _sendNotif(d.email,d.firstname+' '+d.lastname,d.id); });
     } else {
       // Échange ouvert à tous → notifier tous les médecins actifs avec un email
       sb.from('doctors').select('email,firstname,lastname').eq('active',true).eq('hospital_id',CFG.hospital).not('email','is',null)
-        .then(({data:docs})=>{ (docs||[]).filter(d=>d.email&&d.id!==me.id).forEach(d=>_sendNotif(d.email,d.firstname+' '+d.lastname)); });
+        .then(({data:docs})=>{ (docs||[]).filter(d=>d.email&&d.id!==me.id).forEach(d=>_sendNotif(d.email,d.firstname+' '+d.lastname,d.id)); });
     }
   }catch(e){toast('Erreur : '+e.message,true);}
 }
