@@ -405,7 +405,7 @@ function renderLoginDocs(){
   const _urlDoc = new URLSearchParams(window.location.search).get('doc');
   if(_urlDoc){
     const _preId = parseInt(_urlDoc);
-    if(doctors.find(d=>d.id===_preId)) setTimeout(()=>selectDoc(_preId), 50);
+    if(doctors.find(d=>d.id===_preId)) setTimeout(()=>{selectDoc(_preId);setTimeout(()=>document.getElementById('pin-area').scrollIntoView({behavior:'smooth',block:'center'}),100);}, 50);
   }
 }
 
