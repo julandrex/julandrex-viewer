@@ -1218,7 +1218,7 @@ async function openPushPopup(){
   popup.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;';
   const icon=subscribed?'🔔':'🔕';
   const desc=subscribed
-    ?'Vous recevez actuellement les notifications. Vous pouvez les désactiver pendant vos vacances.'
+    ?'Vous recevez actuellement les notifications. Vous pouvez les désactiver et les activer lorsque vous le souhaitez.'
     :'Souhaitez-vous recevoir les notifications planning, échanges et desiderata ?';
   const btns=subscribed
     ?'<button onclick="handlePushOff()" style="background:#c0392b;color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600;">🔕 Désactiver</button> <button onclick="closePushPopup()" style="background:#2a4a6a;color:#fff;border:1px solid #4a6a8a;padding:10px 22px;border-radius:8px;cursor:pointer;">Annuler</button>'
