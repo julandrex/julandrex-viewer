@@ -1245,7 +1245,11 @@ async function handlePushOff(){
   try{
     const reg=await navigator.serviceWorker.ready;
     const sub=await reg.pushManager.getSubscription();
-    if(sub){await supabase.from('push_subscriptions').delete().eq('endpoint',sub.endpoint);await sub.unsubscribe();}
+    if(sub){
+      // Supprimer de Supabase (non bloquant si erreur)
+      try{ await supabase.from('push_subscriptions').delete().eq('endpoint',sub.endpoint); }catch(e2){ console.warn('Supabase delete error (ignored):',e2); }
+      await sub.unsubscribe();
+    }
     showToast('🔕 Notifications désactivées','info');
     updateNotifBtn(false);
   }catch(e){showToast('Erreur: '+e.message,'error');}
