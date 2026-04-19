@@ -169,10 +169,8 @@ button{font-family:inherit;}
     <button class="logout-btn" onclick="openMesEchanges()" id="echanges-btn" style="display:none;background:none;border:1px solid #22c55e;color:#22c55e;">🔄 Mes échanges</button>
     <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">+ Desiderata</button>
     
-<button id="btnPushToggle" onclick="togglePushSubscription()" title="Notifications"
-  style="display:none;background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:13px;transition:all 0.2s;align-items:center;gap:4px;">
-  🔕 Notif.
-</button>
+<button id="btnNotifications" onclick="openPushPopup()"
+  style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:13px;">🔕 Notif.</button>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </div>
   <div class="month-bar">
@@ -1225,102 +1223,56 @@ function closeMesEchanges(){
 init();
 
 
-// ══ PWA + PUSH NOTIFICATIONS ══════════════════════════════════════════
+// ══ PWA + PUSH NOTIFICATIONS ══
 const VAPID_PUBLIC_KEY = 'BBbUZ2rQ18MQmQknkJdbWyvIbcdlhSLERAjoIT7fxVfxoecYzvFz07TDGZ7m-v24yCYvj4OnRgzhli41ObaJG_o';
-let _pushBtnShown = false;
-
-function _forceShowPushBtn() {
-  if (!_pushBtnShown) return;
-  const btn = document.getElementById('btnPushToggle');
-  if (btn) { btn.style.setProperty('display','inline-flex','important'); }
+async function initServiceWorker(){if(!('serviceWorker' in navigator))return;try{await navigator.serviceWorker.register('./sw.js',{scope:'./'});}catch(e){console.warn('[SW]',e);}}
+function urlBase64ToUint8Array(b64){const pad='='.repeat((4-b64.length%4)%4);const b=(b64+pad).replace(/-/g,'+').replace(/_/g,'/');return new Uint8Array([...atob(b)].map(c=>c.charCodeAt(0)));}
+async function isPushSubscribed(){if(!('serviceWorker' in navigator))return false;try{const reg=await navigator.serviceWorker.ready;return!!(await reg.pushManager.getSubscription());}catch(e){return false;}}
+function closePushPopup(){const el=document.getElementById('pushPopup');if(el)el.remove();}
+async function openPushPopup(){
+  closePushPopup();
+  const subscribed=await isPushSubscribed();
+  const popup=document.createElement('div');
+  popup.id='pushPopup';
+  popup.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  const icon=subscribed?'🔔':'🔕';
+  const desc=subscribed
+    ?'Vous recevez actuellement les notifications. Vous pouvez les désactiver pendant vos vacances.'
+    :'Souhaitez-vous recevoir les notifications planning, échanges et desiderata ?';
+  const btns=subscribed
+    ?'<button onclick="handlePushOff()" style="background:#c0392b;color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600;">🔕 Désactiver</button> <button onclick="closePushPopup()" style="background:#2a4a6a;color:#fff;border:1px solid #4a6a8a;padding:10px 22px;border-radius:8px;cursor:pointer;">Annuler</button>'
+    :'<button onclick="handlePushOn()" style="background:#c9983a;color:#1a2f4a;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600;">🔔 Activer</button> <button onclick="closePushPopup()" style="background:#2a4a6a;color:#fff;border:1px solid #4a6a8a;padding:10px 22px;border-radius:8px;cursor:pointer;">Non merci</button>';
+  popup.innerHTML='<div style="background:#1a2f4a;border:1px solid #c9983a;border-radius:12px;padding:28px 32px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px;">'+icon+'</div><div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:8px;">Notifications push</div><div style="color:#a0b4c8;font-size:13px;margin-bottom:24px;">'+desc+'</div><div style="display:flex;gap:12px;justify-content:center;">'+btns+'</div></div>';
+  popup.addEventListener('click',e=>{if(e.target===popup)closePushPopup();});
+  document.body.appendChild(popup);
 }
-
-async function initServiceWorker() {
-  if (!('serviceWorker' in navigator)) return;
-  try { await navigator.serviceWorker.register('./sw.js', { scope: './' }); }
-  catch(e) { console.warn('[SW]', e); }
+async function handlePushOn(){
+  closePushPopup();
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){showToast('Permission refusée','warning');return;}
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+    const{error}=await supabase.from('push_subscriptions').upsert({doctor_id:currentDoctorId,hospital:HOSPITAL,subscription:sub.toJSON(),endpoint:sub.endpoint},{onConflict:'endpoint'});
+    if(error)throw error;
+    showToast('🔔 Notifications activées','success');
+    updateNotifBtn(true);
+  }catch(e){showToast('Erreur: '+e.message,'error');}
 }
-
-function urlBase64ToUint8Array(b64) {
-  const pad = '='.repeat((4 - b64.length % 4) % 4);
-  const b = (b64 + pad).replace(/-/g,'+').replace(/_/g,'/');
-  return new Uint8Array([...atob(b)].map(c => c.charCodeAt(0)));
+async function handlePushOff(){
+  closePushPopup();
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    if(sub){await supabase.from('push_subscriptions').delete().eq('endpoint',sub.endpoint);await sub.unsubscribe();}
+    showToast('🔕 Notifications désactivées','info');
+    updateNotifBtn(false);
+  }catch(e){showToast('Erreur: '+e.message,'error');}
 }
-
-async function isPushSubscribed() {
-  if (!('serviceWorker' in navigator)) return false;
-  const reg = await navigator.serviceWorker.ready;
-  return !!(await reg.pushManager.getSubscription());
-}
-
-async function subscribeToPush() {
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    _forceShowPushBtn();
-    const perm = await Notification.requestPermission();
-    _forceShowPushBtn();
-    if (perm !== 'granted') { showToast('Notifications refusées', 'warning'); return; }
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-    });
-    _forceShowPushBtn();
-    const { error } = await supabase.from('push_subscriptions').upsert({
-      doctor_id: currentDoctorId, hospital: HOSPITAL,
-      subscription: sub.toJSON(), endpoint: sub.endpoint
-    }, { onConflict: 'endpoint' });
-    if (error) throw error;
-    _forceShowPushBtn();
-    showToast('🔔 Notifications activées', 'success');
-    updatePushButton(true);
-  } catch(e) { _forceShowPushBtn(); showToast('Erreur: ' + e.message, 'error'); }
-}
-
-async function unsubscribeFromPush() {
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    if (sub) {
-      await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
-      await sub.unsubscribe();
-    }
-    showToast('🔕 Notifications désactivées', 'info');
-    updatePushButton(false);
-  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
-}
-
-async function togglePushSubscription() {
-  if (!currentDoctorId) { showToast('Connectez-vous d\'abord', 'warning'); return; }
-  (await isPushSubscribed()) ? await unsubscribeFromPush() : await subscribeToPush();
-}
-
-async function updatePushButton(subscribed) {
-  const btn = document.getElementById('btnPushToggle');
-  if (!btn) return;
-  if (subscribed === undefined) subscribed = await isPushSubscribed();
-  btn.style.setProperty('display','inline-flex','important');
-  btn.textContent = subscribed ? '🔔 Notif. ON' : '🔕 Notif. OFF';
-  btn.style.borderColor = subscribed ? '#c9983a' : 'rgba(255,255,255,0.3)';
-  btn.style.color = subscribed ? '#c9983a' : '#fff';
-}
-
-async function initPushUI() {
-  if (!('PushManager' in window)) return;
-  const btn = document.getElementById('btnPushToggle');
-  if (!btn) return;
-  _pushBtnShown = true;
-  btn.style.setProperty('display','inline-flex','important');
-  await updatePushButton();
-  if (!btn._obs) {
-    btn._obs = new MutationObserver(() => { _forceShowPushBtn(); });
-    btn._obs.observe(btn, { attributes: true, attributeFilter: ['style'] });
-  }
-  document.addEventListener('visibilitychange', _forceShowPushBtn);
-  window.addEventListener('focus', _forceShowPushBtn);
-}
-
-window.addEventListener('load', () => { initServiceWorker(); });
-// ══ FIN PUSH ═════════════════════════════════════════════════════
+function updateNotifBtn(subscribed){const btn=document.getElementById('btnNotifications');if(!btn)return;btn.textContent=subscribed?'🔔 Notif.':'🔕 Notif.';btn.style.borderColor=subscribed?'#c9983a':'rgba(255,255,255,0.3)';btn.style.color=subscribed?'#c9983a':'#fff';}
+async function initPushUI(){if(!('PushManager' in window))return;updateNotifBtn(await isPushSubscribed());}
+window.addEventListener('load',()=>{initServiceWorker();});
+// ══ FIN PUSH ══
 // Patch showMain pour appeler initPushUI après login
 (function() {
   const _orig = window.showMain;
