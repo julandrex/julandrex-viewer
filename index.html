@@ -989,7 +989,7 @@ function renderPanel(){
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
-    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="openRejectReply('${r.id}','reject')" style="margin-left:4px">✕ Refuser</button><button class="xbtn" onclick="openRejectReply('${r.id}','reply')" style="margin-left:4px;background:rgba(79,142,247,0.15);border-color:#4f8ef7;color:#4f8ef7;">💬</button>`;
+    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="openRejectReply('${r.id}','accept')">✓ Accepter</button><button class="xbtn cancel" onclick="openRejectReply('${r.id}','reject')" style="margin-left:4px">✕ Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
     if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">✓ Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
     let stLbl='';
@@ -1499,27 +1499,26 @@ function openRejectReply(id, mode) {
   const msg = document.getElementById('rr-msg');
   if (!bg) return;
 
-  // Trouver l'échange
   const r = exchanges.find(x => x.id === id);
   const post = planning?.posts?.find(p => p.id === r?.proposer_post);
   const prop = doctors.find(d => d.id === r?.proposer_id);
   const propName = prop ? prop.firstname + ' ' + prop.lastname : 'le demandeur';
   const postName = post?.full || post?.name || r?.proposer_post || '';
 
-  if (mode === 'reject') {
+  if (mode === 'accept') {
+    title.textContent = '✓ Accepter la demande';
+    info.textContent = 'De ' + propName + ' — ' + postName;
+    btn.textContent = 'Confirmer l’acceptation';
+    btn.style.background = '#22c55e';
+    btn.style.color = '#fff';
+    msg.placeholder = 'Message optionnel pour le demandeur…';
+  } else {
     title.textContent = '✕ Refuser la demande';
-    info.textContent = 'Demande de ' + propName + ' — ' + postName;
-    btn.textContent = 'Refuser';
+    info.textContent = 'De ' + propName + ' — ' + postName;
+    btn.textContent = 'Confirmer le refus';
     btn.style.background = '#ef4444';
     btn.style.color = '#fff';
     msg.placeholder = 'Message optionnel pour expliquer le refus…';
-  } else {
-    title.textContent = '💬 Envoyer un message';
-    info.textContent = 'À ' + propName + ' concernant : ' + postName;
-    btn.textContent = 'Envoyer';
-    btn.style.background = '#4f8ef7';
-    btn.style.color = '#fff';
-    msg.placeholder = 'Votre message…';
   }
   msg.value = '';
   bg.style.display = 'flex';
@@ -1541,20 +1540,20 @@ async function submitRejectReply() {
   btn.textContent = '⏳';
 
   try {
-    if (_rrMode === 'reject') {
-      // Refus : annuler + stocker reply_message
+    if (_rrMode === 'accept') {
+      // Acceptation avec message optionnel
+      const { error } = await sb.from('exchange_requests')
+        .update({ status: 'accepted', acceptor_id: me.id, reply_message: msg || null })
+        .eq('id', _rrId);
+      if (error) throw error;
+      showToast('✓ Demande acceptée', 2500);
+    } else {
+      // Refus avec message optionnel
       const { error } = await sb.from('exchange_requests')
         .update({ status: 'cancelled', reply_message: msg || null })
         .eq('id', _rrId);
       if (error) throw error;
       showToast('✕ Demande refusée', 2500);
-    } else {
-      // Message seul : stocker reply_message sans changer le statut
-      const { error } = await sb.from('exchange_requests')
-        .update({ reply_message: msg || null })
-        .eq('id', _rrId);
-      if (error) throw error;
-      showToast('💬 Message enregistré', 2500);
     }
 
     // Envoyer push au proposeur si message
@@ -1563,33 +1562,9 @@ async function submitRejectReply() {
       if (r?.proposer_id) {
         const meName = me.firstname + ' ' + me.lastname;
         const post = planning?.posts?.find(p => p.id === r.proposer_post);
-        const postName = post?.full || post?.name || '';
-        const notifTitle = _rrMode === 'reject'
-          ? '✕ Demande refusée par ' + meName
-          : '💬 Message de ' + meName;
-        const notifBody = msg + (postName ? ' (' + postName + ')' : '');
-        try {
-          await fetch(CFG.url + '/functions/v1/send-push', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + CFG.key, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              hospital: CFG.hospital,
-              doctor_ids: [String(r.proposer_id)],
-              title: notifTitle,
-              message: notifBody,
-              url: 'https://julandrex.github.io/julandrex-viewer/'
-            })
-          });
-        } catch(e) { console.warn('push failed:', e); }
-      }
-    }
-
-    closeRejectReply();
-    openMesEchanges(); // Rafraîchir la liste
-  } catch(e) {
-    showToast('Erreur : ' + e.message, 3000);
-    btn.disabled = false;
-    btn.textContent = _rrMode === 'reject' ? 'Refuser' : 'Envoyer';
+        const postName = post?.full || post?.name || const notifTitle = _rrMode === 'accept'
+          ? '✓ Demande acceptée par ' + meName
+          : '✕ Demande refusée par ' + meName;
   }
 }
 // ========== FIN REFUSER / RÉPONDRE ==========
