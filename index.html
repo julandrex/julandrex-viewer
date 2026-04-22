@@ -170,6 +170,7 @@ button{font-family:inherit;}
     <button class="logout-btn" onclick="openMesDemandes()" id="demandes-btn" style="display:none;background:none;border:1px solid #a78bfa;color:#a78bfa;">📋 Mes demandes</button>
     <button class="logout-btn" onclick="openMesEchanges()" id="echanges-btn" style="display:none;background:none;border:1px solid #22c55e;color:#22c55e;">🔄 Mes échanges</button>
     <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">+ Desiderata</button>
+    <button class="logout-btn" id="mon-planning-btn" onclick="openMonPlanning()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">📅 Mon planning</button>
     <button class="logout-btn" id="notif-btn" onclick="toggleNotifications()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">🔔 Notif.</button>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </div>
@@ -840,6 +841,7 @@ function showMain(){
   document.getElementById('desid-btn').style.display='';
   document.getElementById('demandes-btn').style.display='';
   document.getElementById('echanges-btn').style.display='';
+  document.getElementById('mon-planning-btn').style.display='';
   initNotifBtn();
   const av=document.getElementById('tb-av');
   av.textContent=ini(me,doctors);av.style.background=me.color+'33';av.style.color=me.color;
@@ -1329,6 +1331,135 @@ async function unsubscribeFromPush(sub, reg) {
   }
 }
 // ========== FIN PUSH NOTIFICATIONS ==========
+
+
+// ========== MON PLANNING ==========
+let mpY = null, mpM = null;
+
+function openMonPlanning() {
+  if (!me || !planning) { showToast('Planning non disponible', 2000); return; }
+  mpY = cy; mpM = cm;
+  document.getElementById('mon-planning-bg').style.display = 'block';
+  renderMonPlanning();
+}
+
+function closeMonPlanning() {
+  document.getElementById('mon-planning-bg').style.display = 'none';
+}
+
+function mpPrevMonth() {
+  mpM--; if (mpM < 0) { mpM = 11; mpY--; }
+  renderMonPlanning();
+}
+
+function mpNextMonth() {
+  mpM++; if (mpM > 11) { mpM = 0; mpY++; }
+  renderMonPlanning();
+}
+
+async function renderMonPlanning() {
+  const titleEl = document.getElementById('mp-title');
+  const statsEl = document.getElementById('mp-stats');
+  const listEl  = document.getElementById('mp-list');
+  if (!titleEl) return;
+
+  titleEl.textContent = MO[mpM] + ' ' + mpY;
+  statsEl.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:8px;text-align:center">Chargement…</div>';
+  listEl.innerHTML = '';
+
+  // Charger le planning du mois si différent du mois courant
+  let pl = planning;
+  if (mpY !== cy || mpM !== cm) {
+    const monthKey = mpY + '-' + String(mpM + 1).padStart(2, '0');
+    const { data } = await sb.from('planning_months')
+      .select('data').eq('hospital_id', CFG.hospital).eq('month', monthKey).single();
+    pl = data ? data.data : null;
+  }
+
+  if (!pl) {
+    statsEl.innerHTML = '';
+    listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Planning non publié pour ce mois.</div>';
+    return;
+  }
+
+  const { shifts, posts } = pl;
+  const d2 = new Date(mpY, mpM + 1, 0).getDate();
+  const today = new Date().toISOString().slice(0, 10);
+  const DN = ['↓ Dim', '→ Lun', '→ Mar', '→ Mer', '→ Jeu', '→ Ven', '→ Sam'];
+  const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+
+  // Collecter mes gardes
+  const myShifts = [];
+  for (let d = 1; d <= d2; d++) {
+    const dk = dkStr(mpY, mpM, d);
+    for (const p of posts) {
+      if ((shifts[dk] || {})[p.id] === me.id) {
+        myShifts.push({ dk, post: p });
+      }
+    }
+  }
+
+  // Stats
+  const total = myShifts.length;
+  const nuits = myShifts.filter(s => s.post.section === 'nuit').length;
+  const wes = myShifts.filter(s => {
+    const dw = new Date(s.dk + 'T12:00:00').getDay();
+    return dw === 0 || dw === 6;
+  }).length;
+  const smur = myShifts.filter(s => (s.post.name || '').toLowerCase().includes('smur')).length;
+
+  statsEl.innerHTML = [
+    ['Total', total, '#4f8ef7'],
+    ['Nuits', nuits, '#9b59b6'],
+    ['WE', wes, '#e67e22'],
+    ['SMUR', smur, '#1abc9c']
+  ].map(([l, v, c]) => `<div style="background:var(--bg2);border-radius:10px;padding:10px 6px;text-align:center;">
+    <div style="font-size:22px;font-weight:800;color:${c}">${v}</div>
+    <div style="font-size:11px;color:var(--t3);margin-top:2px">${l}</div>
+  </div>`).join('');
+
+  if (!myShifts.length) {
+    listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Aucune garde ce mois.</div>';
+    return;
+  }
+
+  // Savoir si c'est le mois courant (pour permettre l'échange)
+  const isCurMonth = (mpY === cy && mpM === cm);
+
+  listEl.innerHTML = myShifts.map(({ dk, post }) => {
+    const dt = new Date(dk + 'T12:00:00');
+    const isToday = dk === today;
+    const isPast = dk < today;
+    const dayName = DAYS[dt.getDay()];
+    const dayNum = dt.getDate();
+    const canExchange = !isPast && isCurMonth;
+    const clickAttr = canExchange
+      ? `onclick="closeMonPlanning();openModal('${dk}','${post.id}')"`
+      : `onclick="showToast('Les gardes passées ne peuvent pas être échangées', 2500)"`;
+    return `<div ${clickAttr} style="
+      display:flex;align-items:center;gap:12px;
+      background:var(--bg2);border-radius:10px;padding:12px 14px;
+      margin-bottom:8px;cursor:pointer;
+      border:1px solid ${isToday ? 'var(--acc)' : 'transparent'};
+      opacity:${isPast ? '0.5' : '1'};"
+      onmouseenter="this.style.background='var(--bg3,#2a3550)'"
+      onmouseleave="this.style.background='var(--bg2)'">
+      <div style="min-width:44px;text-align:center;flex-shrink:0;">
+        <div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase">${dayName}</div>
+        <div style="font-size:22px;font-weight:800;color:${isToday ? 'var(--acc)' : 'var(--t1)'};line-height:1.1">${dayNum}</div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${post.color || '#888'};flex-shrink:0"></span>
+          <span style="font-size:13px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${post.full || post.name}</span>
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-top:3px">${post.start}–${post.end}</div>
+      </div>
+      <div style="font-size:16px;color:${canExchange ? 'var(--acc)' : 'var(--t3)'};">${canExchange ? '🔄' : '🔒'}</div>
+    </div>`;
+  }).join('');
+}
+// ========== FIN MON PLANNING ==========
 </script>
 
 <!-- MES ECHANGES PANEL -->
@@ -1342,4 +1473,19 @@ async function unsubscribeFromPush(sub, reg) {
   </div>
 </div>
 
+
+<div id="mon-planning-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMonPlanning()">
+  <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button onclick="mpPrevMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">‹</button>
+        <span id="mp-title" style="font-size:15px;font-weight:700;min-width:140px;text-align:center;"></span>
+        <button onclick="mpNextMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">›</button>
+      </div>
+      <button onclick="closeMonPlanning()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px;">✕</button>
+    </div>
+    <div id="mp-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;"></div>
+    <div id="mp-list"></div>
+  </div>
+</div>
 </body>
