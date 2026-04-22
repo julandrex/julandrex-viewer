@@ -161,6 +161,7 @@ button{font-family:inherit;}
     <button class="logout-btn" onclick="openMesDemandes()" id="demandes-btn" style="display:none;background:none;border:1px solid #a78bfa;color:#a78bfa;">📋 Mes demandes</button>
     <button class="logout-btn" onclick="openMesEchanges()" id="echanges-btn" style="display:none;background:none;border:1px solid #22c55e;color:#22c55e;">🔄 Mes échanges</button>
     <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">+ Desiderata</button>
+    <button class="logout-btn" id="notif-btn" onclick="toggleNotifications()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">🔔 Notif.</button>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </div>
   <div class="month-bar">
@@ -371,6 +372,8 @@ const SEC_LBL={jour:'JOURNÉE SEMAINE',soir:'SOIRÉE',nuit:'GARDES NUIT SEM.',we
 // INIT
 // ══════════════════════════════════════════════════════════
 async function init(){
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW:',e));}
+
   if(CFG.url==='VOTRE_SUPABASE_URL'){
     document.getElementById('doc-grid').innerHTML='<div class="ld" style="color:var(--err);">⚠ Configurez les clés Supabase dans le fichier viewer (variables CFG).</div>';
     return;
@@ -828,6 +831,7 @@ function showMain(){
   document.getElementById('desid-btn').style.display='';
   document.getElementById('demandes-btn').style.display='';
   document.getElementById('echanges-btn').style.display='';
+  initNotifBtn();
   const av=document.getElementById('tb-av');
   av.textContent=ini(me,doctors);av.style.background=me.color+'33';av.style.color=me.color;
   document.getElementById('tb-nm').textContent=me.firstname+' '+me.lastname;
@@ -1193,6 +1197,111 @@ function closeMesEchanges(){
 
 init();
 
+
+
+// ========== PUSH NOTIFICATIONS ==========
+const VAPID_PUBLIC_KEY = 'BJDakPq7fiVgU4fD8RYEyhWssNVumlgiIknIeyMyd4mn98xet6XP0R0h1Kqy3IxiTwiwhSbkMH_wAHOn_gNK_Us';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function initNotifBtn() {
+  const btn = document.getElementById('notif-btn');
+  if (!btn) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  btn.style.display = '';
+  const perm = Notification.permission;
+  if (perm === 'granted') {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) {
+      const sub = await reg.pushManager.getSubscription();
+      updateNotifBtn(!!sub ? 'subscribed' : 'unsubscribed');
+    } else { updateNotifBtn('unsubscribed'); }
+  } else if (perm === 'denied') {
+    updateNotifBtn('denied');
+  } else {
+    updateNotifBtn('unsubscribed');
+  }
+}
+
+function updateNotifBtn(state) {
+  const btn = document.getElementById('notif-btn');
+  if (!btn) return;
+  if (state === 'subscribed') {
+    btn.textContent = '🔔 Notif.';
+    btn.title = 'Notifications activées — cliquer pour désactiver';
+    btn.style.borderColor = 'var(--acc)';
+    btn.style.color = 'var(--acc)';
+  } else if (state === 'denied') {
+    btn.textContent = '🔕 Notif.';
+    btn.title = 'Notifications bloquées par le navigateur';
+    btn.style.borderColor = 'var(--err,#f87171)';
+    btn.style.color = 'var(--err,#f87171)';
+  } else {
+    btn.textContent = '🔔 Notif.';
+    btn.title = 'Activer les notifications';
+    btn.style.borderColor = 'var(--t3)';
+    btn.style.color = 'var(--t3)';
+  }
+}
+
+async function toggleNotifications() {
+  if (Notification.permission === 'denied') {
+    showToast('Notifications bloquées. Modifiez les paramètres de votre navigateur.', 4000);
+    return;
+  }
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (!reg) { showToast('Service Worker non disponible', 3000); return; }
+  const sub = await reg.pushManager.getSubscription();
+  if (sub) {
+    await unsubscribeFromPush(sub, reg);
+  } else {
+    await subscribeToPush(reg);
+  }
+}
+
+async function subscribeToPush(reg) {
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { updateNotifBtn('denied'); showToast('Permission refusée', 3000); return; }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    // Sauvegarder en base
+    const docId = currentDoc && currentDoc.id ? currentDoc.id : null;
+    const hospital = CFG.hospital || 'citadelle';
+    await sb.from('push_subscriptions').upsert({
+      doctor_id: currentUser && currentUser.id ? currentUser.id : 'unknown',
+      hospital: hospital,
+      subscription: sub.toJSON(),
+      endpoint: sub.endpoint,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'endpoint' });
+    updateNotifBtn('subscribed');
+    showToast('🔔 Notifications activées !', 3000);
+  } catch(e) {
+    console.error('subscribeToPush error:', e);
+    showToast('Erreur activation notifications: ' + e.message, 4000);
+  }
+}
+
+async function unsubscribeFromPush(sub, reg) {
+  try {
+    await sub.unsubscribe();
+    await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+    updateNotifBtn('unsubscribed');
+    showToast('🔕 Notifications désactivées', 3000);
+  } catch(e) {
+    console.error('unsubscribeFromPush error:', e);
+    showToast('Erreur désactivation: ' + e.message, 4000);
+  }
+}
+// ========== FIN PUSH NOTIFICATIONS ==========
 </script>
 
 <!-- MES ECHANGES PANEL -->
