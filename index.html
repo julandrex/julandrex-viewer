@@ -1370,10 +1370,9 @@ async function renderMonPlanning() {
   // Charger le planning du mois si différent du mois courant
   let pl = planning;
   if (mpY !== cy || mpM !== cm) {
-    const monthKey = mpY + '-' + String(mpM + 1).padStart(2, '0');
-    const { data } = await sb.from('planning_months')
-      .select('data').eq('hospital_id', CFG.hospital).eq('month', monthKey).single();
-    pl = data ? data.data : null;
+    const { data: mpData } = await sb.from('planning_months')
+      .select('shifts,posts').eq('hospital_id', CFG.hospital).eq('year', mpY).eq('month', mpM).maybeSingle();
+    pl = mpData || null;
   }
 
   if (!pl) {
