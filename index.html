@@ -1370,9 +1370,10 @@ async function renderMonPlanning() {
   // Charger le planning du mois si différent du mois courant
   let pl = planning;
   if (mpY !== cy || mpM !== cm) {
-    const { data: mpData } = await sb.from('planning_months')
-      .select('shifts,posts').eq('hospital_id', CFG.hospital).eq('year', mpY).eq('month', mpM).maybeSingle();
-    pl = mpData || null;
+    const monthKey = mpY + '-' + String(mpM + 1).padStart(2, '0');
+    const { data } = await sb.from('planning_months')
+      .select('data').eq('hospital_id', CFG.hospital).eq('month', monthKey).single();
+    pl = data ? data.data : null;
   }
 
   if (!pl) {
@@ -1422,16 +1423,13 @@ async function renderMonPlanning() {
     return;
   }
 
-  // Savoir si c'est le mois courant (pour permettre l'échange)
-  const isCurMonth = (mpY === cy && mpM === cm);
-
   listEl.innerHTML = myShifts.map(({ dk, post }) => {
     const dt = new Date(dk + 'T12:00:00');
     const isToday = dk === today;
     const isPast = dk < today;
     const dayName = DAYS[dt.getDay()];
     const dayNum = dt.getDate();
-    const canExchange = !isPast && isCurMonth;
+    const canExchange = !isPast;
     const clickAttr = canExchange
       ? `onclick="closeMonPlanning();openModal('${dk}','${post.id}')"`
       : `onclick="showToast('Les gardes passées ne peuvent pas être échangées', 2500)"`;
