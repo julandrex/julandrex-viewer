@@ -989,7 +989,7 @@ function renderPanel(){
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
-    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button>`;
+    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
     if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">✓ Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
     let stLbl='';
@@ -1484,6 +1484,15 @@ document.addEventListener('click', function(e) {
   if (wrap && !wrap.contains(e.target)) closeTbMenu();
 });
 // ===== FIN TOPBAR DROPDOWN MENU =====
+
+function rejectX(id){
+  if(!confirm('Refuser cette demande d’échange ?'))return;
+  sb.from('exchange_requests').update({status:'cancelled'}).eq('id',id).then(({error})=>{
+    if(error){showToast('Erreur: '+error.message,3000);return;}
+    showToast('✕ Demande refusée',2500);
+    openMesEchanges();
+  });
+}
 </script>
 
 <!-- MES ECHANGES PANEL -->
