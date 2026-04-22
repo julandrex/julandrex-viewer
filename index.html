@@ -126,13 +126,6 @@ button{font-family:inherit;}
 .sp{width:18px;height:18px;border:2px solid var(--b);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
-<meta name="theme-color" content="#0f2847">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Julandrex">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 
@@ -168,9 +161,6 @@ button{font-family:inherit;}
     <button class="logout-btn" onclick="openMesDemandes()" id="demandes-btn" style="display:none;background:none;border:1px solid #a78bfa;color:#a78bfa;">📋 Mes demandes</button>
     <button class="logout-btn" onclick="openMesEchanges()" id="echanges-btn" style="display:none;background:none;border:1px solid #22c55e;color:#22c55e;">🔄 Mes échanges</button>
     <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">+ Desiderata</button>
-    
-<button id="btnNotifications" onclick="openPushPopup()"
-  style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:13px;">🔕 Notif.</button>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </div>
   <div class="month-bar">
@@ -295,7 +285,13 @@ button{font-family:inherit;}
     <!-- REMARQUES -->
     <div class="dsec">
       <div class="dsec-ttl">💬 Remarques libres</div>
-      <textarea id="desid-rem" style="width:100%;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:10px;color:#e2e8f0;font-size:12px;resize:vertical;min-height:80px;box-sizing:border-box;" placeholder="In <button onclick="submitDesiderata()" style="background:#c9983a;color:#000;border:none;border-radius:10px;padding:11px 22px;font-weight:700;cursor:pointer;font-size:13px;">📤 Envoyer</button>
+      <textarea id="desid-rem" style="width:100%;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:10px;color:#e2e8f0;font-size:12px;resize:vertical;min-height:80px;box-sizing:border-box;" placeholder="Informations complémentaires..."></textarea>
+    </div>
+
+    <!-- Boutons -->
+    <div style="display:flex;gap:10px;justify-content:flex-end;padding:4px 0 20px;">
+      <button onclick="closeDesiderata()" style="background:none;border:1px solid #2d3d54;color:#94a3b8;border-radius:10px;padding:11px 22px;cursor:pointer;font-size:13px;">Annuler</button>
+      <button onclick="submitDesiderata()" style="background:#c9983a;color:#000;border:none;border-radius:10px;padding:11px 22px;font-weight:700;cursor:pointer;font-size:13px;">📤 Envoyer</button>
     </div>
 
     <!-- champs cachés compatibilité -->
@@ -395,7 +391,7 @@ async function loadDoctors(){
     doctors=data||[];
     renderLoginDocs();
   }catch(e){
-    document.getElementById('doc-grid').innerHTML<`<div class="ld" style="color:var(--err);">Connexion impossible : ${e.message}</div>`;
+    document.getElementById('doc-grid').innerHTML=`<div class="ld" style="color:var(--err);">Connexion impossible : ${e.message}</div>`;
   }
 }
 
@@ -473,7 +469,7 @@ async function openDesiderata(){
   const now=new Date();
   const nextQ=Math.floor(now.getMonth()/3)+2;
   const nextQYear=nextQ>4?now.getFullYear()+1:now.getFullYear();
-  const nextQNum=nextQ?4?1:nextQ;
+  const nextQNum=nextQ>4?1:nextQ;
   const qLabel=['T1','T2','T3','T4'][nextQNum-1];
   const qKey='t'+nextQNum;
   document.getElementById('desid-title').textContent='📋 Desiderata '+qLabel+' '+nextQYear;
@@ -744,7 +740,7 @@ async function submitDesiderata(){
     doctor_name:me.firstname+' '+me.lastname,
     year, quarter,
     conges:_desidCgs,
-    indispoz:_desidInds,
+    indispos:_desidInds,
     prefs:_desidPrefs,
     remarques:document.getElementById('desid-rem').value.trim(),
     status:'pending'
@@ -1188,7 +1184,7 @@ async function openMesEchanges(){
       </div>`;
     }).join('');
   }catch(e){
-    list.innerHTML<`<div style="color:var(--err);padding:10px;">Erreur : ${e.message}</div>`;
+    list.innerHTML=`<div style="color:var(--err);padding:10px;">Erreur : ${e.message}</div>`;
   }
 }
 function closeMesEchanges(){
@@ -1197,67 +1193,17 @@ function closeMesEchanges(){
 
 init();
 
-
-// ══ PWA + PUSH NOTIFICATIONS ══
-const VAPID_PUBLIC_KEY = 'BBbUZ2rQ18MQmQknkJdbWyvIbcdlhSLERAjoIT7fxVfxoecYzvFz07TDGZ7m-v24yCYvj4OnRgzhli41ObaJG_o';
-async function initServiceWorker(){if(!('serviceWorker' in navigator))return;try{await navigator.serviceWorker.register('./sw.js',{scope:'./'});}catch(e){console.warn('[SW]',e);}}
-function urlBase64ToUint8Array(b64){const pad='='.repeat((4-b64.length%4)%4);const b=(b64+pad).replace(/-/g,'+').replace(/_/g,'/');return new Uint8Array([...atob(b)].map(c=>c.charCodeAt(0)));}
-async function isPushSubscribed(){if(!('serviceWorker' in navigator))return false;try{const reg=await navigator.serviceWorker.ready;return!!(await reg.pushManager.getSubscription());}catch(e){return false;}}
-function closePushPopup(){const el=document.getElementById('pushPopup');if(el)el.remove();}
-async function openPushPopup(){
-  closePushPopup();
-  const subscribed=await isPushSubscribed();
-  const popup=document.createElement('div');
-  popup.id='pushPopup';
-  popup.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;';
-  const icon=subscribed?'🔔':'🔕';
-  const desc=subscribed
-    ?'Vous recevez actuellement les notifications. Vous pouvez les désactiver et les activer lorsque vous le souhaitez.'
-    :'Souhaitez-vous recevoir les notifications planning, échanges et desiderata ?';
-  const btns=subscribed
-    ?'<button onclick="handlePushOff()" style="background:#c0392b;color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600;">🔕 Désactiver</button> <button onclick="closePushPopup()" style="background:#2a4a6a;color:#fff;border:1px solid #4a6a8a;padding:10px 22px;border-radius:8px;cursor:pointer;">Annuler</button>'
-    :'<button onclick="handlePushOn()" style="background:#c9983a;color:#1a2f4a;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600;">🔔 Activer</button> <button onclick="closePushPopup()" style="background:#2a4a6a;color:#fff;border:1px solid #4a6a8a;padding:10px 22px;border-radius:8px;cursor:pointer;">Non merci</button>';
-  popup.innerHTML='<div style="background:#1a2f4a;border:1px solid #c9983a;border-radius:12px;padding:28px 32px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px;">'+icon+'</div><div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:8px;">Notifications push</div><div style="color:#a0b4c8;font-size:13px;margin-bottom:24px;">'+desc+'</div><div style="display:flex;gap:12px;justify-content:center;">'+btns+'</div></div>';
-  popup.addEventListener('click',e=>{if(e.target===popup)closePushPopup();});
-  document.body.appendChild(popup);
-}
-async function handlePushOn(){
-  closePushPopup();
-  try{
-    const reg=await navigator.serviceWorker.ready;
-    const perm=await Notification.requestPermission();
-    if(perm!=='granted'){toast('Permission refusée', true);return;}
-    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
-    const{error}=await sb.from('push_subscriptions').upsert({doctor_id:me?.id||null,hospital:CFG.hospital,subscription:sub.toJSON(),endpoint:sub.endpoint},{onConflict:'endpoint'});
-    if(error)throw error;
-    toast('🔔 Notifications activées');
-    updateNotifBtn(true);
-  }catch(e){toast('Erreur: '+e.message, true);}
-}
-async function handlePushOff(){
-  closePushPopup();
-  try{
-    const reg=await navigator.serviceWorker.ready;
-    const sub=await reg.pushManager.getSubscription();
-    if(sub){
-      // Supprimer de Supabase (non bloquant si erreur)
-      try{ await sb.from('push_subscriptions').delete().eq('endpoint',sub.endpoint); }catch(e2){ console.warn('Supabase delete error (ignored):',e2); }
-      await sub.unsubscribe();
-    }
-    toast('🔕 Notifications désactivées');
-    updateNotifBtn(false);
-  }catch(e){toast('Erreur: '+e.message, true);}
-}
-function updateNotifBtn(subscribed){const btn=document.getElementById('btnNotifications');if(!btn)return;btn.textContent=subscribed?'🔔 Notif.':'🔕 Notif.';btn.style.borderColor=subscribed?'#c9983a':'rgba(255,255,255,0.3)';btn.style.color=subscribed?'#c9983a':'#fff';}
-async function initPushUI(){if(!('PushManager' in window))return;updateNotifBtn(await isPushSubscribed());}
-window.addEventListener('load',()=>{initServiceWorker();});
-// ══ FIN PUSH ══
-// Patch showMain pour appeler initPushUI après login
-(function() {
-  const _orig = window.showMain;
-  if (typeof _orig === 'function') {
-    window.showMain = function() { _orig.apply(this, arguments); initPushUI(); };
-  }
-})();
-
 </script>
+
+<!-- MES ECHANGES PANEL -->
+<div id="mesechanges-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMesEchanges()">
+  <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:700;">🔄 Mes demandes d'échange</div>
+      <button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="mesechanges-list"></div>
+  </div>
+</div>
+
+</body>
