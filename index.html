@@ -134,6 +134,9 @@ button{font-family:inherit;}
 .ld{display:flex;align-items:center;justify-content:center;padding:48px 20px;color:var(--t3);gap:10px;flex-direction:column;font-size:12px;}
 .sp{width:18px;height:18px;border:2px solid var(--b);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+.tb-dd-item{display:block;width:100%;text-align:left;background:none;border:none;color:var(--t1);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;}
+.tb-dd-item:hover{background:var(--bg2);}
 </style>
 </head>
 <body>
@@ -166,13 +169,19 @@ button{font-family:inherit;}
         <div class="tb-role" id="tb-role"></div>
       </div>
     </div>
-    <button class="logout-btn" onclick="copyCalUrl()" id="cal-btn" style="display:none;background:none;border:1px solid var(--acc);color:var(--acc);">📅 Mon calendrier</button>
-    <button class="logout-btn" onclick="openMesDemandes()" id="demandes-btn" style="display:none;background:none;border:1px solid #a78bfa;color:#a78bfa;">📋 Mes demandes</button>
-    <button class="logout-btn" onclick="openMesEchanges()" id="echanges-btn" style="display:none;background:none;border:1px solid #22c55e;color:#22c55e;">🔄 Mes échanges</button>
-    <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">+ Desiderata</button>
     <button class="logout-btn" id="mon-planning-btn" onclick="openMonPlanning()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">📅 Mon planning</button>
-    <button class="logout-btn" id="notif-btn" onclick="toggleNotifications()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">🔔 Notif.</button>
-    <button class="logout-btn" onclick="logout()">Déconnexion</button>
+    <div id="tb-menu-wrap" style="position:relative;display:none;">
+      <button id="tb-menu-btn" onclick="toggleTbMenu()" style="background:var(--bg2);border:1px solid var(--b);color:var(--t1);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:15px;line-height:1;" title="Menu">☰</button>
+      <div id="tb-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg1);border:1px solid var(--b);border-radius:12px;padding:6px;z-index:200;min-width:195px;box-shadow:0 8px 28px rgba(0,0,0,.45);">
+        <button id="cal-btn" onclick="copyCalUrl();closeTbMenu()" class="tb-dd-item" style="display:none;">📅 Mon calendrier</button>
+        <button id="demandes-btn" onclick="openMesDemandes();closeTbMenu()" class="tb-dd-item" style="display:none;">📋 Mes demandes</button>
+        <button id="echanges-btn" onclick="openMesEchanges();closeTbMenu()" class="tb-dd-item" style="display:none;">🔄 Mes échanges</button>
+        <button id="desid-btn" onclick="openDesiderata();closeTbMenu()" class="tb-dd-item" style="display:none;">+ Desiderata</button>
+        <button id="notif-btn" onclick="toggleNotifications();closeTbMenu()" class="tb-dd-item" style="display:none;">🔔 Notif.</button>
+        <div style="border-top:1px solid var(--b);margin:5px 0;"></div>
+        <button onclick="logout();closeTbMenu()" class="tb-dd-item" style="color:#f87171;">→ Déconnexion</button>
+      </div>
+    </div>
   </div>
   <div class="month-bar">
     <button class="mnav" onclick="prevMonth()">‹</button>
@@ -837,11 +846,12 @@ function copyCalUrl(){
 function showMain(){
   document.getElementById('scr-login').style.display='none';
   document.getElementById('scr-main').style.display='flex';
-  document.getElementById('cal-btn').style.display='';
-  document.getElementById('desid-btn').style.display='';
-  document.getElementById('demandes-btn').style.display='';
-  document.getElementById('echanges-btn').style.display='';
   document.getElementById('mon-planning-btn').style.display='';
+  document.getElementById('tb-menu-wrap').style.display='';
+  // Afficher tous les items du dropdown
+  ['cal-btn','demandes-btn','echanges-btn','desid-btn'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='';
+  });
   initNotifBtn();
   const av=document.getElementById('tb-av');
   av.textContent=ini(me,doctors);av.style.background=me.color+'33';av.style.color=me.color;
@@ -1456,6 +1466,24 @@ async function renderMonPlanning() {
   }).join('');
 }
 // ========== FIN MON PLANNING ==========
+
+// ===== TOPBAR DROPDOWN MENU =====
+function toggleTbMenu() {
+  const dd = document.getElementById('tb-dropdown');
+  if (!dd) return;
+  const isOpen = dd.style.display !== 'none';
+  dd.style.display = isOpen ? 'none' : 'block';
+}
+function closeTbMenu() {
+  const dd = document.getElementById('tb-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+// Fermer le menu si clic en dehors
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('tb-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) closeTbMenu();
+});
+// ===== FIN TOPBAR DROPDOWN MENU =====
 </script>
 
 <!-- MES ECHANGES PANEL -->
