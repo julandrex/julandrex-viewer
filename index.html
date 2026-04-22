@@ -1562,7 +1562,8 @@ async function submitRejectReply() {
       if (r?.proposer_id) {
         const meName = me.firstname + ' ' + me.lastname;
         const post = planning?.posts?.find(p => p.id === r.proposer_post);
-        const postName = post?.full || post?.name || const notifTitle = _rrMode === 'accept'
+        const postName = post?.full || post?.name || '';
+        const notifTitle = _rrMode === 'accept'
           ? '✓ Demande acceptée par ' + meName
           : '✕ Demande refusée par ' + meName;
   }
