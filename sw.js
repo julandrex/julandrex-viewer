@@ -1,7 +1,11 @@
-const CACHE_VERSION='julandrex-v1';
-const ASSETS_TO_CACHE=['./','./index.html','./manifest.json'];
+const CACHE_VERSION='julandrex-v3';
+const ASSETS_TO_CACHE=['./icon-192.png','./icon-512.png','./icon.svg','./manifest.json'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_VERSION).then(c=>c.addAll(ASSETS_TO_CACHE)).catch(()=>{}));self.skipWaiting();});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_VERSION).map(k=>caches.delete(k)))));self.clients.claim();});
-self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.hostname.includes('supabase')||u.hostname.includes('googleapis'))return;e.respondWith(caches.match(e.request).then(cached=>{if(cached)return cached;return fetch(e.request).then(r=>{if(e.request.method==='GET'&&r.status===200){const cl=r.clone();caches.open(CACHE_VERSION).then(c=>c.put(e.request,cl));}return r;}).catch(()=>cached||new Response('Offline',{status:503}));}));});
+self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.hostname.includes('supabase')||u.hostname.includes('googleapis'))return;
+// Network-first pour index.html et manifest (toujours la version fraiche)
+if(e.request.mode==='navigate'||u.pathname.endsWith('index.html')||u.pathname.endsWith('manifest.json')){e.respondWith(fetch(e.request).then(r=>{if(r.ok){const cl=r.clone();caches.open(CACHE_VERSION).then(c=>c.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request).then(c=>c||new Response('Offline',{status:503}))));return;}
+// Cache-first pour icones et assets statiques
+e.respondWith(caches.match(e.request).then(cached=>{if(cached)return cached;return fetch(e.request).then(r=>{if(e.request.method==='GET'&&r.status===200){const cl=r.clone();caches.open(CACHE_VERSION).then(c=>c.put(e.request,cl));}return r;}).catch(()=>cached||new Response('Offline',{status:503}));}));});
 self.addEventListener('push',e=>{let d={title:'Julandrex',body:'Nouvelle notification',url:self.registration.scope,icon:'./icon-192.png',tag:'julandrex'};try{d={...d,...e.data.json()};}catch(err){if(e.data)d.body=e.data.text();}e.waitUntil(self.registration.showNotification(d.title,{body:d.body,icon:d.icon,badge:d.icon,tag:d.tag,renotify:true,data:{url:d.url},vibrate:[200,100,200]}));});
 self.addEventListener('notificationclick',e=>{e.notification.close();const url=e.notification.data?.url||self.registration.scope;e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(wc=>{for(const c of wc){if(c.url.startsWith(self.registration.scope)&&'focus'in c){c.focus();c.navigate(url);return;}}return clients.openWindow(url);}));});
