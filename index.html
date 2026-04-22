@@ -989,7 +989,7 @@ function renderPanel(){
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
-    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button>`;
+    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="openRejectReply('${r.id}','reject')" style="margin-left:4px">✕ Refuser</button><button class="xbtn" onclick="openRejectReply('${r.id}','reply')" style="margin-left:4px;background:rgba(79,142,247,0.15);border-color:#4f8ef7;color:#4f8ef7;">💬</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
     if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">✓ Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
     let stLbl='';
@@ -1002,6 +1002,7 @@ function renderPanel(){
       </div>
       <div class="xinfo">${post?post.full||post.name:r.proposer_post} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
       ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
+      ${r.reply_message?`<div class="xmsg" style="color:#4f8ef7;border-left:2px solid #4f8ef7;margin-top:4px;">💬 ${r.reply_message}</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
   }).join('');
@@ -1484,6 +1485,114 @@ document.addEventListener('click', function(e) {
   if (wrap && !wrap.contains(e.target)) closeTbMenu();
 });
 // ===== FIN TOPBAR DROPDOWN MENU =====
+
+
+// ========== REFUSER / RÉPONDRE ==========
+let _rrId = null, _rrMode = null;
+
+function openRejectReply(id, mode) {
+  _rrId = id; _rrMode = mode;
+  const bg = document.getElementById('rr-bg');
+  const title = document.getElementById('rr-title');
+  const info = document.getElementById('rr-info');
+  const btn = document.getElementById('rr-submit');
+  const msg = document.getElementById('rr-msg');
+  if (!bg) return;
+
+  // Trouver l'échange
+  const r = exchanges.find(x => x.id === id);
+  const post = planning?.posts?.find(p => p.id === r?.proposer_post);
+  const prop = doctors.find(d => d.id === r?.proposer_id);
+  const propName = prop ? prop.firstname + ' ' + prop.lastname : 'le demandeur';
+  const postName = post?.full || post?.name || r?.proposer_post || '';
+
+  if (mode === 'reject') {
+    title.textContent = '✕ Refuser la demande';
+    info.textContent = 'Demande de ' + propName + ' — ' + postName;
+    btn.textContent = 'Refuser';
+    btn.style.background = '#ef4444';
+    btn.style.color = '#fff';
+    msg.placeholder = 'Message optionnel pour expliquer le refus…';
+  } else {
+    title.textContent = '💬 Envoyer un message';
+    info.textContent = 'À ' + propName + ' concernant : ' + postName;
+    btn.textContent = 'Envoyer';
+    btn.style.background = '#4f8ef7';
+    btn.style.color = '#fff';
+    msg.placeholder = 'Votre message…';
+  }
+  msg.value = '';
+  bg.style.display = 'flex';
+  bg.style.alignItems = 'flex-start';
+  setTimeout(() => msg.focus(), 50);
+}
+
+function closeRejectReply() {
+  const bg = document.getElementById('rr-bg');
+  if (bg) bg.style.display = 'none';
+  _rrId = null; _rrMode = null;
+}
+
+async function submitRejectReply() {
+  if (!_rrId || !_rrMode) return;
+  const msg = document.getElementById('rr-msg').value.trim();
+  const btn = document.getElementById('rr-submit');
+  btn.disabled = true;
+  btn.textContent = '⏳';
+
+  try {
+    if (_rrMode === 'reject') {
+      // Refus : annuler + stocker reply_message
+      const { error } = await sb.from('exchange_requests')
+        .update({ status: 'cancelled', reply_message: msg || null })
+        .eq('id', _rrId);
+      if (error) throw error;
+      showToast('✕ Demande refusée', 2500);
+    } else {
+      // Message seul : stocker reply_message sans changer le statut
+      const { error } = await sb.from('exchange_requests')
+        .update({ reply_message: msg || null })
+        .eq('id', _rrId);
+      if (error) throw error;
+      showToast('💬 Message enregistré', 2500);
+    }
+
+    // Envoyer push au proposeur si message
+    if (msg) {
+      const r = exchanges.find(x => x.id === _rrId);
+      if (r?.proposer_id) {
+        const meName = me.firstname + ' ' + me.lastname;
+        const post = planning?.posts?.find(p => p.id === r.proposer_post);
+        const postName = post?.full || post?.name || '';
+        const notifTitle = _rrMode === 'reject'
+          ? '✕ Demande refusée par ' + meName
+          : '💬 Message de ' + meName;
+        const notifBody = msg + (postName ? ' (' + postName + ')' : '');
+        try {
+          await fetch(CFG.url + '/functions/v1/send-push', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + CFG.key, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              hospital: CFG.hospital,
+              doctor_ids: [String(r.proposer_id)],
+              title: notifTitle,
+              message: notifBody,
+              url: 'https://julandrex.github.io/julandrex-viewer/'
+            })
+          });
+        } catch(e) { console.warn('push failed:', e); }
+      }
+    }
+
+    closeRejectReply();
+    openMesEchanges(); // Rafraîchir la liste
+  } catch(e) {
+    showToast('Erreur : ' + e.message, 3000);
+    btn.disabled = false;
+    btn.textContent = _rrMode === 'reject' ? 'Refuser' : 'Envoyer';
+  }
+}
+// ========== FIN REFUSER / RÉPONDRE ==========
 </script>
 
 <!-- MES ECHANGES PANEL -->
@@ -1510,6 +1619,18 @@ document.addEventListener('click', function(e) {
     </div>
     <div id="mp-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;"></div>
     <div id="mp-list"></div>
+  </div>
+</div>
+
+<div id="rr-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;" onclick="if(event.target===this)closeRejectReply()">
+  <div style="background:var(--bg1);border-radius:14px;max-width:420px;margin:80px auto;padding:22px;box-sizing:border-box;">
+    <div id="rr-title" style="font-size:15px;font-weight:700;margin-bottom:6px;"></div>
+    <div id="rr-info" style="font-size:12px;color:var(--t3);margin-bottom:14px;"></div>
+    <textarea id="rr-msg" rows="3" placeholder="Message optionnel au demandeur…" style="width:100%;background:var(--bg2);border:1px solid var(--b);border-radius:8px;color:var(--t1);padding:10px;font-size:13px;resize:vertical;box-sizing:border-box;"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
+      <button onclick="closeRejectReply()" style="background:none;border:1px solid var(--b);color:var(--t3);border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;">Annuler</button>
+      <button id="rr-submit" onclick="submitRejectReply()" style="border:none;border-radius:8px;padding:8px 18px;cursor:pointer;font-size:13px;font-weight:700;"></button>
+    </div>
   </div>
 </div>
 </body>
