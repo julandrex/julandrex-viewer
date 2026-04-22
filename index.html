@@ -1219,7 +1219,21 @@ async function initNotifBtn() {
     const reg = await navigator.serviceWorker.getRegistration();
     if (reg) {
       const sub = await reg.pushManager.getSubscription();
-      updateNotifBtn(!!sub ? 'subscribed' : 'unsubscribed');
+      if (sub) {
+        updateNotifBtn('subscribed');
+        // Sauvegarder en base si absent (cas reconnexion)
+        const hospital = CFG && CFG.hospital ? CFG.hospital : 'citadelle';
+        const doctorId = me && me.id ? String(me.id) : null;
+        if (doctorId) {
+          sb.from('push_subscriptions').upsert({
+            doctor_id: doctorId, hospital,
+            subscription: sub.toJSON(), endpoint: sub.endpoint,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'endpoint' }).then(({error}) => {
+            if (error) console.warn('initNotifBtn upsert:', error.message);
+          });
+        }
+      } else { updateNotifBtn('unsubscribed'); }
     } else { updateNotifBtn('unsubscribed'); }
   } else if (perm === 'denied') {
     updateNotifBtn('denied');
@@ -1234,18 +1248,21 @@ function updateNotifBtn(state) {
   if (state === 'subscribed') {
     btn.textContent = '🔔 Notif.';
     btn.title = 'Notifications activées — cliquer pour désactiver';
+    btn.style.background = 'rgba(201,152,58,0.18)';
     btn.style.borderColor = 'var(--acc)';
     btn.style.color = 'var(--acc)';
   } else if (state === 'denied') {
     btn.textContent = '🔕 Notif.';
-    btn.title = 'Notifications bloquées par le navigateur';
-    btn.style.borderColor = 'var(--err,#f87171)';
-    btn.style.color = 'var(--err,#f87171)';
+    btn.title = 'Notifications bloquées — modifiez les paramètres navigateur';
+    btn.style.background = 'rgba(248,113,113,0.12)';
+    btn.style.borderColor = '#f87171';
+    btn.style.color = '#f87171';
   } else {
     btn.textContent = '🔔 Notif.';
-    btn.title = 'Activer les notifications';
-    btn.style.borderColor = 'var(--t3)';
-    btn.style.color = 'var(--t3)';
+    btn.title = 'Activer les notifications push';
+    btn.style.background = 'rgba(255,255,255,0.07)';
+    btn.style.borderColor = 'var(--t2,#94a3b8)';
+    btn.style.color = 'var(--t2,#94a3b8)';
   }
 }
 
@@ -1273,15 +1290,16 @@ async function subscribeToPush(reg) {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
     // Sauvegarder en base
-    const docId = currentDoc && currentDoc.id ? currentDoc.id : null;
     const hospital = CFG.hospital || 'citadelle';
-    await sb.from('push_subscriptions').upsert({
-      doctor_id: currentUser && currentUser.id ? currentUser.id : 'unknown',
+    const doctorId = me && me.id ? String(me.id) : 'unknown';
+    const { error: upsertErr } = await sb.from('push_subscriptions').upsert({
+      doctor_id: doctorId,
       hospital: hospital,
       subscription: sub.toJSON(),
       endpoint: sub.endpoint,
       updated_at: new Date().toISOString()
     }, { onConflict: 'endpoint' });
+    if (upsertErr) console.error('push_subscriptions upsert error:', upsertErr);
     updateNotifBtn('subscribed');
     showToast('🔔 Notifications activées !', 3000);
   } catch(e) {
