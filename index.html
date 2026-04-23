@@ -1014,6 +1014,23 @@ async function acceptX(id){
     const {error}=await sb.from('exchange_requests').update({status:'accepted',acceptor_id:me.id,accepted_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
     toast('Demande acceptée — en attente de confirmation.');
+    // Push au proposeur
+    try {
+      if(xr) {
+        const _postName = planning?.posts?.find(p=>p.id===xr.proposer_post)?.full || xr.proposer_post;
+        fetch(CFG.url+'/functions/v1/send-push',{
+          method:'POST',
+          headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
+          body:JSON.stringify({
+            hospital: CFG.hospital,
+            doctor_ids: [String(xr.proposer_id)],
+            title: '✓ Demande acceptée',
+            message: me.firstname+' '+me.lastname+' a accepté votre demande d’échange — '+_postName,
+            url: 'https://julandrex.github.io/julandrex-viewer/'
+          })
+        }).catch(()=>{});
+      }
+    } catch(e){}
     // Notifier le gestionnaire
     if(CFG.gest_email && xr){
       const post=planning?.posts?.find(p=>p.id===xr.proposer_post);
@@ -1093,6 +1110,24 @@ async function submitExchange(){
     if(error)throw error;
     closeModal();
     toast(targetDocId?'Demande envoyée au médecin ciblé !':'Demande envoyée à tous les médecins !');
+    // Push notification au(x) destinataire(s)
+    try {
+      const _postName = planning?.posts?.find(p=>p.id===mPost)?.full || mPost;
+      const _pushPayload = {
+        hospital: CFG.hospital,
+        title: '🔄 Demande d’échange',
+        message: me.firstname+' '+me.lastname+' vous propose un échange — '+_postName,
+        url: 'https://julandrex.github.io/julandrex-viewer/'
+      };
+      if(targetDocId) {
+        _pushPayload.doctor_ids = [String(targetDocId)];
+      }
+      fetch(CFG.url+'/functions/v1/send-push',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
+        body:JSON.stringify(_pushPayload)
+      }).catch(()=>{});
+    } catch(e){}
     // Notifier le(s) destinataire(s) de l'échange
     const post=planning?.posts?.find(p=>p.id===mPost);
     const _notifData={
