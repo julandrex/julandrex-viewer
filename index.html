@@ -138,14 +138,23 @@ button{font-family:inherit;}
 .tb-dd-item{display:block;width:100%;text-align:left;background:none;border:none;color:var(--t1);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;}
 .tb-dd-item:hover{background:var(--bg2);}
 
-/* ── OFFLINE / ERROR BANNERS ───────────────── */
+/* ── OFFLINE / ERROR BANNERS ─── */
 .offline-banner{display:flex;align-items:center;gap:10px;background:rgba(230,126,34,.1);border:1px solid #e67e22;border-radius:10px;padding:10px 14px;margin:8px 8px 0;font-size:13px;color:#e67e22;}
 .err-banner{background:rgba(239,68,68,.08);border:1px solid var(--err);border-radius:10px;padding:12px 14px;margin:8px 8px 0;font-size:13px;color:var(--err);display:flex;flex-direction:column;gap:10px;}
 .err-retry{background:var(--err);color:#fff;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600;align-self:flex-start;}
-/* ── SHIFT WIDGET ──────────────────────────── */
+/* ── SHIFT WIDGET ─── */
 .shift-widget{margin:8px 8px 0;border-radius:10px;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:12px;}
 .shift-today{background:rgba(231,76,60,.13);border:1px solid #e74c3c;}
 .shift-next{background:var(--bg2);border:1px solid var(--b);}
+/* ── SESSION OVERLAY ─── */
+#session-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+#session-overlay.show{display:flex;}
+.sess-box{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:28px 32px;text-align:center;max-width:320px;}
+.sess-title{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:8px;}
+.sess-sub{font-size:13px;color:var(--t2);margin-bottom:20px;}
+.sess-pin{width:100%;background:var(--bg3);border:1px solid var(--b);border-radius:10px;padding:12px;color:var(--t1);font-size:26px;text-align:center;letter-spacing:8px;outline:none;margin-bottom:12px;}
+.sess-btn{width:100%;background:var(--acc);color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;}
+.pin-lockout{color:var(--err);font-size:12px;text-align:center;margin-top:4px;}
 </style>
 </head>
 <body>
@@ -202,6 +211,16 @@ button{font-family:inherit;}
   <div id="grid-area"><div class="ld"><div class="sp"></div>Chargement du planning...</div></div>
 </div>
 
+<!-- SESSION OVERLAY -->
+<div id="session-overlay">
+  <div class="sess-box">
+    <div class="sess-title">&#x23F1; Session expirée</div>
+    <div class="sess-sub">Entrez votre PIN pour reprendre</div>
+    <input class="sess-pin" id="sess-pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••" oninput="onSessPinInput(this.value)">
+    <div id="sess-pin-err" class="pin-lockout"></div>
+    <button class="sess-btn" onclick="onSessPinSubmit()">Déverrouiller</button>
+  </div>
+</div>
 <!-- EXCHANGE PANEL -->
 <div id="exch-panel">
   <div class="ep-hdr">
@@ -390,6 +409,10 @@ let planning=null, exchanges=[];
 let cy=new Date().getFullYear(), cm=new Date().getMonth();
 let mDate=null, mPost=null;
 let rtChannel=null;
+var _sessTimer=null, _sessActive=false;
+var SESS_TIMEOUT=25*60*1000;
+var PIN_MAX_ATTEMPTS=5;
+var _pinAttempts=0, _pinLockedUntil=0;
 
 const MO=['Janvier','Février','Mars','Avril','Mai','Juin',
           'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -456,15 +479,28 @@ function selectDoc(id){
 }
 
 function doLogin(){
-  const doc=selectedDoc;
-  if(!doc)return;
-  const pin=document.getElementById('pin-inp').value;
+  var doc=selectedDoc;if(!doc)return;
+  var now=Date.now();
+  if(now<_pinLockedUntil){
+    var errEl=document.getElementById('pin-err');
+    errEl.textContent='Trop de tentatives. Patientez '+Math.ceil((_pinLockedUntil-now)/1000)+'s.';
+    errEl.style.display='block';return;
+  }
+  var pin=document.getElementById('pin-inp').value;
   if(pin===doc.pin){
-    me={...doc};
+    _pinAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     showMain();
   }else{
-    document.getElementById('pin-err').style.display='block';
+    _pinAttempts++;
+    var errEl=document.getElementById('pin-err');
+    if(_pinAttempts>=PIN_MAX_ATTEMPTS){
+      _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
+      errEl.textContent='5 tentatives échouées. Bloqué 30s.';
+    }else{
+      errEl.textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
+    }
+    errEl.style.display='block';
     document.getElementById('pin-inp').value='';
     document.getElementById('pin-inp').focus();
   }
@@ -475,6 +511,9 @@ document.addEventListener('keydown',e=>{
 });
 
 function logout(){
+  logAccess('logout','');
+  clearTimeout(_sessTimer);
+  _sessActive=false;
   sessionStorage.removeItem('jlx_me');
   me=null;planning=null;
   if(rtChannel){sb.removeChannel(rtChannel);rtChannel=null;}
@@ -870,6 +909,8 @@ function showMain(){
   updateMonthLbl();
   loadAll();
   subscribeRT();
+  initSession();
+  logAccess('login','');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -878,43 +919,37 @@ function showMain(){
 async function loadAll(){
   document.getElementById('grid-area').innerHTML='<div class="ld"><div class="sp"></div>Chargement...</div>';
   document.getElementById('shift-widget').innerHTML='';
-  const CACHE_KEY='jlx_c_'+CFG.hospital+'_'+cy+'_'+cm;
-  (async()=>{
+  var CK='jlx_c_'+CFG.hospital+'_'+cy+'_'+cm;
+  (async function(){
     try{
-      const [pr,dr,xr]=await Promise.all([
+      var res=await Promise.all([
         sb.from('planning_months').select('shifts,posts').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
         sb.from('doctors').select('id,firstname,lastname,role,color').eq('active',true),
         sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
       ]);
+      var pr=res[0],dr=res[1],xr=res[2];
       if(pr.error)throw pr.error;
-      doctors=dr.data||[];
-      exchanges=xr.data||[];
-      planning=pr.data||null;
-      if(planning&&doctors.length){
-        try{localStorage.setItem(CACHE_KEY,JSON.stringify({planning,doctors,ts:Date.now()}));}catch(ce){}
-      }
+      doctors=dr.data||[];exchanges=xr.data||[];planning=pr.data||null;
+      if(planning&&doctors.length){try{localStorage.setItem(CK,JSON.stringify({planning:planning,doctors:doctors,ts:Date.now()}));}catch(ce){}}
+      logAccess('view_planning',cy+'-'+(cm+1<10?'0':'')+(cm+1));
       if(!planning){
         document.getElementById('grid-area').innerHTML='<div class="ld"><div>Planning non disponible pour ce mois.</div><div style="color:var(--t3)">Contactez le gestionnaire de planning.</div></div>';
-      }else{
-        renderGrid();
-        renderShiftWidget();
-      }
+      }else{renderGrid();renderShiftWidget();}
       renderBadge();
     }catch(e){
-      let cached=null;
-      try{const raw=localStorage.getItem(CACHE_KEY);if(raw)cached=JSON.parse(raw);}catch(ce){}
+      var cached=null;
+      try{var raw=localStorage.getItem(CK);if(raw)cached=JSON.parse(raw);}catch(ce){}
       if(cached){
-        doctors=cached.doctors||doctors;
-        planning=cached.planning||null;
-        const age=Math.round((Date.now()-cached.ts)/60000);
-        const ageStr=age<60?age+'min':Math.round(age/60)+'h';
-        const dt=new Date(cached.ts).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-        document.getElementById('grid-area').innerHTML=`<div class="offline-banner">📵 Mode hors-ligne — données du ${dt} (il y a ${ageStr})</div>`;
+        doctors=cached.doctors||doctors;planning=cached.planning||null;
+        var age=Math.round((Date.now()-cached.ts)/60000);
+        var ageStr=age<60?age+'min':Math.round(age/60)+'h';
+        var dt=new Date(cached.ts).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+        document.getElementById('grid-area').innerHTML='<div class="offline-banner">📵 Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
         if(planning){renderGrid();renderShiftWidget();}
       }else{
-        const isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
-        const msg=isNet?'Impossible de joindre le serveur. Vérifiez votre connexion.':`Erreur serveur : ${e.message}`;
-        document.getElementById('grid-area').innerHTML=`<div class="err-banner"><div>⚠️ ${msg}</div><button class="err-retry" onclick="loadAll()">↻ Réessayer</button></div>`;
+        var isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
+        var msg=isNet?'Impossible de joindre le serveur. Vérifiez votre connexion.':'Erreur serveur : '+e.message;
+        document.getElementById('grid-area').innerHTML='<div class="err-banner"><div>⚠️ '+msg+'</div><button class="err-retry" onclick="loadAll()">↻ Réessayer</button></div>';
       }
       renderBadge();
     }
@@ -993,9 +1028,7 @@ function renderGrid(){
   document.getElementById('grid-area').innerHTML=h;
 }
 
-// ════════════════════════════════════════════════════════
-// SHIFT WIDGET
-// ════════════════════════════════════════════════════════
+// ════════ SHIFT WIDGET ════════
 function renderShiftWidget(){
   var el=document.getElementById('shift-widget');
   if(!el||!planning||!me)return;
@@ -1009,26 +1042,64 @@ function renderShiftWidget(){
     for(var pi=0;pi<po.length;pi++){
       var p=po[pi];
       if((sf[dk]||{})[p.id]===me.id){
-        if(dk===today){todayS.push({dk:dk,p:p});}
-        else if(!nextS&&dk>today){nextS={dk:dk,p:p};}
+        if(dk===today)todayS.push({dk:dk,p:p});
+        else if(!nextS&&dk>today)nextS={dk:dk,p:p};
       }
     }
   }
   if(todayS.length){
     var p=todayS[0].p;
     el.className='shift-widget shift-today';
-    el.innerHTML='<span style="font-size:20px">\uD83D\uDD34</span><div><strong>Shift aujourd\'hui !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' &middot; '+p.start+'–'+p.end+'</span></div>';
+    el.innerHTML='<span style="font-size:20px">🔴</span><div><strong>Shift aujourd\'hui !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' · '+p.start+'–'+p.end+'</span></div>';
   }else if(nextS){
     var dt=new Date(nextS.dk+'T12:00:00');
     var diff=Math.round((dt.getTime()-new Date().setHours(0,0,0,0))/86400000);
     var DS2=['dim','lun','mar','mer','jeu','ven','sam'];
     var dlbl=DS2[dt.getDay()]+' '+dt.getDate()+' '+MO[dt.getMonth()].toLowerCase().slice(0,3)+'.';
-    var p=nextS.p;
+    var pp=nextS.p;
     el.className='shift-widget shift-next';
-    el.innerHTML='<span style="font-size:20px">\uD83D\uDCC5</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' — '+(p.full||p.name)+' '+p.start+'–'+p.end+' &middot; <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
+    el.innerHTML='<span style="font-size:20px">📅</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' — '+(pp.full||pp.name)+' '+pp.start+'–'+pp.end+' · <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
+  }else{el.className='';el.innerHTML='';}
+}
+
+// ════════ SESSION TIMEOUT ════════
+function initSession(){
+  _sessActive=true;resetSessTimer();
+  ['click','touchstart','keydown'].forEach(function(ev){document.addEventListener(ev,resetSessTimer,{passive:true});});
+}
+function resetSessTimer(){clearTimeout(_sessTimer);_sessTimer=setTimeout(lockSession,SESS_TIMEOUT);}
+function lockSession(){
+  _sessActive=false;
+  var ov=document.getElementById('session-overlay');if(ov)ov.classList.add('show');
+  var inp=document.getElementById('sess-pin-inp');if(inp){inp.value='';inp.focus();}
+  document.getElementById('sess-pin-err').textContent='';
+}
+function onSessPinInput(v){if(v.length>=4)onSessPinSubmit();}
+function onSessPinSubmit(){
+  var now=Date.now();
+  if(now<_pinLockedUntil){document.getElementById('sess-pin-err').textContent='Trop de tentatives. Patientez '+Math.ceil((_pinLockedUntil-now)/1000)+'s.';return;}
+  var inp=document.getElementById('sess-pin-inp');
+  if(inp.value===me.pin){
+    _pinAttempts=0;
+    document.getElementById('session-overlay').classList.remove('show');
+    _sessActive=true;resetSessTimer();logAccess('session_resume','');
   }else{
-    el.className='';el.innerHTML='';
+    _pinAttempts++;
+    if(_pinAttempts>=PIN_MAX_ATTEMPTS){
+      _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
+      document.getElementById('sess-pin-err').textContent='5 tentatives échouées. Bloqué 30s.';
+      logAccess('pin_lockout','');
+    }else{
+      document.getElementById('sess-pin-err').textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
+    }
+    inp.value='';
   }
+}
+
+// ════════ LOGS RGPD ════════
+function logAccess(action,detail){
+  if(!sb||!me)return;
+  try{sb.from('access_logs').insert({hospital_id:CFG.hospital,doctor_id:me.id,action:action,detail:detail||'',ts:new Date().toISOString()}).then(function(){});}catch(e){}
 }
 
 // ══════════════════════════════════════════════════════════
