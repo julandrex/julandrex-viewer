@@ -137,6 +137,15 @@ button{font-family:inherit;}
 
 .tb-dd-item{display:block;width:100%;text-align:left;background:none;border:none;color:var(--t1);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;}
 .tb-dd-item:hover{background:var(--bg2);}
+
+/* ── OFFLINE / ERROR BANNERS ───────────────── */
+.offline-banner{display:flex;align-items:center;gap:10px;background:rgba(230,126,34,.1);border:1px solid #e67e22;border-radius:10px;padding:10px 14px;margin:8px 8px 0;font-size:13px;color:#e67e22;}
+.err-banner{background:rgba(239,68,68,.08);border:1px solid var(--err);border-radius:10px;padding:12px 14px;margin:8px 8px 0;font-size:13px;color:var(--err);display:flex;flex-direction:column;gap:10px;}
+.err-retry{background:var(--err);color:#fff;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600;align-self:flex-start;}
+/* ── SHIFT WIDGET ──────────────────────────── */
+.shift-widget{margin:8px 8px 0;border-radius:10px;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:12px;}
+.shift-today{background:rgba(231,76,60,.13);border:1px solid #e74c3c;}
+.shift-next{background:var(--bg2);border:1px solid var(--b);}
 </style>
 </head>
 <body>
@@ -189,6 +198,7 @@ button{font-family:inherit;}
     <button class="mnav" onclick="nextMonth()">›</button>
     <span class="exch-pill" id="exch-pill" onclick="togglePanel()">0 échange</span>
   </div>
+  <div id="shift-widget"></div>
   <div id="grid-area"><div class="ld"><div class="sp"></div>Chargement du planning...</div></div>
 </div>
 
@@ -867,25 +877,48 @@ function showMain(){
 // ══════════════════════════════════════════════════════════
 async function loadAll(){
   document.getElementById('grid-area').innerHTML='<div class="ld"><div class="sp"></div>Chargement...</div>';
-  try{
-    const [pr,dr,xr]=await Promise.all([
-      sb.from('planning_months').select('shifts,posts').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
-      sb.from('doctors').select('id,firstname,lastname,role,color').eq('active',true),
-      sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
-    ]);
-    if(pr.error)throw pr.error;
-    doctors=dr.data||[];
-    exchanges=xr.data||[];
-    planning=pr.data||null;
-    if(!planning){
-      document.getElementById('grid-area').innerHTML='<div class="ld"><div>Planning non disponible pour ce mois.</div><div style="color:var(--t3)">Contactez le gestionnaire de planning.</div></div>';
-    }else{
-      renderGrid();
+  document.getElementById('shift-widget').innerHTML='';
+  const CACHE_KEY='jlx_c_'+CFG.hospital+'_'+cy+'_'+cm;
+  (async()=>{
+    try{
+      const [pr,dr,xr]=await Promise.all([
+        sb.from('planning_months').select('shifts,posts').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
+        sb.from('doctors').select('id,firstname,lastname,role,color').eq('active',true),
+        sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
+      ]);
+      if(pr.error)throw pr.error;
+      doctors=dr.data||[];
+      exchanges=xr.data||[];
+      planning=pr.data||null;
+      if(planning&&doctors.length){
+        try{localStorage.setItem(CACHE_KEY,JSON.stringify({planning,doctors,ts:Date.now()}));}catch(ce){}
+      }
+      if(!planning){
+        document.getElementById('grid-area').innerHTML='<div class="ld"><div>Planning non disponible pour ce mois.</div><div style="color:var(--t3)">Contactez le gestionnaire de planning.</div></div>';
+      }else{
+        renderGrid();
+        renderShiftWidget();
+      }
+      renderBadge();
+    }catch(e){
+      let cached=null;
+      try{const raw=localStorage.getItem(CACHE_KEY);if(raw)cached=JSON.parse(raw);}catch(ce){}
+      if(cached){
+        doctors=cached.doctors||doctors;
+        planning=cached.planning||null;
+        const age=Math.round((Date.now()-cached.ts)/60000);
+        const ageStr=age<60?age+'min':Math.round(age/60)+'h';
+        const dt=new Date(cached.ts).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+        document.getElementById('grid-area').innerHTML=`<div class="offline-banner">📵 Mode hors-ligne — données du ${dt} (il y a ${ageStr})</div>`;
+        if(planning){renderGrid();renderShiftWidget();}
+      }else{
+        const isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
+        const msg=isNet?'Impossible de joindre le serveur. Vérifiez votre connexion.':`Erreur serveur : ${e.message}`;
+        document.getElementById('grid-area').innerHTML=`<div class="err-banner"><div>⚠️ ${msg}</div><button class="err-retry" onclick="loadAll()">↻ Réessayer</button></div>`;
+      }
+      renderBadge();
     }
-    renderBadge();
-  }catch(e){
-    document.getElementById('grid-area').innerHTML=`<div class="ld" style="color:var(--err);">Erreur : ${e.message}</div>`;
-  }
+  })();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -958,6 +991,44 @@ function renderGrid(){
   }
   h+='</tbody></table>';
   document.getElementById('grid-area').innerHTML=h;
+}
+
+// ════════════════════════════════════════════════════════
+// SHIFT WIDGET
+// ════════════════════════════════════════════════════════
+function renderShiftWidget(){
+  var el=document.getElementById('shift-widget');
+  if(!el||!planning||!me)return;
+  var sf=planning.shifts,po=planning.posts;
+  var today=new Date().toISOString().slice(0,10);
+  var d2=new Date(cy,cm+1,0).getDate();
+  var todayS=[],nextS=null;
+  for(var d=1;d<=d2;d++){
+    var dk=dkStr(cy,cm,d);
+    if(dk<today)continue;
+    for(var pi=0;pi<po.length;pi++){
+      var p=po[pi];
+      if((sf[dk]||{})[p.id]===me.id){
+        if(dk===today){todayS.push({dk:dk,p:p});}
+        else if(!nextS&&dk>today){nextS={dk:dk,p:p};}
+      }
+    }
+  }
+  if(todayS.length){
+    var p=todayS[0].p;
+    el.className='shift-widget shift-today';
+    el.innerHTML='<span style="font-size:20px">\uD83D\uDD34</span><div><strong>Shift aujourd\'hui !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' &middot; '+p.start+'–'+p.end+'</span></div>';
+  }else if(nextS){
+    var dt=new Date(nextS.dk+'T12:00:00');
+    var diff=Math.round((dt.getTime()-new Date().setHours(0,0,0,0))/86400000);
+    var DS2=['dim','lun','mar','mer','jeu','ven','sam'];
+    var dlbl=DS2[dt.getDay()]+' '+dt.getDate()+' '+MO[dt.getMonth()].toLowerCase().slice(0,3)+'.';
+    var p=nextS.p;
+    el.className='shift-widget shift-next';
+    el.innerHTML='<span style="font-size:20px">\uD83D\uDCC5</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' — '+(p.full||p.name)+' '+p.start+'–'+p.end+' &middot; <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
+  }else{
+    el.className='';el.innerHTML='';
+  }
 }
 
 // ══════════════════════════════════════════════════════════
