@@ -168,7 +168,7 @@ button{font-family:inherit;}
     <div class="doc-grid" id="doc-grid"><div class="ld"><div class="sp"></div>Chargement...</div></div>
     <div class="pin-area" id="pin-area">
       <div class="pin-lbl" id="pin-lbl">Entrez votre code PIN</div>
-      <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off">
+      <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
       <div class="pin-err" id="pin-err">Code PIN incorrect — réessayez</div>
       <button class="pin-btn" onclick="doLogin()">Se connecter</button>
     </div>
@@ -216,7 +216,7 @@ button{font-family:inherit;}
   <div class="sess-box">
     <div class="sess-title">&#x23F1; Session expirée</div>
     <div class="sess-sub">Entrez votre PIN pour reprendre</div>
-    <input class="sess-pin" id="sess-pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••" oninput="onSessPinInput(this.value)">
+    <input class="sess-pin" id="sess-pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" oninput="onSessPinInput(this.value)">
     <div id="sess-pin-err" class="pin-lockout"></div>
     <button class="sess-btn" onclick="onSessPinSubmit()">Déverrouiller</button>
   </div>
@@ -1074,7 +1074,7 @@ function lockSession(){
   var inp=document.getElementById('sess-pin-inp');if(inp){inp.value='';inp.focus();}
   document.getElementById('sess-pin-err').textContent='';
 }
-function onSessPinInput(v){if(v.length>=4)onSessPinSubmit();}
+function onSessPinInput(v){if(v.length>=6)onSessPinSubmit();}
 function onSessPinSubmit(){
   var now=Date.now();
   if(now<_pinLockedUntil){document.getElementById('sess-pin-err').textContent='Trop de tentatives. Patientez '+Math.ceil((_pinLockedUntil-now)/1000)+'s.';return;}
