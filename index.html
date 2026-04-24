@@ -924,7 +924,7 @@ async function loadAll(){
     try{
       var res=await Promise.all([
         sb.from('planning_months').select('shifts,posts').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
-        sb.from('doctors').select('id,firstname,lastname,role,color').eq('active',true),
+        sb.from('doctors').select('id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
         sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
       ]);
       var pr=res[0],dr=res[1],xr=res[2];
