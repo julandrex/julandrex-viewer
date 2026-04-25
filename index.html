@@ -195,7 +195,7 @@ button{font-family:inherit;}
         <button id="demandes-btn" onclick="openMesDemandes();closeTbMenu()" class="tb-dd-item" style="display:none;">📋 Mes demandes</button>
         <button id="echanges-btn" onclick="openMesEchanges();closeTbMenu()" class="tb-dd-item" style="display:none;">🔄 Mes échanges</button>
         <button id="desid-btn" onclick="openDesiderata();closeTbMenu()" class="tb-dd-item" style="display:none;">+ Desiderata</button>
-        <button id="notif-btn" onclick="toggleNotifications();closeTbMenu()" class="tb-dd-item" style="display:none;align-items:center;gap:7px;">
+        <button id="notif-btn" onclick="toggleNotifications()" class="tb-dd-item" style="display:none;align-items:center;gap:7px;">
           <span id="notif-pill" style="display:inline-flex;align-items:center;width:34px;height:18px;border-radius:9px;background:#4b5563;padding:0 2px;transition:background .25s;flex-shrink:0;position:relative;">
             <span id="notif-dot" style="width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:transform .25s;transform:translateX(0);"></span>
           </span>
@@ -1450,41 +1450,36 @@ function updateNotifBtn(state) {
   const pill = document.getElementById('notif-pill');
   const dot  = document.getElementById('notif-dot');
   const lbl  = document.getElementById('notif-lbl');
-  if (!btn) return;
+  if (!btn || !pill || !dot) return;
 
-  // Reset styles bouton
-  btn.style.background   = '';
-  btn.style.borderColor  = '';
-  btn.style.color        = '';
+  btn.style.display     = 'flex';
+  btn.style.background  = '';
+  btn.style.borderColor = '';
+  btn.style.color       = '';
 
   if (state === 'subscribed') {
-    pill.style.background  = '#22c55e';           // vert
-    dot.style.transform    = 'translateX(16px)';  // droite = ON
-    dot.style.background   = '#fff';
+    pill.style.background = '#22c55e';
+    dot.style.transform   = 'translateX(16px)';
     btn.title = 'Notifications activées — cliquer pour désactiver';
-    if (lbl) lbl.textContent = 'Notif.';
   } else if (state === 'denied') {
-    pill.style.background  = '#ef4444';           // rouge
-    dot.style.transform    = 'translateX(0)';     // gauche = OFF
-    dot.style.background   = '#fff';
+    pill.style.background = '#ef4444';
+    dot.style.transform   = 'translateX(0)';
     btn.title = 'Notifications bloquées — modifiez les paramètres navigateur';
-    if (lbl) lbl.textContent = 'Notif.';
   } else {
-    pill.style.background  = '#4b5563';           // gris = OFF
-    dot.style.transform    = 'translateX(0)';
-    dot.style.background   = '#fff';
+    pill.style.background = '#4b5563';
+    dot.style.transform   = 'translateX(0)';
     btn.title = 'Activer les notifications push';
-    if (lbl) lbl.textContent = 'Notif.';
   }
+  if (lbl) lbl.textContent = 'Notif.';
 }
 
 async function toggleNotifications() {
   if (Notification.permission === 'denied') {
-    showToast('Notifications bloquées. Modifiez les paramètres de votre navigateur.', 4000);
+    toast('Notifications bloquées. Modifiez les paramètres de votre navigateur.', 4000);
     return;
   }
   const reg = await navigator.serviceWorker.getRegistration();
-  if (!reg) { showToast('Service Worker non disponible', 3000); return; }
+  if (!reg) { toast('Service Worker non disponible', 3000); return; }
   const sub = await reg.pushManager.getSubscription();
   if (sub) {
     await unsubscribeFromPush(sub, reg);
@@ -1496,7 +1491,7 @@ async function toggleNotifications() {
 async function subscribeToPush(reg) {
   try {
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { updateNotifBtn('denied'); showToast('Permission refusée', 3000); return; }
+    if (perm !== 'granted') { updateNotifBtn('denied'); toast('Permission refusée', 3000); return; }
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
@@ -1513,10 +1508,10 @@ async function subscribeToPush(reg) {
     }, { onConflict: 'endpoint' });
     if (upsertErr) console.error('push_subscriptions upsert error:', upsertErr);
     updateNotifBtn('subscribed');
-    showToast('🔔 Notifications activées !', 3000);
+    toast('🔔 Notifications activées !', 3000);
   } catch(e) {
     console.error('subscribeToPush error:', e);
-    showToast('Erreur activation notifications: ' + e.message, 4000);
+    toast('Erreur activation notifications: ' + e.message, 4000);
   }
 }
 
@@ -1525,10 +1520,10 @@ async function unsubscribeFromPush(sub, reg) {
     await sub.unsubscribe();
     await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
     updateNotifBtn('unsubscribed');
-    showToast('🔕 Notifications désactivées', 3000);
+    toast('🔕 Notifications désactivées', 3000);
   } catch(e) {
     console.error('unsubscribeFromPush error:', e);
-    showToast('Erreur désactivation: ' + e.message, 4000);
+    toast('Erreur désactivation: ' + e.message, 4000);
   }
 }
 // ========== FIN PUSH NOTIFICATIONS ==========
