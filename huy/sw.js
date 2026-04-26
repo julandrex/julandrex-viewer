@@ -1,4 +1,4 @@
-const CACHE_VERSION='julandrex-v3';
+const CACHE_VERSION='julandrex-v4';
 const ASSETS_TO_CACHE=['./','./index.html','./manifest.json'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_VERSION).then(c=>c.addAll(ASSETS_TO_CACHE)).catch(()=>{}));self.skipWaiting();});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_VERSION).map(k=>caches.delete(k)))));self.clients.claim();});
