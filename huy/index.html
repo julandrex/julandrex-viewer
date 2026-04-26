@@ -2,6 +2,15 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0f2847">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Julandrex">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Planning Urgences — CHR Huy</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -125,14 +134,28 @@ button{font-family:inherit;}
 .ld{display:flex;align-items:center;justify-content:center;padding:48px 20px;color:var(--t3);gap:10px;flex-direction:column;font-size:12px;}
 .sp{width:18px;height:18px;border:2px solid var(--b);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+.tb-dd-item{display:block;width:100%;text-align:left;background:none;border:none;color:var(--t1);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;}
+.tb-dd-item:hover{background:var(--bg2);}
+
+/* ── OFFLINE / ERROR BANNERS ─── */
+.offline-banner{display:flex;align-items:center;gap:10px;background:rgba(230,126,34,.1);border:1px solid #e67e22;border-radius:10px;padding:10px 14px;margin:8px 8px 0;font-size:13px;color:#e67e22;}
+.err-banner{background:rgba(239,68,68,.08);border:1px solid var(--err);border-radius:10px;padding:12px 14px;margin:8px 8px 0;font-size:13px;color:var(--err);display:flex;flex-direction:column;gap:10px;}
+.err-retry{background:var(--err);color:#fff;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600;align-self:flex-start;}
+/* ── SHIFT WIDGET ─── */
+.shift-widget{margin:8px 8px 0;border-radius:10px;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:12px;}
+.shift-today{background:rgba(231,76,60,.13);border:1px solid #e74c3c;}
+.shift-next{background:var(--bg2);border:1px solid var(--b);}
+/* ── SESSION OVERLAY ─── */
+#session-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+#session-overlay.show{display:flex;}
+.sess-box{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:28px 32px;text-align:center;max-width:320px;}
+.sess-title{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:8px;}
+.sess-sub{font-size:13px;color:var(--t2);margin-bottom:20px;}
+.sess-pin{width:100%;background:var(--bg3);border:1px solid var(--b);border-radius:10px;padding:12px;color:var(--t1);font-size:26px;text-align:center;letter-spacing:8px;outline:none;margin-bottom:12px;}
+.sess-btn{width:100%;background:var(--acc);color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;}
+.pin-lockout{color:var(--err);font-size:12px;text-align:center;margin-top:4px;}
 </style>
-<meta name="theme-color" content="#0f2847">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Julandrex">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 
@@ -145,7 +168,7 @@ button{font-family:inherit;}
     <div class="doc-grid" id="doc-grid"><div class="ld"><div class="sp"></div>Chargement...</div></div>
     <div class="pin-area" id="pin-area">
       <div class="pin-lbl" id="pin-lbl">Entrez votre code PIN</div>
-      <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off">
+      <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
       <div class="pin-err" id="pin-err">Code PIN incorrect — réessayez</div>
       <button class="pin-btn" onclick="doLogin()">Se connecter</button>
     </div>
@@ -164,14 +187,24 @@ button{font-family:inherit;}
         <div class="tb-role" id="tb-role"></div>
       </div>
     </div>
-    <button class="logout-btn" onclick="copyCalUrl()" id="cal-btn" style="display:none;background:none;border:1px solid var(--acc);color:var(--acc);">📅 Mon calendrier</button>
-    <button class="logout-btn" onclick="openMesDemandes()" id="demandes-btn" style="display:none;background:none;border:1px solid #a78bfa;color:#a78bfa;">📋 Mes demandes</button>
-    <button class="logout-btn" onclick="openMesEchanges()" id="echanges-btn" style="display:none;background:none;border:1px solid #22c55e;color:#22c55e;">🔄 Mes échanges</button>
-    <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">+ Desiderata</button>
-    
-<button id="btnNotifications" onclick="openPushPopup()"
-  style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:13px;">🔕 Notif.</button>
-    <button class="logout-btn" onclick="logout()">Déconnexion</button>
+    <button class="logout-btn" id="mon-planning-btn" onclick="openMonPlanning()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">📅 Mon planning</button>
+    <div id="tb-menu-wrap" style="position:relative;display:none;">
+      <button id="tb-menu-btn" onclick="toggleTbMenu()" style="background:var(--bg2);border:1px solid var(--b);color:var(--t1);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:15px;line-height:1;" title="Menu">☰</button>
+      <div id="tb-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg1);border:1px solid var(--b);border-radius:12px;padding:6px;z-index:200;min-width:195px;box-shadow:0 8px 28px rgba(0,0,0,.45);">
+        <button id="cal-btn" onclick="copyCalUrl();closeTbMenu()" class="tb-dd-item" style="display:none;">📅 Mon calendrier</button>
+        <button id="demandes-btn" onclick="openMesDemandes();closeTbMenu()" class="tb-dd-item" style="display:none;">📋 Mes demandes</button>
+        <button id="echanges-btn" onclick="openMesEchanges();closeTbMenu()" class="tb-dd-item" style="display:none;">🔄 Mes échanges</button>
+        <button id="desid-btn" onclick="openDesiderata();closeTbMenu()" class="tb-dd-item" style="display:none;">+ Desiderata</button>
+        <button id="notif-btn" onclick="toggleNotifications()" class="tb-dd-item" style="display:none;align-items:center;gap:7px;">
+          <span id="notif-pill" style="display:inline-flex;align-items:center;width:34px;height:18px;border-radius:9px;background:#4b5563;padding:0 2px;transition:background .25s;flex-shrink:0;position:relative;">
+            <span id="notif-dot" style="width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:transform .25s;transform:translateX(0);"></span>
+          </span>
+          <span id="notif-lbl">Notif.</span>
+        </button>
+        <div style="border-top:1px solid var(--b);margin:5px 0;"></div>
+        <button onclick="logout();closeTbMenu()" class="tb-dd-item" style="color:#f87171;">→ Déconnexion</button>
+      </div>
+    </div>
   </div>
   <div class="month-bar">
     <button class="mnav" onclick="prevMonth()">‹</button>
@@ -179,9 +212,20 @@ button{font-family:inherit;}
     <button class="mnav" onclick="nextMonth()">›</button>
     <span class="exch-pill" id="exch-pill" onclick="togglePanel()">0 échange</span>
   </div>
+  <div id="shift-widget"></div>
   <div id="grid-area"><div class="ld"><div class="sp"></div>Chargement du planning...</div></div>
 </div>
 
+<!-- SESSION OVERLAY -->
+<div id="session-overlay">
+  <div class="sess-box">
+    <div class="sess-title">&#x23F1; Session expirée</div>
+    <div class="sess-sub">Entrez votre PIN pour reprendre</div>
+    <input class="sess-pin" id="sess-pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" oninput="onSessPinInput(this.value)">
+    <div id="sess-pin-err" class="pin-lockout"></div>
+    <button class="sess-btn" onclick="onSessPinSubmit()">Déverrouiller</button>
+  </div>
+</div>
 <!-- EXCHANGE PANEL -->
 <div id="exch-panel">
   <div class="ep-hdr">
@@ -370,6 +414,10 @@ let planning=null, exchanges=[];
 let cy=new Date().getFullYear(), cm=new Date().getMonth();
 let mDate=null, mPost=null;
 let rtChannel=null;
+var _sessTimer=null, _sessActive=false;
+var SESS_TIMEOUT=25*60*1000;
+var PIN_MAX_ATTEMPTS=5;
+var _pinAttempts=0, _pinLockedUntil=0;
 
 const MO=['Janvier','Février','Mars','Avril','Mai','Juin',
           'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -381,6 +429,8 @@ const SEC_LBL={jour:'JOURNÉE SEMAINE',soir:'SOIRÉE',nuit:'GARDES NUIT SEM.',we
 // INIT
 // ══════════════════════════════════════════════════════════
 async function init(){
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW:',e));}
+
   if(CFG.url==='VOTRE_SUPABASE_URL'){
     document.getElementById('doc-grid').innerHTML='<div class="ld" style="color:var(--err);">⚠ Configurez les clés Supabase dans le fichier viewer (variables CFG).</div>';
     return;
@@ -396,7 +446,7 @@ async function init(){
 // ══════════════════════════════════════════════════════════
 async function loadDoctors(){
   try{
-    const {data,error}=await sb.from('doctors').select('id,firstname,lastname,role,color,pin').eq('active',true).eq('hospital_id',CFG.hospital).order('role').order('lastname');
+    const {data,error}=await sb.from('doctors').select('id,firstname,lastname,role,color,pin').eq('active',true).order('role').order('lastname');
     if(error)throw error;
     doctors=data||[];
     renderLoginDocs();
@@ -434,15 +484,28 @@ function selectDoc(id){
 }
 
 function doLogin(){
-  const doc=selectedDoc;
-  if(!doc)return;
-  const pin=document.getElementById('pin-inp').value;
+  var doc=selectedDoc;if(!doc)return;
+  var now=Date.now();
+  if(now<_pinLockedUntil){
+    var errEl=document.getElementById('pin-err');
+    errEl.textContent='Trop de tentatives. Patientez '+Math.ceil((_pinLockedUntil-now)/1000)+'s.';
+    errEl.style.display='block';return;
+  }
+  var pin=document.getElementById('pin-inp').value;
   if(pin===doc.pin){
-    me={...doc};
+    _pinAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     showMain();
   }else{
-    document.getElementById('pin-err').style.display='block';
+    _pinAttempts++;
+    var errEl=document.getElementById('pin-err');
+    if(_pinAttempts>=PIN_MAX_ATTEMPTS){
+      _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
+      errEl.textContent='5 tentatives échouées. Bloqué 30s.';
+    }else{
+      errEl.textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
+    }
+    errEl.style.display='block';
     document.getElementById('pin-inp').value='';
     document.getElementById('pin-inp').focus();
   }
@@ -453,6 +516,9 @@ document.addEventListener('keydown',e=>{
 });
 
 function logout(){
+  logAccess('logout','');
+  clearTimeout(_sessTimer);
+  _sessActive=false;
   sessionStorage.removeItem('jlx_me');
   me=null;planning=null;
   if(rtChannel){sb.removeChannel(rtChannel);rtChannel=null;}
@@ -491,8 +557,9 @@ async function openDesiderata(){
   _jcalCgY=nextQYear; _jcalCgM=qStartMonth;
   _jcalIndY=nextQYear; _jcalIndM=qStartMonth;
   _jcalPrefY=nextQYear; _jcalPrefM=qStartMonth;
+  _jcalPrefY=nextQYear; _jcalPrefM=qStartMonth;
   _jcalIndY=nextQYear; _jcalIndM=qStartMonth;
-  jcalRender('cg'); jcalRender('ind'); jcalRender('pref');
+  jcalRender('cg'); jcalRender('ind'); jcalRender('pref'); jcalRender('pref');
   // Deadline
   const info=document.getElementById('desid-deadline-info');
   info.innerHTML='⏳ Chargement de la date limite...';
@@ -602,7 +669,6 @@ function jcalClickCg(dk){
   } else {
     const s=_cgSelStart<=dk?_cgSelStart:dk;
     const e=_cgSelStart<=dk?dk:_cgSelStart;
-    // Vérifier chevauchement avec une période existante
     const overlap=_desidCgs.some(c=>!(e<c.start||s>c.end));
     if(overlap){
       _cgSelStart=null;
@@ -663,56 +729,38 @@ function confirmDesidFormation(){
 // Préférences — grille postes × jours
 let _jcalPrefY=new Date().getFullYear(), _jcalPrefM=new Date().getMonth();
 
-function initPrefGrid(qStartMonth, qYear){
-  _jcalPrefY=qYear; _jcalPrefM=qStartMonth;
-  jcalRender('pref');
-}
-
 function jcalRender_pref(){
   const y=_jcalPrefY, m=_jcalPrefM;
   const lbl=document.getElementById('jcal-pref-lbl');
   const grid=document.getElementById('desid-pref-grid');
   if(!lbl||!grid) return;
   lbl.textContent=DCAL_MO[m]+' '+y;
-
-  // Postes disponibles (depuis planning si chargé, sinon liste par défaut)
   const availPosts = (typeof planning !== 'undefined' && planning?.posts)
     ? planning.posts.filter(p=>p.section!=='we')
-    : [{id:'med-j',name:'MED'},{id:'smur-j',name:'SMUR'},{id:'chir-j',name:'CHIR'},{id:'tard',name:'TARD'}];
-
+    : [{id:'coord',name:'COORD'},{id:'smur-j',name:'SMUR'},{id:'satmu-j',name:'SATMU'},{id:'a',name:'A'},{id:'b',name:'B'},{id:'c',name:'C'},{id:'d',name:'D'},{id:'pm16',name:'16-00'}];
   const dmax=new Date(y,m+1,0).getDate();
   const today=new Date().toISOString().slice(0,10);
-
-  // Jours ouvrables du mois (lun-ven)
   const days=[];
   for(let d=1;d<=dmax;d++){
     const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const dw=new Date(dk+'T12:00:00').getDay();
     if(dw!==0&&dw!==6) days.push({dk,d,dw});
   }
-
   const DS2=['Lu','Ma','Me','Je','Ve'];
-
   let h=`<table style="border-collapse:collapse;font-size:11px;width:100%;">`;
-  // En-tête jours
   h+=`<thead><tr><th style="background:#1a2332;padding:4px 6px;text-align:left;color:#64748b;white-space:nowrap;position:sticky;left:0;z-index:2;">Poste</th>`;
   days.forEach(({dk,d,dw})=>{
     const isT=dk===today;
     h+=`<th style="background:#1a2332;padding:3px 2px;text-align:center;min-width:28px;color:${isT?'#c9983a':'#64748b'};font-weight:${isT?'700':'400'};">
-      <div>${d}</div><div style="font-size:9px;">${DS2[dw-1]}</div>
-    </th>`;
+      <div>${d}</div><div style="font-size:9px;">${DS2[dw-1]}</div></th>`;
   });
   h+=`</tr></thead><tbody>`;
-
-  // Lignes postes
   availPosts.forEach(p=>{
-    h+=`<tr>`;
-    h+=`<td style="background:#111c2d;padding:4px 6px;white-space:nowrap;color:${p.color||'#93c5fd'};font-weight:600;position:sticky;left:0;z-index:1;">${p.name||p.id}</td>`;
+    h+=`<tr><td style="background:#111c2d;padding:4px 6px;white-space:nowrap;color:${p.color||'#93c5fd'};font-weight:600;position:sticky;left:0;z-index:1;">${p.name||p.id}</td>`;
     days.forEach(({dk})=>{
       const sel=_desidPrefs.some(x=>x.date===dk&&x.poste===p.id);
       h+=`<td onclick="toggleDesidPref('${dk}','${p.id}','${p.name||p.id}')"
-        style="padding:2px;text-align:center;cursor:pointer;background:${sel?'#c9983a22':'transparent'};border:1px solid ${sel?'#c9983a':'#1e293b'};border-radius:3px;transition:all .1s;"
-        title="${p.name||p.id} — ${dk}">
+        style="padding:2px;text-align:center;cursor:pointer;background:${sel?'#c9983a22':'transparent'};border:1px solid ${sel?'#c9983a':'#1e293b'};border-radius:3px;">
         ${sel?`<span style="color:#c9983a;font-size:10px;font-weight:700;">✓</span>`:''}
       </td>`;
     });
@@ -733,7 +781,6 @@ function toggleDesidPref(dk,postId,postName){
 function addDesidPref(){ /* no-op — grille interactive */ }
 function cancelDesidPref(){ /* no-op */ }
 function confirmDesidPref(){ /* no-op */ }
-
 
 function renderDesidLists(){
   const fmtD=dk=>{if(!dk)return'';const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
@@ -853,10 +900,13 @@ function copyCalUrl(){
 function showMain(){
   document.getElementById('scr-login').style.display='none';
   document.getElementById('scr-main').style.display='flex';
-  document.getElementById('cal-btn').style.display='';
-  document.getElementById('desid-btn').style.display='';
-  document.getElementById('demandes-btn').style.display='';
-  document.getElementById('echanges-btn').style.display='';
+  document.getElementById('mon-planning-btn').style.display='';
+  document.getElementById('tb-menu-wrap').style.display='';
+  // Afficher tous les items du dropdown
+  ['cal-btn','demandes-btn','echanges-btn','desid-btn'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='';
+  });
+  initNotifBtn();
   const av=document.getElementById('tb-av');
   av.textContent=ini(me,doctors);av.style.background=me.color+'33';av.style.color=me.color;
   document.getElementById('tb-nm').textContent=me.firstname+' '+me.lastname;
@@ -864,6 +914,8 @@ function showMain(){
   updateMonthLbl();
   loadAll();
   subscribeRT();
+  initSession();
+  logAccess('login','');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -871,25 +923,42 @@ function showMain(){
 // ══════════════════════════════════════════════════════════
 async function loadAll(){
   document.getElementById('grid-area').innerHTML='<div class="ld"><div class="sp"></div>Chargement...</div>';
-  try{
-    const [pr,dr,xr]=await Promise.all([
-      sb.from('planning_months').select('shifts,posts').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
-      sb.from('doctors').select('id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
-      sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
-    ]);
-    if(pr.error)throw pr.error;
-    doctors=dr.data||[];
-    exchanges=xr.data||[];
-    planning=pr.data||null;
-    if(!planning){
-      document.getElementById('grid-area').innerHTML='<div class="ld"><div>Planning non disponible pour ce mois.</div><div style="color:var(--t3)">Contactez le gestionnaire de planning.</div></div>';
-    }else{
-      renderGrid();
+  document.getElementById('shift-widget').innerHTML='';
+  var CK='jlx_c_'+CFG.hospital+'_'+cy+'_'+cm;
+  (async function(){
+    try{
+      var res=await Promise.all([
+        sb.from('planning_months').select('shifts,posts').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
+        sb.from('doctors').select('id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
+        sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
+      ]);
+      var pr=res[0],dr=res[1],xr=res[2];
+      if(pr.error)throw pr.error;
+      doctors=dr.data||[];exchanges=xr.data||[];planning=pr.data||null;
+      if(planning&&doctors.length){try{localStorage.setItem(CK,JSON.stringify({planning:planning,doctors:doctors,ts:Date.now()}));}catch(ce){}}
+      logAccess('view_planning',cy+'-'+(cm+1<10?'0':'')+(cm+1));
+      if(!planning){
+        document.getElementById('grid-area').innerHTML='<div class="ld"><div>Planning non disponible pour ce mois.</div><div style="color:var(--t3)">Contactez le gestionnaire de planning.</div></div>';
+      }else{renderGrid();renderShiftWidget();}
+      renderBadge();
+    }catch(e){
+      var cached=null;
+      try{var raw=localStorage.getItem(CK);if(raw)cached=JSON.parse(raw);}catch(ce){}
+      if(cached){
+        doctors=cached.doctors||doctors;planning=cached.planning||null;
+        var age=Math.round((Date.now()-cached.ts)/60000);
+        var ageStr=age<60?age+'min':Math.round(age/60)+'h';
+        var dt=new Date(cached.ts).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+        document.getElementById('grid-area').innerHTML='<div class="offline-banner">📵 Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
+        if(planning){renderGrid();renderShiftWidget();}
+      }else{
+        var isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
+        var msg=isNet?'Impossible de joindre le serveur. Vérifiez votre connexion.':'Erreur serveur : '+e.message;
+        document.getElementById('grid-area').innerHTML='<div class="err-banner"><div>⚠️ '+msg+'</div><button class="err-retry" onclick="loadAll()">↻ Réessayer</button></div>';
+      }
+      renderBadge();
     }
-    renderBadge();
-  }catch(e){
-    document.getElementById('grid-area').innerHTML=`<div class="ld" style="color:var(--err);">Erreur : ${e.message}</div>`;
-  }
+  })();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -964,6 +1033,80 @@ function renderGrid(){
   document.getElementById('grid-area').innerHTML=h;
 }
 
+// ════════ SHIFT WIDGET ════════
+function renderShiftWidget(){
+  var el=document.getElementById('shift-widget');
+  if(!el||!planning||!me)return;
+  var sf=planning.shifts,po=planning.posts;
+  var today=new Date().toISOString().slice(0,10);
+  var d2=new Date(cy,cm+1,0).getDate();
+  var todayS=[],nextS=null;
+  for(var d=1;d<=d2;d++){
+    var dk=dkStr(cy,cm,d);
+    if(dk<today)continue;
+    for(var pi=0;pi<po.length;pi++){
+      var p=po[pi];
+      if((sf[dk]||{})[p.id]===me.id){
+        if(dk===today)todayS.push({dk:dk,p:p});
+        else if(!nextS&&dk>today)nextS={dk:dk,p:p};
+      }
+    }
+  }
+  if(todayS.length){
+    var p=todayS[0].p;
+    el.className='shift-widget shift-today';
+    el.innerHTML='<span style="font-size:20px">🔴</span><div><strong>Shift aujourd\'hui !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' · '+p.start+'–'+p.end+'</span></div>';
+  }else if(nextS){
+    var dt=new Date(nextS.dk+'T12:00:00');
+    var diff=Math.round((dt.getTime()-new Date().setHours(0,0,0,0))/86400000);
+    var DS2=['dim','lun','mar','mer','jeu','ven','sam'];
+    var dlbl=DS2[dt.getDay()]+' '+dt.getDate()+' '+MO[dt.getMonth()].toLowerCase().slice(0,3)+'.';
+    var pp=nextS.p;
+    el.className='shift-widget shift-next';
+    el.innerHTML='<span style="font-size:20px">📅</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' — '+(pp.full||pp.name)+' '+pp.start+'–'+pp.end+' · <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
+  }else{el.className='';el.innerHTML='';}
+}
+
+// ════════ SESSION TIMEOUT ════════
+function initSession(){
+  _sessActive=true;resetSessTimer();
+  ['click','touchstart','keydown'].forEach(function(ev){document.addEventListener(ev,resetSessTimer,{passive:true});});
+}
+function resetSessTimer(){clearTimeout(_sessTimer);_sessTimer=setTimeout(lockSession,SESS_TIMEOUT);}
+function lockSession(){
+  _sessActive=false;
+  var ov=document.getElementById('session-overlay');if(ov)ov.classList.add('show');
+  var inp=document.getElementById('sess-pin-inp');if(inp){inp.value='';inp.focus();}
+  document.getElementById('sess-pin-err').textContent='';
+}
+function onSessPinInput(v){if(v.length>=6)onSessPinSubmit();}
+function onSessPinSubmit(){
+  var now=Date.now();
+  if(now<_pinLockedUntil){document.getElementById('sess-pin-err').textContent='Trop de tentatives. Patientez '+Math.ceil((_pinLockedUntil-now)/1000)+'s.';return;}
+  var inp=document.getElementById('sess-pin-inp');
+  if(inp.value===me.pin){
+    _pinAttempts=0;
+    document.getElementById('session-overlay').classList.remove('show');
+    _sessActive=true;resetSessTimer();logAccess('session_resume','');
+  }else{
+    _pinAttempts++;
+    if(_pinAttempts>=PIN_MAX_ATTEMPTS){
+      _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
+      document.getElementById('sess-pin-err').textContent='5 tentatives échouées. Bloqué 30s.';
+      logAccess('pin_lockout','');
+    }else{
+      document.getElementById('sess-pin-err').textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
+    }
+    inp.value='';
+  }
+}
+
+// ════════ LOGS RGPD ════════
+function logAccess(action,detail){
+  if(!sb||!me)return;
+  try{sb.from('access_logs').insert({hospital_id:CFG.hospital,doctor_id:me.id,action:action,detail:detail||'',ts:new Date().toISOString()}).then(function(){});}catch(e){}
+}
+
 // ══════════════════════════════════════════════════════════
 // EXCHANGES
 // ══════════════════════════════════════════════════════════
@@ -993,7 +1136,7 @@ function renderPanel(){
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
-    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button>`;
+    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
     if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">✓ Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
     let stLbl='';
@@ -1018,6 +1161,23 @@ async function acceptX(id){
     const {error}=await sb.from('exchange_requests').update({status:'accepted',acceptor_id:me.id,accepted_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
     toast('Demande acceptée — en attente de confirmation.');
+    // Push au proposeur
+    try {
+      if(xr) {
+        const _postName = planning?.posts?.find(p=>p.id===xr.proposer_post)?.full || xr.proposer_post;
+        fetch(CFG.url+'/functions/v1/send-push',{
+          method:'POST',
+          headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
+          body:JSON.stringify({
+            hospital: CFG.hospital,
+            doctor_ids: [String(xr.proposer_id)],
+            title: '✓ Demande acceptée',
+            message: me.firstname+' '+me.lastname+' a accepté votre demande d’échange — '+_postName,
+            url: 'https://julandrex.github.io/julandrex-viewer/'
+          })
+        }).catch(()=>{});
+      }
+    } catch(e){}
     // Notifier le gestionnaire
     if(CFG.gest_email && xr){
       const post=planning?.posts?.find(p=>p.id===xr.proposer_post);
@@ -1097,6 +1257,24 @@ async function submitExchange(){
     if(error)throw error;
     closeModal();
     toast(targetDocId?'Demande envoyée au médecin ciblé !':'Demande envoyée à tous les médecins !');
+    // Push notification au(x) destinataire(s)
+    try {
+      const _postName = planning?.posts?.find(p=>p.id===mPost)?.full || mPost;
+      const _pushPayload = {
+        hospital: CFG.hospital,
+        title: '🔄 Demande d’échange',
+        message: me.firstname+' '+me.lastname+' vous propose un échange — '+_postName,
+        url: 'https://julandrex.github.io/julandrex-viewer/'
+      };
+      if(targetDocId) {
+        _pushPayload.doctor_ids = [String(targetDocId)];
+      }
+      fetch(CFG.url+'/functions/v1/send-push',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
+        body:JSON.stringify(_pushPayload)
+      }).catch(()=>{});
+    } catch(e){}
     // Notifier le(s) destinataire(s) de l'échange
     const post=planning?.posts?.find(p=>p.id===mPost);
     const _notifData={
@@ -1157,7 +1335,7 @@ function getLabel(doc,arr){
 
 function shortRole(r){
   if(!r)return'';
-  const m={'PH Urgences':'PH Urg.','PH SMUR':'PH SMUR','CCA':'CCA','Assistant SMUR ok':'Ass. SMUR','Assistant Urgences':'Assistant','Assistant Médecine Interne':'Ass. MI','Médecin Généraliste':'Généraliste'};
+  const m={'PH Urgences':'PH Urg.','PH SMUR':'PH SMUR','CCA':'CCA','Assistant SMUR ok':'Ass. SMUR','Assistant Urgences':'Assistant','Médecin Généraliste':'Généraliste'};
   return m[r]||r.substring(0,14);
 }
 
@@ -1223,66 +1401,310 @@ function closeMesEchanges(){
 init();
 
 
-// ══ PWA + PUSH NOTIFICATIONS ══
-const VAPID_PUBLIC_KEY = 'BBbUZ2rQ18MQmQknkJdbWyvIbcdlhSLERAjoIT7fxVfxoecYzvFz07TDGZ7m-v24yCYvj4OnRgzhli41ObaJG_o';
-async function initServiceWorker(){if(!('serviceWorker' in navigator))return;try{await navigator.serviceWorker.register('./sw.js',{scope:'./'});}catch(e){console.warn('[SW]',e);}}
-function urlBase64ToUint8Array(b64){const pad='='.repeat((4-b64.length%4)%4);const b=(b64+pad).replace(/-/g,'+').replace(/_/g,'/');return new Uint8Array([...atob(b)].map(c=>c.charCodeAt(0)));}
-async function isPushSubscribed(){if(!('serviceWorker' in navigator))return false;try{const reg=await navigator.serviceWorker.ready;return!!(await reg.pushManager.getSubscription());}catch(e){return false;}}
-function closePushPopup(){const el=document.getElementById('pushPopup');if(el)el.remove();}
-async function openPushPopup(){
-  closePushPopup();
-  const subscribed=await isPushSubscribed();
-  const popup=document.createElement('div');
-  popup.id='pushPopup';
-  popup.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;';
-  const icon=subscribed?'🔔':'🔕';
-  const desc=subscribed
-    ?'Vous recevez actuellement les notifications. Vous pouvez les désactiver et les activer lorsque vous le souhaitez.'
-    :'Souhaitez-vous recevoir les notifications planning, échanges et desiderata ?';
-  const btns=subscribed
-    ?'<button onclick="handlePushOff()" style="background:#c0392b;color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600;">🔕 Désactiver</button> <button onclick="closePushPopup()" style="background:#2a4a6a;color:#fff;border:1px solid #4a6a8a;padding:10px 22px;border-radius:8px;cursor:pointer;">Annuler</button>'
-    :'<button onclick="handlePushOn()" style="background:#c9983a;color:#1a2f4a;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600;">🔔 Activer</button> <button onclick="closePushPopup()" style="background:#2a4a6a;color:#fff;border:1px solid #4a6a8a;padding:10px 22px;border-radius:8px;cursor:pointer;">Non merci</button>';
-  popup.innerHTML='<div style="background:#1a2f4a;border:1px solid #c9983a;border-radius:12px;padding:28px 32px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px;">'+icon+'</div><div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:8px;">Notifications push</div><div style="color:#a0b4c8;font-size:13px;margin-bottom:24px;">'+desc+'</div><div style="display:flex;gap:12px;justify-content:center;">'+btns+'</div></div>';
-  popup.addEventListener('click',e=>{if(e.target===popup)closePushPopup();});
-  document.body.appendChild(popup);
-}
-async function handlePushOn(){
-  closePushPopup();
-  try{
-    const reg=await navigator.serviceWorker.ready;
-    const perm=await Notification.requestPermission();
-    if(perm!=='granted'){showToast('Permission refusée','warning');return;}
-    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
-    const{error}=await supabase.from('push_subscriptions').upsert({doctor_id:currentDoctorId,hospital:HOSPITAL,subscription:sub.toJSON(),endpoint:sub.endpoint},{onConflict:'endpoint'});
-    if(error)throw error;
-    showToast('🔔 Notifications activées','success');
-    updateNotifBtn(true);
-  }catch(e){showToast('Erreur: '+e.message,'error');}
-}
-async function handlePushOff(){
-  closePushPopup();
-  try{
-    const reg=await navigator.serviceWorker.ready;
-    const sub=await reg.pushManager.getSubscription();
-    if(sub){
-      // Supprimer de Supabase (non bloquant si erreur)
-      try{ await supabase.from('push_subscriptions').delete().eq('endpoint',sub.endpoint); }catch(e2){ console.warn('Supabase delete error (ignored):',e2); }
-      await sub.unsubscribe();
-    }
-    showToast('🔕 Notifications désactivées','info');
-    updateNotifBtn(false);
-  }catch(e){showToast('Erreur: '+e.message,'error');}
-}
-function updateNotifBtn(subscribed){const btn=document.getElementById('btnNotifications');if(!btn)return;btn.textContent=subscribed?'🔔 Notif.':'🔕 Notif.';btn.style.borderColor=subscribed?'#c9983a':'rgba(255,255,255,0.3)';btn.style.color=subscribed?'#c9983a':'#fff';}
-async function initPushUI(){if(!('PushManager' in window))return;updateNotifBtn(await isPushSubscribed());}
-window.addEventListener('load',()=>{initServiceWorker();});
-// ══ FIN PUSH ══
-// Patch showMain pour appeler initPushUI après login
-(function() {
-  const _orig = window.showMain;
-  if (typeof _orig === 'function') {
-    window.showMain = function() { _orig.apply(this, arguments); initPushUI(); };
-  }
-})();
 
+// ========== PUSH NOTIFICATIONS ==========
+const VAPID_PUBLIC_KEY = 'BJDakPq7fiVgU4fD8RYEyhWssNVumlgiIknIeyMyd4mn98xet6XP0R0h1Kqy3IxiTwiwhSbkMH_wAHOn_gNK_Us';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function initNotifBtn() {
+  const btn = document.getElementById('notif-btn');
+  if (!btn) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  btn.style.display = '';
+  const perm = Notification.permission;
+  if (perm === 'granted') {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) {
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        updateNotifBtn('subscribed');
+        // Sauvegarder en base si absent (cas reconnexion)
+        const hospital = CFG && CFG.hospital ? CFG.hospital : 'citadelle';
+        const doctorId = me && me.id ? String(me.id) : null;
+        if (doctorId) {
+          sb.from('push_subscriptions').upsert({
+            doctor_id: doctorId, hospital,
+            subscription: sub.toJSON(), endpoint: sub.endpoint,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'endpoint' }).then(({error}) => {
+            if (error) console.warn('initNotifBtn upsert:', error.message);
+          });
+        }
+      } else { updateNotifBtn('unsubscribed'); }
+    } else { updateNotifBtn('unsubscribed'); }
+  } else if (perm === 'denied') {
+    updateNotifBtn('denied');
+  } else {
+    updateNotifBtn('unsubscribed');
+  }
+}
+
+function updateNotifBtn(state) {
+  const btn  = document.getElementById('notif-btn');
+  const pill = document.getElementById('notif-pill');
+  const dot  = document.getElementById('notif-dot');
+  const lbl  = document.getElementById('notif-lbl');
+  if (!btn || !pill || !dot) return;
+
+  btn.style.display     = 'flex';
+  btn.style.background  = '';
+  btn.style.borderColor = '';
+  btn.style.color       = '';
+
+  if (state === 'subscribed') {
+    pill.style.background = '#22c55e';
+    dot.style.transform   = 'translateX(16px)';
+    btn.title = 'Notifications activées — cliquer pour désactiver';
+  } else if (state === 'denied') {
+    pill.style.background = '#ef4444';
+    dot.style.transform   = 'translateX(0)';
+    btn.title = 'Notifications bloquées — modifiez les paramètres navigateur';
+  } else {
+    pill.style.background = '#4b5563';
+    dot.style.transform   = 'translateX(0)';
+    btn.title = 'Activer les notifications push';
+  }
+  if (lbl) lbl.textContent = 'Notif.';
+}
+
+async function toggleNotifications() {
+  if (Notification.permission === 'denied') {
+    toast('Notifications bloquées. Modifiez les paramètres de votre navigateur.', 4000);
+    return;
+  }
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (!reg) { toast('Service Worker non disponible', 3000); return; }
+  const sub = await reg.pushManager.getSubscription();
+  if (sub) {
+    await unsubscribeFromPush(sub, reg);
+  } else {
+    await subscribeToPush(reg);
+  }
+}
+
+async function subscribeToPush(reg) {
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { updateNotifBtn('denied'); toast('Permission refusée', 3000); return; }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    // Sauvegarder en base
+    const hospital = CFG.hospital || 'citadelle';
+    const doctorId = me && me.id ? String(me.id) : 'unknown';
+    const { error: upsertErr } = await sb.from('push_subscriptions').upsert({
+      doctor_id: doctorId,
+      hospital: hospital,
+      subscription: sub.toJSON(),
+      endpoint: sub.endpoint,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'endpoint' });
+    if (upsertErr) console.error('push_subscriptions upsert error:', upsertErr);
+    updateNotifBtn('subscribed');
+    toast('🔔 Notifications activées !', 3000);
+  } catch(e) {
+    console.error('subscribeToPush error:', e);
+    toast('Erreur activation notifications: ' + e.message, 4000);
+  }
+}
+
+async function unsubscribeFromPush(sub, reg) {
+  try {
+    await sub.unsubscribe();
+    await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+    updateNotifBtn('unsubscribed');
+    toast('🔕 Notifications désactivées', 3000);
+  } catch(e) {
+    console.error('unsubscribeFromPush error:', e);
+    toast('Erreur désactivation: ' + e.message, 4000);
+  }
+}
+// ========== FIN PUSH NOTIFICATIONS ==========
+
+
+// ========== MON PLANNING ==========
+let mpY = null, mpM = null;
+
+function openMonPlanning() {
+  if (!me || !planning) { toast('Planning non disponible', 2000); return; }
+  mpY = cy; mpM = cm;
+  document.getElementById('mon-planning-bg').style.display = 'block';
+  renderMonPlanning();
+}
+
+function closeMonPlanning() {
+  document.getElementById('mon-planning-bg').style.display = 'none';
+}
+
+function mpPrevMonth() {
+  mpM--; if (mpM < 0) { mpM = 11; mpY--; }
+  renderMonPlanning();
+}
+
+function mpNextMonth() {
+  mpM++; if (mpM > 11) { mpM = 0; mpY++; }
+  renderMonPlanning();
+}
+
+async function renderMonPlanning() {
+  const titleEl = document.getElementById('mp-title');
+  const statsEl = document.getElementById('mp-stats');
+  const listEl  = document.getElementById('mp-list');
+  if (!titleEl) return;
+
+  titleEl.textContent = MO[mpM] + ' ' + mpY;
+  statsEl.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:8px;text-align:center">Chargement…</div>';
+  listEl.innerHTML = '';
+
+  // Charger le planning du mois si différent du mois courant
+  let pl = planning;
+  if (mpY !== cy || mpM !== cm) {
+    const { data: mpData } = await sb.from('planning_months')
+      .select('shifts,posts').eq('hospital_id', CFG.hospital).eq('year', mpY).eq('month', mpM).maybeSingle();
+    pl = mpData || null;
+  }
+
+  if (!pl) {
+    statsEl.innerHTML = '';
+    listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Planning non publié pour ce mois.</div>';
+    return;
+  }
+
+  const { shifts, posts } = pl;
+  const d2 = new Date(mpY, mpM + 1, 0).getDate();
+  const today = new Date().toISOString().slice(0, 10);
+  const DN = ['↓ Dim', '→ Lun', '→ Mar', '→ Mer', '→ Jeu', '→ Ven', '→ Sam'];
+  const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+
+  // Collecter mes gardes
+  const myShifts = [];
+  for (let d = 1; d <= d2; d++) {
+    const dk = dkStr(mpY, mpM, d);
+    for (const p of posts) {
+      if ((shifts[dk] || {})[p.id] === me.id) {
+        myShifts.push({ dk, post: p });
+      }
+    }
+  }
+
+  // Stats
+  const total = myShifts.length;
+  const nuits = myShifts.filter(s => s.post.section === 'nuit').length;
+  const wes = myShifts.filter(s => {
+    const dw = new Date(s.dk + 'T12:00:00').getDay();
+    return dw === 0 || dw === 6;
+  }).length;
+  const smur = myShifts.filter(s => (s.post.name || '').toLowerCase().includes('smur')).length;
+
+  statsEl.innerHTML = [
+    ['Total', total, '#4f8ef7'],
+    ['Nuits', nuits, '#9b59b6'],
+    ['WE', wes, '#e67e22'],
+    ['SMUR', smur, '#1abc9c']
+  ].map(([l, v, c]) => `<div style="background:var(--bg2);border-radius:10px;padding:10px 6px;text-align:center;">
+    <div style="font-size:22px;font-weight:800;color:${c}">${v}</div>
+    <div style="font-size:11px;color:var(--t3);margin-top:2px">${l}</div>
+  </div>`).join('');
+
+  if (!myShifts.length) {
+    listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Aucune garde ce mois.</div>';
+    return;
+  }
+
+  listEl.innerHTML = myShifts.map(({ dk, post }) => {
+    const dt = new Date(dk + 'T12:00:00');
+    const isToday = dk === today;
+    const isPast = dk < today;
+    const dayName = DAYS[dt.getDay()];
+    const dayNum = dt.getDate();
+    const canExchange = !isPast;
+    const clickAttr = canExchange
+      ? `onclick="closeMonPlanning();openModal('${dk}','${post.id}')"`
+      : `onclick="showToast('Les gardes passées ne peuvent pas être échangées', 2500)"`;
+    return `<div ${clickAttr} style="
+      display:flex;align-items:center;gap:12px;
+      background:var(--bg2);border-radius:10px;padding:12px 14px;
+      margin-bottom:8px;cursor:pointer;
+      border:1px solid ${isToday ? 'var(--acc)' : 'transparent'};
+      opacity:${isPast ? '0.5' : '1'};"
+      onmouseenter="this.style.background='var(--bg3,#2a3550)'"
+      onmouseleave="this.style.background='var(--bg2)'">
+      <div style="min-width:44px;text-align:center;flex-shrink:0;">
+        <div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase">${dayName}</div>
+        <div style="font-size:22px;font-weight:800;color:${isToday ? 'var(--acc)' : 'var(--t1)'};line-height:1.1">${dayNum}</div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${post.color || '#888'};flex-shrink:0"></span>
+          <span style="font-size:13px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${post.full || post.name}</span>
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-top:3px">${post.start}–${post.end}</div>
+      </div>
+      <div style="font-size:16px;color:${canExchange ? 'var(--acc)' : 'var(--t3)'};">${canExchange ? '🔄' : '🔒'}</div>
+    </div>`;
+  }).join('');
+}
+// ========== FIN MON PLANNING ==========
+
+// ===== TOPBAR DROPDOWN MENU =====
+function toggleTbMenu() {
+  const dd = document.getElementById('tb-dropdown');
+  if (!dd) return;
+  const isOpen = dd.style.display !== 'none';
+  dd.style.display = isOpen ? 'none' : 'block';
+}
+function closeTbMenu() {
+  const dd = document.getElementById('tb-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+// Fermer le menu si clic en dehors
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('tb-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) closeTbMenu();
+});
+// ===== FIN TOPBAR DROPDOWN MENU =====
+
+function rejectX(id){
+  if(!confirm('Refuser cette demande d’échange ?'))return;
+  sb.from('exchange_requests').update({status:'cancelled'}).eq('id',id).then(({error})=>{
+    if(error){toast('Erreur: '+error.message,3000);return;}
+    toast('✕ Demande refusée',2500);
+    openMesEchanges();
+  });
+}
 </script>
+
+<!-- MES ECHANGES PANEL -->
+<div id="mesechanges-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMesEchanges()">
+  <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:700;">🔄 Mes demandes d'échange</div>
+      <button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="mesechanges-list"></div>
+  </div>
+</div>
+
+
+<div id="mon-planning-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMonPlanning()">
+  <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button onclick="mpPrevMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">‹</button>
+        <span id="mp-title" style="font-size:15px;font-weight:700;min-width:140px;text-align:center;"></span>
+        <button onclick="mpNextMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">›</button>
+      </div>
+      <button onclick="closeMonPlanning()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px;">✕</button>
+    </div>
+    <div id="mp-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;"></div>
+    <div id="mp-list"></div>
+  </div>
+</div>
+</body>
