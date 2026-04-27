@@ -446,7 +446,7 @@ async function init(){
 // ══════════════════════════════════════════════════════════
 async function loadDoctors(){
   try{
-    const {data,error}=await sb.from('doctors').select('id,firstname,lastname,role,color,pin').eq('hospital_id',CFG.hospital).eq('active',true).order('role').order('lastname');
+    const {data,error}=await sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin').eq('hospital_id',CFG.hospital).eq('active',true).order('role').order('lastname');
     if(error)throw error;
     doctors=data||[];
     renderLoginDocs();
@@ -1016,7 +1016,7 @@ function renderGrid(){
         const isTd=dk===today;
         if(!isActive(p,dk)){h+=`<td class="c-inactive${isTd?' c-today':''}"></td>`;continue;}
         const docId=(shifts[dk]||{})[p.id];
-        const doc=docId?doctors.find(x=>x.id===docId):null;
+        const doc=docId?doctors.find(x=>(x.local_id??x.id)===docId):null;
         if(!doc){h+=`<td class="${we?'c-we':''}${isTd?' c-today':''}"></td>`;continue;}
         const isMe2=doc.id===me.id;
         const hasX=exchanges.some(r=>r.proposer_date===dk&&r.proposer_post===p.id&&r.status==='open');
@@ -1046,7 +1046,7 @@ function renderShiftWidget(){
     if(dk<today)continue;
     for(var pi=0;pi<po.length;pi++){
       var p=po[pi];
-      if((sf[dk]||{})[p.id]===me.id){
+      if((sf[dk]||{})[p.id]===(me.local_id??me.id)){
         if(dk===today)todayS.push({dk:dk,p:p});
         else if(!nextS&&dk>today)nextS={dk:dk,p:p};
       }
@@ -1588,7 +1588,7 @@ async function renderMonPlanning() {
   for (let d = 1; d <= d2; d++) {
     const dk = dkStr(mpY, mpM, d);
     for (const p of posts) {
-      if ((shifts[dk] || {})[p.id] === me.id) {
+      if ((shifts[dk] || {})[p.id] === (me.local_id??me.id)) {
         myShifts.push({ dk, post: p });
       }
     }
