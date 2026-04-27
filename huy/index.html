@@ -446,7 +446,7 @@ async function init(){
 // ══════════════════════════════════════════════════════════
 async function loadDoctors(){
   try{
-    const {data,error}=await sb.from('doctors').select('id,firstname,lastname,role,color,pin').eq('active',true).order('role').order('lastname');
+    const {data,error}=await sb.from('doctors').select('id,firstname,lastname,role,color,pin').eq('hospital_id',CFG.hospital).eq('active',true).order('role').order('lastname');
     if(error)throw error;
     doctors=data||[];
     renderLoginDocs();
