@@ -20,7 +20,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--t1);font-size:13px;min-height:100vh;}
 button{font-family:inherit;}
 
-/* ââ LOGIN âââââââââââââââââââââââââââââââââââ */
+/* ── LOGIN ─────────────────────────────────── */
 #scr-login{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px 16px 60px;}
 .logo{font-size:26px;font-weight:800;color:var(--acc);letter-spacing:-1px;}
 .logo-sub{font-size:12px;color:var(--t3);margin-bottom:32px;margin-top:2px;}
@@ -42,7 +42,7 @@ button{font-family:inherit;}
 .pin-btn{background:var(--acc);color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s;}
 .pin-btn:hover{opacity:.88;}
 
-/* ââ MAIN âââââââââââââââââââââââââââââââââââââ */
+/* ── MAIN ───────────────────────────────────── */
 #scr-main{display:none;flex-direction:column;height:100dvh;height:100vh;}
 .topbar{background:var(--bg1);border-bottom:1px solid var(--b);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .tb-logo{font-size:14px;font-weight:800;color:var(--acc);}
@@ -64,7 +64,7 @@ button{font-family:inherit;}
 
 #grid-area{flex:1;overflow:auto;}
 
-/* ââ PLANNING GRID ââââââââââââââââââââââââââââ */
+/* ── PLANNING GRID ──────────────────────────── */
 .pgrid{border-collapse:collapse;min-width:100%;font-size:11px;}
 .pgrid th{background:var(--bg2);border:1px solid var(--b);padding:4px 1px;text-align:center;font-weight:600;font-size:9px;color:var(--t2);white-space:nowrap;position:sticky;top:0;z-index:2;min-width:34px;}
 .pgrid th.we{color:var(--warn);}
@@ -85,7 +85,7 @@ button{font-family:inherit;}
 .c-exch{position:relative;}
 .c-exch::after{content:'';position:absolute;top:2px;right:2px;width:5px;height:5px;border-radius:50%;background:var(--warn);}
 
-/* ââ EXCHANGE PANEL âââââââââââââââââââââââââââ */
+/* ── EXCHANGE PANEL ─────────────────────────── */
 #exch-panel{display:none;position:fixed;bottom:0;left:0;right:0;max-height:65vh;background:var(--bg1);border-top:1px solid var(--b);border-radius:18px 18px 0 0;padding:16px;overflow-y:auto;z-index:10;box-shadow:0 -8px 32px rgba(0,0,0,.4);}
 #exch-panel.show{display:block;}
 .ep-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
@@ -108,7 +108,7 @@ button{font-family:inherit;}
 .xstatus.accepted{background:rgba(245,158,11,.15);color:var(--warn);}
 .xstatus.confirmed{background:rgba(34,197,94,.15);color:var(--ok);}
 
-/* ââ MODAL ââââââââââââââââââââââââââââââââââââ */
+/* ── MODAL ──────────────────────────────────── */
 #modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:20;align-items:flex-end;justify-content:center;}
 #modal-bg.show{display:flex;}
 #modal{background:var(--bg1);border-radius:18px 18px 0 0;padding:22px 20px 32px;width:100%;max-width:520px;}
@@ -126,11 +126,11 @@ button{font-family:inherit;}
 .msubmit{flex:2;background:var(--acc2);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .14s;}
 .msubmit:hover{opacity:.9;}
 
-/* ââ TOAST ââââââââââââââââââââââââââââââââââââ */
+/* ── TOAST ──────────────────────────────────── */
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--bg3);border:1px solid var(--b);border-radius:10px;padding:10px 18px;font-size:13px;opacity:0;transition:all .28s;z-index:30;white-space:nowrap;pointer-events:none;}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-/* ââ LOADING / EMPTY ââââââââââââââââââââââââââ */
+/* ── LOADING / EMPTY ────────────────────────── */
 .ld{display:flex;align-items:center;justify-content:center;padding:48px 20px;color:var(--t3);gap:10px;flex-direction:column;font-size:12px;}
 .sp{width:18px;height:18px;border:2px solid var(--b);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -138,15 +138,15 @@ button{font-family:inherit;}
 .tb-dd-item{display:block;width:100%;text-align:left;background:none;border:none;color:var(--t1);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;}
 .tb-dd-item:hover{background:var(--bg2);}
 
-/* ââ OFFLINE / ERROR BANNERS âââ */
+/* ── OFFLINE / ERROR BANNERS ─── */
 .offline-banner{display:flex;align-items:center;gap:10px;background:rgba(230,126,34,.1);border:1px solid #e67e22;border-radius:10px;padding:10px 14px;margin:8px 8px 0;font-size:13px;color:#e67e22;}
 .err-banner{background:rgba(239,68,68,.08);border:1px solid var(--err);border-radius:10px;padding:12px 14px;margin:8px 8px 0;font-size:13px;color:var(--err);display:flex;flex-direction:column;gap:10px;}
 .err-retry{background:var(--err);color:#fff;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600;align-self:flex-start;}
-/* ââ SHIFT WIDGET âââ */
+/* ── SHIFT WIDGET ─── */
 .shift-widget{margin:8px 8px 0;border-radius:10px;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:12px;}
 .shift-today{background:rgba(231,76,60,.13);border:1px solid #e74c3c;}
 .shift-next{background:var(--bg2);border:1px solid var(--b);}
-/* ââ SESSION OVERLAY âââ */
+/* ── SESSION OVERLAY ─── */
 #session-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
 #session-overlay.show{display:flex;}
 .sess-box{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:28px 32px;text-align:center;max-width:320px;}
@@ -161,15 +161,15 @@ button{font-family:inherit;}
 
 <!-- LOGIN -->
 <div id="scr-login">
-  <div class="logo">ð Julandrex</div>
-  <div class="logo-sub">Planning des urgences â CHR Citadelle</div>
+  <div class="logo">📋 Julandrex</div>
+  <div class="logo-sub">Planning des urgences — CHR Citadelle</div>
   <div class="login-box">
-    <div class="step-title">SÃ©lectionnez votre nom</div>
+    <div class="step-title">Sélectionnez votre nom</div>
     <div class="doc-grid" id="doc-grid"><div class="ld"><div class="sp"></div>Chargement...</div></div>
     <div class="pin-area" id="pin-area">
       <div class="pin-lbl" id="pin-lbl">Entrez votre code PIN</div>
-      <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="â¢â¢â¢â¢â¢â¢" autocomplete="off">
-      <div class="pin-err" id="pin-err">Code PIN incorrect â rÃ©essayez</div>
+      <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
+      <div class="pin-err" id="pin-err">Code PIN incorrect — réessayez</div>
       <button class="pin-btn" onclick="doLogin()">Se connecter</button>
     </div>
   </div>
@@ -187,13 +187,13 @@ button{font-family:inherit;}
         <div class="tb-role" id="tb-role"></div>
       </div>
     </div>
-    <button class="logout-btn" id="mon-planning-btn" onclick="openMonPlanning()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">ð Mon planning</button>
+    <button class="logout-btn" id="mon-planning-btn" onclick="openMonPlanning()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">📅 Mon planning</button>
     <div id="tb-menu-wrap" style="position:relative;display:none;">
-      <button id="tb-menu-btn" onclick="toggleTbMenu()" style="background:var(--bg2);border:1px solid var(--b);color:var(--t1);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:15px;line-height:1;" title="Menu">â°</button>
+      <button id="tb-menu-btn" onclick="toggleTbMenu()" style="background:var(--bg2);border:1px solid var(--b);color:var(--t1);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:15px;line-height:1;" title="Menu">☰</button>
       <div id="tb-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg1);border:1px solid var(--b);border-radius:12px;padding:6px;z-index:200;min-width:195px;box-shadow:0 8px 28px rgba(0,0,0,.45);">
-        <button id="cal-btn" onclick="copyCalUrl();closeTbMenu()" class="tb-dd-item" style="display:none;">ð Mon calendrier</button>
-        <button id="demandes-btn" onclick="openMesDemandes();closeTbMenu()" class="tb-dd-item" style="display:none;">ð Mes demandes</button>
-        <button id="echanges-btn" onclick="openMesEchanges();closeTbMenu()" class="tb-dd-item" style="display:none;">ð Mes Ã©changes</button>
+        <button id="cal-btn" onclick="copyCalUrl();closeTbMenu()" class="tb-dd-item" style="display:none;">📅 Mon calendrier</button>
+        <button id="demandes-btn" onclick="openMesDemandes();closeTbMenu()" class="tb-dd-item" style="display:none;">📋 Mes demandes</button>
+        <button id="echanges-btn" onclick="openMesEchanges();closeTbMenu()" class="tb-dd-item" style="display:none;">🔄 Mes échanges</button>
         <button id="desid-btn" onclick="openDesiderata();closeTbMenu()" class="tb-dd-item" style="display:none;">+ Desiderata</button>
         <button id="notif-btn" onclick="toggleNotifications()" class="tb-dd-item" style="display:none;align-items:center;gap:7px;">
           <span id="notif-pill" style="display:inline-flex;align-items:center;width:34px;height:18px;border-radius:9px;background:#4b5563;padding:0 2px;transition:background .25s;flex-shrink:0;position:relative;">
@@ -202,15 +202,15 @@ button{font-family:inherit;}
           <span id="notif-lbl">Notif.</span>
         </button>
         <div style="border-top:1px solid var(--b);margin:5px 0;"></div>
-        <button onclick="logout();closeTbMenu()" class="tb-dd-item" style="color:#f87171;">â DÃ©connexion</button>
+        <button onclick="logout();closeTbMenu()" class="tb-dd-item" style="color:#f87171;">→ Déconnexion</button>
       </div>
     </div>
   </div>
   <div class="month-bar">
-    <button class="mnav" onclick="prevMonth()">â¹</button>
-    <span class="mlbl" id="mlbl">â</span>
-    <button class="mnav" onclick="nextMonth()">âº</button>
-    <span class="exch-pill" id="exch-pill" onclick="togglePanel()">0 Ã©change</span>
+    <button class="mnav" onclick="prevMonth()">‹</button>
+    <span class="mlbl" id="mlbl">—</span>
+    <button class="mnav" onclick="nextMonth()">›</button>
+    <span class="exch-pill" id="exch-pill" onclick="togglePanel()">0 échange</span>
   </div>
   <div id="shift-widget"></div>
   <div id="grid-area"><div class="ld"><div class="sp"></div>Chargement du planning...</div></div>
@@ -219,18 +219,18 @@ button{font-family:inherit;}
 <!-- SESSION OVERLAY -->
 <div id="session-overlay">
   <div class="sess-box">
-    <div class="sess-title">&#x23F1; Session expirÃ©e</div>
+    <div class="sess-title">&#x23F1; Session expirée</div>
     <div class="sess-sub">Entrez votre PIN pour reprendre</div>
-    <input class="sess-pin" id="sess-pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="â¢â¢â¢â¢â¢â¢" oninput="onSessPinInput(this.value)">
+    <input class="sess-pin" id="sess-pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" oninput="onSessPinInput(this.value)">
     <div id="sess-pin-err" class="pin-lockout"></div>
-    <button class="sess-btn" onclick="onSessPinSubmit()">DÃ©verrouiller</button>
+    <button class="sess-btn" onclick="onSessPinSubmit()">Déverrouiller</button>
   </div>
 </div>
 <!-- EXCHANGE PANEL -->
 <div id="exch-panel">
   <div class="ep-hdr">
-    <div class="ep-title">Demandes d'Ã©change</div>
-    <button class="ep-close" onclick="togglePanel()">â</button>
+    <div class="ep-title">Demandes d'échange</div>
+    <button class="ep-close" onclick="togglePanel()">✕</button>
   </div>
   <div id="exch-list"></div>
 </div>
@@ -268,30 +268,30 @@ button{font-family:inherit;}
 
     <!-- Header -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 4px 12px;">
-      <div style="font-size:17px;font-weight:800;color:#e2e8f0;" id="desid-title">ð Desiderata T3 2026</div>
-      <button onclick="closeDesiderata()" style="background:#1e293b;border:none;color:#94a3b8;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:20px;line-height:1;">â</button>
+      <div style="font-size:17px;font-weight:800;color:#e2e8f0;" id="desid-title">📋 Desiderata T3 2026</div>
+      <button onclick="closeDesiderata()" style="background:#1e293b;border:none;color:#94a3b8;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:20px;line-height:1;">✕</button>
     </div>
     <div id="desid-deadline-info" style="background:#1e3a5f;border-radius:10px;padding:10px 14px;font-size:12px;color:#93c5fd;margin-bottom:14px;"></div>
 
-    <!-- CONGÃS -->
+    <!-- CONGÉS -->
     <div class="dsec">
-      <div class="dsec-ttl">ð CongÃ©s souhaitÃ©s</div>
-      <div class="dsec-sub">CLIQUEZ SUR UN 1ER JOUR PUIS SUR LE DERNIER JOUR DE LA PÃRIODE</div>
+      <div class="dsec-ttl">🏖 Congés souhaités</div>
+      <div class="dsec-sub">CLIQUEZ SUR UN 1ER JOUR PUIS SUR LE DERNIER JOUR DE LA PÉRIODE</div>
       <div class="jcal2">
         <div class="jcal2-hdr">
-          <button class="jcal2-nav" onclick="jcalNav('cg',-1)">â¹</button>
+          <button class="jcal2-nav" onclick="jcalNav('cg',-1)">‹</button>
           <div class="jcal2-ttl" id="jcal-cg-lbl"></div>
-          <button class="jcal2-nav" onclick="jcalNav('cg',1)">âº</button>
+          <button class="jcal2-nav" onclick="jcalNav('cg',1)">›</button>
         </div>
         <div class="jcal2-grid" id="jcal-cg-grid"></div>
-        <div class="jcal2-hint" id="jcal-cg-hint">Cliquez pour dÃ©buter une pÃ©riode.</div>
+        <div class="jcal2-hint" id="jcal-cg-hint">Cliquez pour débuter une période.</div>
       </div>
       <div id="desid-cg-list" style="margin-top:8px;"></div>
     </div>
 
     <!-- FORMATIONS -->
     <div class="dsec">
-      <div class="dsec-ttl">ð Formations</div>
+      <div class="dsec-ttl">🎓 Formations</div>
       <div class="dsec-sub"></div>
       <div id="desid-form-list" style="margin-bottom:8px;"></div>
       <button class="dsec-add" onclick="addDesidFormation()">+ Ajouter une formation</button>
@@ -299,56 +299,56 @@ button{font-family:inherit;}
         <input type="text" id="desid-form-txt" placeholder="Description de la formation..." style="width:100%;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:8px 10px;color:#e2e8f0;font-size:12px;box-sizing:border-box;">
         <div style="display:flex;gap:6px;margin-top:6px;">
           <input type="date" id="desid-form-date" style="flex:1;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:7px;color:#e2e8f0;font-size:12px;">
-          <button onclick="confirmDesidFormation()" style="background:#c9983a;color:#000;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;">â</button>
-          <button onclick="cancelDesidFormation()" style="background:#1e293b;border:none;color:#94a3b8;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:12px;">â</button>
+          <button onclick="confirmDesidFormation()" style="background:#c9983a;color:#000;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;">✓</button>
+          <button onclick="cancelDesidFormation()" style="background:#1e293b;border:none;color:#94a3b8;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:12px;">✕</button>
         </div>
       </div>
     </div>
 
     <!-- REPOS -->
     <div class="dsec">
-      <div class="dsec-ttl">ð´ Repos souhaitÃ©s</div>
-      <div class="dsec-sub">SÃLECTION MULTIPLE â CLIQUEZ SUR LES JOURS</div>
+      <div class="dsec-ttl">😴 Repos souhaités</div>
+      <div class="dsec-sub">SÉLECTION MULTIPLE — CLIQUEZ SUR LES JOURS</div>
       <div class="jcal2">
         <div class="jcal2-hdr">
-          <button class="jcal2-nav" onclick="jcalNav('ind',-1)">â¹</button>
+          <button class="jcal2-nav" onclick="jcalNav('ind',-1)">‹</button>
           <div class="jcal2-ttl" id="jcal-ind-lbl"></div>
-          <button class="jcal2-nav" onclick="jcalNav('ind',1)">âº</button>
+          <button class="jcal2-nav" onclick="jcalNav('ind',1)">›</button>
         </div>
         <div class="jcal2-grid" id="jcal-ind-grid"></div>
       </div>
       <div id="desid-ind-list" style="margin-top:8px;font-size:12px;color:#94a3b8;"></div>
     </div>
 
-    <!-- PRÃFÃRENCES -->
+    <!-- PRÉFÉRENCES -->
     <div class="dsec">
-      <div class="dsec-ttl">ð PrÃ©fÃ©rences de postes</div>
-      <div class="dsec-sub">CLIQUEZ SUR UN POSTE POUR UN JOUR DONNÃ</div>
+      <div class="dsec-ttl">🔔 Préférences de postes</div>
+      <div class="dsec-sub">CLIQUEZ SUR UN POSTE POUR UN JOUR DONNÉ</div>
       <!-- Nav mois -->
       <div class="jcal2-hdr" style="margin-bottom:8px;">
-        <button class="jcal2-nav" onclick="jcalNav('pref',-1)">â¹</button>
+        <button class="jcal2-nav" onclick="jcalNav('pref',-1)">‹</button>
         <div class="jcal2-ttl" id="jcal-pref-lbl"></div>
-        <button class="jcal2-nav" onclick="jcalNav('pref',1)">âº</button>
+        <button class="jcal2-nav" onclick="jcalNav('pref',1)">›</button>
       </div>
-      <!-- Grille postes Ã jours -->
+      <!-- Grille postes × jours -->
       <div id="desid-pref-grid" style="overflow-x:auto;"></div>
-      <!-- RÃ©cap sÃ©lections -->
+      <!-- Récap sélections -->
       <div id="desid-pref-list" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;"></div>
     </div>
 
     <!-- REMARQUES -->
     <div class="dsec">
-      <div class="dsec-ttl">ð¬ Remarques libres</div>
-      <textarea id="desid-rem" style="width:100%;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:10px;color:#e2e8f0;font-size:12px;resize:vertical;min-height:80px;box-sizing:border-box;" placeholder="Informations complÃ©mentaires..."></textarea>
+      <div class="dsec-ttl">💬 Remarques libres</div>
+      <textarea id="desid-rem" style="width:100%;background:#1a2332;border:1px solid #2d3d54;border-radius:8px;padding:10px;color:#e2e8f0;font-size:12px;resize:vertical;min-height:80px;box-sizing:border-box;" placeholder="Informations complémentaires..."></textarea>
     </div>
 
     <!-- Boutons -->
     <div style="display:flex;gap:10px;justify-content:flex-end;padding:4px 0 20px;">
       <button onclick="closeDesiderata()" style="background:none;border:1px solid #2d3d54;color:#94a3b8;border-radius:10px;padding:11px 22px;cursor:pointer;font-size:13px;">Annuler</button>
-      <button onclick="submitDesiderata()" style="background:#c9983a;color:#000;border:none;border-radius:10px;padding:11px 22px;font-weight:700;cursor:pointer;font-size:13px;">ð¤ Envoyer</button>
+      <button onclick="submitDesiderata()" style="background:#c9983a;color:#000;border:none;border-radius:10px;padding:11px 22px;font-weight:700;cursor:pointer;font-size:13px;">📤 Envoyer</button>
     </div>
 
-    <!-- champs cachÃ©s compatibilitÃ© -->
+    <!-- champs cachés compatibilité -->
     <input type="date" id="desid-cg-start" style="display:none;">
     <input type="date" id="desid-cg-end" style="display:none;">
     <input type="date" id="desid-ind-date" style="display:none;">
@@ -359,8 +359,8 @@ button{font-family:inherit;}
 <div id="demandes-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMesDemandes()">
   <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-size:15px;font-weight:700;">ð Mes demandes de desiderata</div>
-      <button onclick="closeMesDemandes()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">â</button>
+      <div style="font-size:15px;font-weight:700;">📋 Mes demandes de desiderata</div>
+      <button onclick="closeMesDemandes()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
     </div>
     <div id="demandes-list"></div>
   </div>
@@ -369,22 +369,22 @@ button{font-family:inherit;}
 <!-- PROPOSE MODAL -->
 <div id="modal-bg" onclick="if(event.target===this)closeModal()">
   <div id="modal">
-    <div class="modal-t" id="mt">Proposer un Ã©change</div>
+    <div class="modal-t" id="mt">Proposer un échange</div>
     <div class="modal-s" id="ms"></div>
     <div class="mfield">
       <span class="mlbl">Destinataire</span>
       <div class="mradio-g">
-        <div class="mradio on" id="r-all" onclick="setTarget('all')">ð¥ Tous les mÃ©decins</div>
-        <div class="mradio" id="r-specific" onclick="setTarget('specific')">ð¤ MÃ©decin en particulier</div>
+        <div class="mradio on" id="r-all" onclick="setTarget('all')">👥 Tous les médecins</div>
+        <div class="mradio" id="r-specific" onclick="setTarget('specific')">👤 Médecin en particulier</div>
       </div>
     </div>
     <div class="mfield" id="m-target-wrap" style="display:none;">
-      <span class="mlbl">Choisir le mÃ©decin</span>
+      <span class="mlbl">Choisir le médecin</span>
       <select id="m-target-doc" class="mtxt" style="padding:8px;font-size:13px;"></select>
     </div>
     <div class="mfield">
       <span class="mlbl">Message (optionnel)</span>
-      <textarea class="mtxt" id="m-msg" placeholder="PrÃ©cisez votre demande..."></textarea>
+      <textarea class="mtxt" id="m-msg" placeholder="Précisez votre demande..."></textarea>
     </div>
     <div class="macts">
       <button class="mcancel" onclick="closeModal()">Annuler</button>
@@ -396,9 +396,9 @@ button{font-family:inherit;}
 <div id="toast"></div>
 
 <script>
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// CONFIG â Remplacer par vos valeurs depuis supabase.com
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
+// CONFIG — Remplacer par vos valeurs depuis supabase.com
+// ══════════════════════════════════════════════════════════
 const CFG = {
   url: 'https://zzqbcjtrtisexyokezaq.supabase.co',
   key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cWJjanRydGlzZXh5b2tlemFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDg1MzgsImV4cCI6MjA5MDc4NDUzOH0.m8DBLJ1T3gOYuZL9sGUDmrTvUHAZ6tRAIfJYIVUzGIE',
@@ -406,9 +406,9 @@ const CFG = {
   gest_email: 'sorcegiuseppepro@gmail.com'
 };
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // STATE
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 let sb, doctors=[], me=null, selectedDoc=null;
 let planning=null, exchanges=[];
 let cy=new Date().getFullYear(), cm=new Date().getMonth();
@@ -419,20 +419,20 @@ var SESS_TIMEOUT=25*60*1000;
 var PIN_MAX_ATTEMPTS=5;
 var _pinAttempts=0, _pinLockedUntil=0;
 
-const MO=['Janvier','FÃ©vrier','Mars','Avril','Mai','Juin',
-          'Juillet','AoÃ»t','Septembre','Octobre','Novembre','DÃ©cembre'];
+const MO=['Janvier','Février','Mars','Avril','Mai','Juin',
+          'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const DS=['Di','Lu','Ma','Me','Je','Ve','Sa'];
 const SEC_ORDER=['jour','soir','nuit','we'];
-const SEC_LBL={jour:'JOURNÃE SEMAINE',soir:'SOIRÃE',nuit:'GARDES NUIT SEM.',we:'WEEK-END'};
+const SEC_LBL={jour:'JOURNÉE SEMAINE',soir:'SOIRÉE',nuit:'GARDES NUIT SEM.',we:'WEEK-END'};
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // INIT
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 async function init(){
   if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW:',e));}
 
   if(CFG.url==='VOTRE_SUPABASE_URL'){
-    document.getElementById('doc-grid').innerHTML='<div class="ld" style="color:var(--err);">â  Configurez les clÃ©s Supabase dans le fichier viewer (variables CFG).</div>';
+    document.getElementById('doc-grid').innerHTML='<div class="ld" style="color:var(--err);">⚠ Configurez les clés Supabase dans le fichier viewer (variables CFG).</div>';
     return;
   }
   sb=supabase.createClient(CFG.url,CFG.key);
@@ -441,9 +441,9 @@ async function init(){
   await loadDoctors();
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // AUTH
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 async function loadDoctors(){
   try{
     const {data,error}=await sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin').eq('hospital_id',CFG.hospital).eq('active',true).order('role').order('lastname');
@@ -457,13 +457,13 @@ async function loadDoctors(){
 
 function renderLoginDocs(){
   const g=document.getElementById('doc-grid');
-  if(!doctors.length){g.innerHTML='<div class="ld">Aucun mÃ©decin trouvÃ©. Le planning n\'a pas encore Ã©tÃ© publiÃ©.</div>';return;}
+  if(!doctors.length){g.innerHTML='<div class="ld">Aucun médecin trouvé. Le planning n\'a pas encore été publié.</div>';return;}
   g.innerHTML=doctors.map(d=>`
     <div class="doc-card" id="dc-${d.id}" onclick="selectDoc(${d.id})">
       <div class="doc-av" style="background:${d.color}33;color:${d.color};">${ini(d,doctors)}</div>
       <div><div class="doc-nm">${d.lastname}</div><div class="doc-rl">${shortRole(d.role)}</div></div>
     </div>`).join('');
-  // PrÃ©-sÃ©lection via paramÃ¨tre URL ?doc=ID (lien email)
+  // Pré-sélection via paramètre URL ?doc=ID (lien email)
   const _urlDoc = new URLSearchParams(window.location.search).get('doc');
   if(_urlDoc){
     const _preId = parseInt(_urlDoc);
@@ -501,7 +501,7 @@ function doLogin(){
     var errEl=document.getElementById('pin-err');
     if(_pinAttempts>=PIN_MAX_ATTEMPTS){
       _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
-      errEl.textContent='5 tentatives Ã©chouÃ©es. BloquÃ© 30s.';
+      errEl.textContent='5 tentatives échouées. Bloqué 30s.';
     }else{
       errEl.textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
     }
@@ -548,7 +548,7 @@ async function openDesiderata(){
   const nextQNum=nextQ>4?1:nextQ;
   const qLabel=['T1','T2','T3','T4'][nextQNum-1];
   const qKey='t'+nextQNum;
-  document.getElementById('desid-title').textContent='ð Desiderata '+qLabel+' '+nextQYear;
+  document.getElementById('desid-title').textContent='📋 Desiderata '+qLabel+' '+nextQYear;
   document.getElementById('desid-bg').style.display='block';
   document.getElementById('desid-bg').dataset.quarter=nextQNum;
   document.getElementById('desid-bg').dataset.year=nextQYear;
@@ -562,7 +562,7 @@ async function openDesiderata(){
   jcalRender('cg'); jcalRender('ind'); jcalRender('pref'); jcalRender('pref');
   // Deadline
   const info=document.getElementById('desid-deadline-info');
-  info.innerHTML='â³ Chargement de la date limite...';
+  info.innerHTML='⏳ Chargement de la date limite...';
   let deadline=null;
   try{
     const {data}=await sb.from('hospital_config').select('desiderata_deadlines').eq('hospital_id',CFG.hospital).maybeSingle();
@@ -584,11 +584,11 @@ async function openDesiderata(){
     const dl=new Date(deadline+'T23:59:59');
     const isPast=dl<new Date();
     info.innerHTML=isPast
-      ?`â Date limite dÃ©passÃ©e (${deadline}) â soumission fermÃ©e.`
-      :`ð Date limite de soumission : ${deadline}`;
+      ?`⛔ Date limite dépassée (${deadline}) — soumission fermée.`
+      :`📅 Date limite de soumission : ${deadline}`;
     document.querySelector('#desid-bg button[onclick="submitDesiderata()"]').style.display=isPast?'none':'';
   } else {
-    info.innerHTML='â¹ Aucune date limite dÃ©finie par le gestionnaire.';
+    info.innerHTML='ℹ Aucune date limite définie par le gestionnaire.';
   }
 }
 
@@ -597,11 +597,11 @@ function closeDesiderata(){
   _cgSelStart=null;
 }
 
-// ââ Calendrier state ââ
+// ── Calendrier state ──
 let _jcalCgY=new Date().getFullYear(), _jcalCgM=new Date().getMonth();
 let _jcalIndY=new Date().getFullYear(), _jcalIndM=new Date().getMonth();
 let _cgSelStart=null;
-const DCAL_MO=['Janvier','FÃ©vrier','Mars','Avril','Mai','Juin','Juillet','AoÃ»t','Septembre','Octobre','Novembre','DÃ©cembre'];
+const DCAL_MO=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 // Semaine Lun-Mar-Mer-Jeu-Ven-Sam-Dim
 const DCAL_DS2=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 
@@ -632,7 +632,7 @@ function jcalRender(type){
   lbl.textContent=DCAL_MO[m]+' '+y;
   const today=new Date().toISOString().slice(0,10);
   const dmax=new Date(y,m+1,0).getDate();
-  // getDay() : 0=Di,1=Lu,...,6=Sa â dÃ©calage Lun=0
+  // getDay() : 0=Di,1=Lu,...,6=Sa → décalage Lun=0
   let d1dow=new Date(y,m,1).getDay(); // 0=Di
   // convertir en index Lun-based: Lun=0,...,Di=6
   const d1lun=(d1dow+6)%7;
@@ -664,7 +664,7 @@ function jcalClickCg(dk){
   if(!_cgSelStart){
     _cgSelStart=dk;
     const hint=document.getElementById('jcal-cg-hint');
-    if(hint) hint.textContent='Cliquez sur le dernier jour de la pÃ©riode';
+    if(hint) hint.textContent='Cliquez sur le dernier jour de la période';
     jcalRender('cg');
   } else {
     const s=_cgSelStart<=dk?_cgSelStart:dk;
@@ -673,14 +673,14 @@ function jcalClickCg(dk){
     if(overlap){
       _cgSelStart=null;
       const hint=document.getElementById('jcal-cg-hint');
-      if(hint) hint.textContent='â  Cette pÃ©riode chevauche une pÃ©riode dÃ©jÃ  sÃ©lectionnÃ©e.';
+      if(hint) hint.textContent='⚠ Cette période chevauche une période déjà sélectionnée.';
       jcalRender('cg');
       return;
     }
     _desidCgs.push({start:s,end:e});
     _cgSelStart=null;
     const hint=document.getElementById('jcal-cg-hint');
-    if(hint) hint.textContent='Cliquez pour dÃ©buter une pÃ©riode.';
+    if(hint) hint.textContent='Cliquez pour débuter une période.';
     renderDesidLists(); jcalRender('cg');
   }
 }
@@ -726,7 +726,7 @@ function confirmDesidFormation(){
   renderDesidLists();
 }
 
-// PrÃ©fÃ©rences â grille postes Ã jours
+// Préférences — grille postes × jours
 let _jcalPrefY=new Date().getFullYear(), _jcalPrefM=new Date().getMonth();
 
 function jcalRender_pref(){
@@ -761,7 +761,7 @@ function jcalRender_pref(){
       const sel=_desidPrefs.some(x=>x.date===dk&&x.poste===p.id);
       h+=`<td onclick="toggleDesidPref('${dk}','${p.id}','${p.name||p.id}')"
         style="padding:2px;text-align:center;cursor:pointer;background:${sel?'#c9983a22':'transparent'};border:1px solid ${sel?'#c9983a':'#1e293b'};border-radius:3px;">
-        ${sel?`<span style="color:#c9983a;font-size:10px;font-weight:700;">â</span>`:''}
+        ${sel?`<span style="color:#c9983a;font-size:10px;font-weight:700;">✓</span>`:''}
       </td>`;
     });
     h+=`</tr>`;
@@ -778,27 +778,27 @@ function toggleDesidPref(dk,postId,postName){
   jcalRender('pref');
 }
 
-function addDesidPref(){ /* no-op â grille interactive */ }
+function addDesidPref(){ /* no-op — grille interactive */ }
 function cancelDesidPref(){ /* no-op */ }
 function confirmDesidPref(){ /* no-op */ }
 
 function renderDesidLists(){
   const fmtD=dk=>{if(!dk)return'';const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
-  // CongÃ©s
+  // Congés
   document.getElementById('desid-cg-list').innerHTML=_desidCgs.map((c,i)=>
-    `<div class="dtag">ð ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' â '+fmtD(c.end)}<button onclick="_desidCgs.splice(${i},1);renderDesidLists();jcalRender('cg')">â</button></div>`
+    `<div class="dtag">🏖 ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}<button onclick="_desidCgs.splice(${i},1);renderDesidLists();jcalRender('cg')">✕</button></div>`
   ).join('');
   // Indispos
-  const indTxt=_desidInds.length?_desidInds.map(d=>fmtD(d.date)).join(', '):'Aucun jour sÃ©lectionnÃ©';
+  const indTxt=_desidInds.length?_desidInds.map(d=>fmtD(d.date)).join(', '):'Aucun jour sélectionné';
   document.getElementById('desid-ind-list').innerHTML=
     `<div style="font-size:11px;color:${_desidInds.length?'#a78bfa':'#64748b'};margin-top:4px;">${indTxt}</div>`;
   // Formations
   document.getElementById('desid-form-list').innerHTML=_desidForms.map((f,i)=>
-    `<div class="dtag">ð ${f.desc}${f.date?' ('+fmtD(f.date)+')':''}<button onclick="_desidForms.splice(${i},1);renderDesidLists()">â</button></div>`
+    `<div class="dtag">🎓 ${f.desc}${f.date?' ('+fmtD(f.date)+')':''}<button onclick="_desidForms.splice(${i},1);renderDesidLists()">✕</button></div>`
   ).join('');
-  // PrÃ©fÃ©rences
+  // Préférences
   document.getElementById('desid-pref-list').innerHTML=_desidPrefs.map((p,i)=>
-    `<div class="dtag">ð ${fmtD(p.date)} â ${p.posteName||p.poste}<button onclick="_desidPrefs.splice(${i},1);renderDesidLists();jcalRender('pref')">â</button></div>`
+    `<div class="dtag">🔔 ${fmtD(p.date)} — ${p.posteName||p.poste}<button onclick="_desidPrefs.splice(${i},1);renderDesidLists();jcalRender('pref')">✕</button></div>`
   ).join('');
 }
 
@@ -823,17 +823,17 @@ async function submitDesiderata(){
   });
   if(error){alert('Erreur : '+error.message);return;}
   closeDesiderata();
-  toast('â Desiderata envoyÃ©s au gestionnaire !');
+  toast('✅ Desiderata envoyés au gestionnaire !');
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // MES DEMANDES
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 async function openMesDemandes(){
   if(!me) return;
   document.getElementById('demandes-bg').style.display='block';
   const list=document.getElementById('demandes-list');
-  list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">â³ Chargement...</div>';
+  list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">⏳ Chargement...</div>';
   try{
     const {data,error}=await sb.from('desiderata_requests')
       .select('*')
@@ -848,22 +848,22 @@ async function openMesDemandes(){
     const fmtD=dk=>{const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
     const fmtDt=s=>new Date(s).toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'});
     const stBadge=st=>{
-      if(st==='pending') return '<span style="background:#fbbf2433;color:#fbbf24;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">â³ En attente</span>';
-      if(st==='validated'||st==='accepted') return '<span style="background:#22c55e33;color:#22c55e;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">â ValidÃ©e</span>';
-      if(st==='refused'||st==='rejected') return '<span style="background:#ef444433;color:#ef4444;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">â RefusÃ©e</span>';
+      if(st==='pending') return '<span style="background:#fbbf2433;color:#fbbf24;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">⏳ En attente</span>';
+      if(st==='validated'||st==='accepted') return '<span style="background:#22c55e33;color:#22c55e;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">✅ Validée</span>';
+      if(st==='refused'||st==='rejected') return '<span style="background:#ef444433;color:#ef4444;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">✗ Refusée</span>';
       return `<span style="background:var(--bg3);color:var(--t3);font-size:11px;border-radius:6px;padding:2px 8px;">${st}</span>`;
     };
     const Q=['T1','T2','T3','T4'];
     list.innerHTML=data.map(r=>{
-      const cgs=(r.conges||[]).map(c=>`ð ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' â '+fmtD(c.end)}`).join('<br>');
-      const inds=(r.indispos||[]).map(i=>`ð« ${fmtD(i.date||i.start)}`).join('<br>');
-      const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">ð¬ ${r.remarques}</div>`:'';
+      const cgs=(r.conges||[]).map(c=>`🏖 ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}`).join('<br>');
+      const inds=(r.indispos||[]).map(i=>`🚫 ${fmtD(i.date||i.start)}`).join('<br>');
+      const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">💬 ${r.remarques}</div>`:'';
       return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:10px;border-left:3px solid ${r.status==='pending'?'#fbbf24':r.status==='validated'||r.status==='accepted'?'#22c55e':'#ef4444'};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <span style="font-size:13px;font-weight:700;">${Q[(r.quarter||1)-1]} ${r.year}</span>
           ${stBadge(r.status)}
         </div>
-        <div style="font-size:12px;color:var(--t2);line-height:1.8;">${[cgs,inds].filter(Boolean).join('<br>')||'<i>Aucun dÃ©tail</i>'}</div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.8;">${[cgs,inds].filter(Boolean).join('<br>')||'<i>Aucun détail</i>'}</div>
         ${rem}
         <div style="font-size:10px;color:var(--t3);margin-top:6px;">Soumis le ${fmtDt(r.submitted_at||r.created_at||r.updated_at)}</div>
       </div>`;
@@ -883,13 +883,13 @@ function copyCalUrl(){
   const url=base+'?doc='+me.id+'&pin='+(me.pin||'')+'&h='+CFG.hospital;
   const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
   if(isIOS){
-    // Sur iOS : ouvrir l'URL dÃ©clenche l'ajout au calendrier natif
+    // Sur iOS : ouvrir l'URL déclenche l'ajout au calendrier natif
     window.location.href=url;
   } else {
     navigator.clipboard.writeText(url).then(()=>{
       const btn=document.getElementById('cal-btn');
       const prev=btn.textContent;
-      btn.textContent='â URL copiÃ©e !';
+      btn.textContent='✓ URL copiée !';
       setTimeout(()=>btn.textContent=prev,2500);
     }).catch(()=>{
       prompt('Copiez cette URL et abonnez-vous dans votre calendrier :',url);
@@ -918,9 +918,9 @@ function showMain(){
   logAccess('login','');
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // DATA
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 async function loadAll(){
   document.getElementById('grid-area').innerHTML='<div class="ld"><div class="sp"></div>Chargement...</div>';
   document.getElementById('shift-widget').innerHTML='';
@@ -949,26 +949,26 @@ async function loadAll(){
         var age=Math.round((Date.now()-cached.ts)/60000);
         var ageStr=age<60?age+'min':Math.round(age/60)+'h';
         var dt=new Date(cached.ts).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-        document.getElementById('grid-area').innerHTML='<div class="offline-banner">ðµ Mode hors-ligne â donnÃ©es du '+dt+' (il y a '+ageStr+')</div>';
+        document.getElementById('grid-area').innerHTML='<div class="offline-banner">📵 Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
         if(planning){renderGrid();renderShiftWidget();}
       }else{
         var isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
-        var msg=isNet?'Impossible de joindre le serveur. VÃ©rifiez votre connexion.':'Erreur serveurÂ : '+e.message;
-        document.getElementById('grid-area').innerHTML='<div class="err-banner"><div>â ï¸ '+msg+'</div><button class="err-retry" onclick="loadAll()">â» RÃ©essayer</button></div>';
+        var msg=isNet?'Impossible de joindre le serveur. Vérifiez votre connexion.':'Erreur serveur : '+e.message;
+        document.getElementById('grid-area').innerHTML='<div class="err-banner"><div>⚠️ '+msg+'</div><button class="err-retry" onclick="loadAll()">↻ Réessayer</button></div>';
       }
       renderBadge();
     }
   })();
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // REALTIME
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 function subscribeRT(){
   if(rtChannel){sb.removeChannel(rtChannel);rtChannel=null;}
   rtChannel=sb.channel('jlx_exchanges_'+CFG.hospital)
     .on('postgres_changes',{event:'*',schema:'public',table:'exchange_requests'},payload=>{
-      // Recharger toutes les demandes (filtre cÃ´tÃ© client)
+      // Recharger toutes les demandes (filtre côté client)
       sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
         .then(({data})=>{
           exchanges=data||[];
@@ -976,9 +976,9 @@ function subscribeRT(){
           if(document.getElementById('exch-panel').classList.contains('show'))renderPanel();
           const ev=payload.eventType;
           const n=payload.new||{};
-          if(ev==='INSERT'&&n.proposer_id!==me.id) toast('ð¬ Nouvelle demande d\'Ã©change !');
-          if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('â Votre Ã©change a Ã©tÃ© acceptÃ© !');
-          if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('â Ãchange confirmÃ© !');
+          if(ev==='INSERT'&&n.proposer_id!==me.id) toast('📬 Nouvelle demande d\'échange !');
+          if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('✅ Votre échange a été accepté !');
+          if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('✅ Échange confirmé !');
         });
     })
     .subscribe((status)=>{
@@ -986,9 +986,9 @@ function subscribeRT(){
     });
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // RENDER GRID
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 function renderGrid(){
   if(!planning)return;
   const {shifts,posts}=planning;
@@ -1010,7 +1010,7 @@ function renderGrid(){
     h+=`<tr class="sr"><td colspan="${d2+1}">${SEC_LBL[sec]}</td></tr>`;
     for(const p of sp){
       h+='<tr>';
-      h+=`<td class="pc"><span class="pdot" style="background:${p.color||'#888'}"></span><span class="pn">${p.full||p.name}</span><span class="ph">${p.start}â${p.end}</span></td>`;
+      h+=`<td class="pc"><span class="pdot" style="background:${p.color||'#888'}"></span><span class="pn">${p.full||p.name}</span><span class="ph">${p.start}–${p.end}</span></td>`;
       for(let d=1;d<=d2;d++){
         const dk=dkStr(cy,cm,d),dw=new Date(dk+'T12:00:00').getDay(),we=dw===0||dw===6;
         const isTd=dk===today;
@@ -1033,7 +1033,7 @@ function renderGrid(){
   document.getElementById('grid-area').innerHTML=h;
 }
 
-// ââââââââ SHIFT WIDGET ââââââââ
+// ════════ SHIFT WIDGET ════════
 function renderShiftWidget(){
   var el=document.getElementById('shift-widget');
   if(!el||!planning||!me)return;
@@ -1055,7 +1055,7 @@ function renderShiftWidget(){
   if(todayS.length){
     var p=todayS[0].p;
     el.className='shift-widget shift-today';
-    el.innerHTML='<span style="font-size:20px">ð´</span><div><strong>Shift aujourd\'huiÂ !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' Â· '+p.start+'â'+p.end+'</span></div>';
+    el.innerHTML='<span style="font-size:20px">🔴</span><div><strong>Shift aujourd\'hui !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' · '+p.start+'–'+p.end+'</span></div>';
   }else if(nextS){
     var dt=new Date(nextS.dk+'T12:00:00');
     var diff=Math.round((dt.getTime()-new Date().setHours(0,0,0,0))/86400000);
@@ -1063,11 +1063,11 @@ function renderShiftWidget(){
     var dlbl=DS2[dt.getDay()]+' '+dt.getDate()+' '+MO[dt.getMonth()].toLowerCase().slice(0,3)+'.';
     var pp=nextS.p;
     el.className='shift-widget shift-next';
-    el.innerHTML='<span style="font-size:20px">ð</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' â '+(pp.full||pp.name)+' '+pp.start+'â'+pp.end+' Â· <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
+    el.innerHTML='<span style="font-size:20px">📅</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' — '+(pp.full||pp.name)+' '+pp.start+'–'+pp.end+' · <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
   }else{el.className='';el.innerHTML='';}
 }
 
-// ââââââââ SESSION TIMEOUT ââââââââ
+// ════════ SESSION TIMEOUT ════════
 function initSession(){
   _sessActive=true;resetSessTimer();
   ['click','touchstart','keydown'].forEach(function(ev){document.addEventListener(ev,resetSessTimer,{passive:true});});
@@ -1092,7 +1092,7 @@ function onSessPinSubmit(){
     _pinAttempts++;
     if(_pinAttempts>=PIN_MAX_ATTEMPTS){
       _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
-      document.getElementById('sess-pin-err').textContent='5 tentatives Ã©chouÃ©es. BloquÃ© 30s.';
+      document.getElementById('sess-pin-err').textContent='5 tentatives échouées. Bloqué 30s.';
       logAccess('pin_lockout','');
     }else{
       document.getElementById('sess-pin-err').textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
@@ -1101,21 +1101,21 @@ function onSessPinSubmit(){
   }
 }
 
-// ââââââââ LOGS RGPD ââââââââ
+// ════════ LOGS RGPD ════════
 function logAccess(action,detail){
   if(!sb||!me)return;
   try{sb.from('access_logs').insert({hospital_id:CFG.hospital,doctor_id:me.id,action:action,detail:detail||'',ts:new Date().toISOString()}).then(function(){});}catch(e){}
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // EXCHANGES
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 function renderBadge(){
   const open=exchanges.filter(r=>r.status==='open').length;
   const act=exchanges.filter(r=>(r.status==='accepted'&&r.proposer_id===me.id)||(r.status==='open'&&r.proposer_id!==me.id)).length;
   const pill=document.getElementById('exch-pill');
   if(open>0){
-    pill.textContent=act>0?`${act} action(s)`:`${open} Ã©change(s)`;
+    pill.textContent=act>0?`${act} action(s)`:`${open} échange(s)`;
     pill.classList.add('show');
     pill.classList.toggle('urgent',act>0);
   }else{pill.classList.remove('show');}
@@ -1136,18 +1136,18 @@ function renderPanel(){
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
-    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">â Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">â Refuser</button>`;
+    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
-    if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">â Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
+    if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">✓ Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
     let stLbl='';
     if(r.status==='accepted'&&!isMe2&&!isMeAcc)stLbl='<span class="xstatus accepted">En attente de confirmation</span>';
-    if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">â ConfirmÃ©</span>';
+    if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">✓ Confirmé</span>';
     return `<div class="xcard">
       <div class="xcard-hdr">
         <div style="font-size:12px;font-weight:600;">${prop?prop.firstname+' '+prop.lastname:'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
-        <span class="xbadge exch">ð Ãchange</span>
+        <span class="xbadge exch">🔄 Échange</span>
       </div>
-      <div class="xinfo">${post?post.full||post.name:r.proposer_post} Â· ${fmtDate(r.proposer_date)}${acc?`<br>AcceptÃ© par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
+      <div class="xinfo">${post?post.full||post.name:r.proposer_post} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
       ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
@@ -1156,11 +1156,11 @@ function renderPanel(){
 
 async function acceptX(id){
   try{
-    // RÃ©cupÃ©rer les infos de la demande avant update
+    // Récupérer les infos de la demande avant update
     const {data:xr}=await sb.from('exchange_requests').select('proposer_id,proposer_date,proposer_post').eq('id',id).maybeSingle();
     const {error}=await sb.from('exchange_requests').update({status:'accepted',acceptor_id:me.id,accepted_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
-    toast('Demande acceptÃ©e â en attente de confirmation.');
+    toast('Demande acceptée — en attente de confirmation.');
     // Push au proposeur
     try {
       if(xr) {
@@ -1171,8 +1171,8 @@ async function acceptX(id){
           body:JSON.stringify({
             hospital: CFG.hospital,
             doctor_ids: [String(xr.proposer_id)],
-            title: 'â Demande acceptÃ©e',
-            message: me.firstname+' '+me.lastname+' a acceptÃ© votre demande dâÃ©change â '+_postName,
+            title: '✓ Demande acceptée',
+            message: me.firstname+' '+me.lastname+' a accepté votre demande d’échange — '+_postName,
             url: 'https://julandrex.github.io/julandrex-viewer/'
           })
         }).catch(()=>{});
@@ -1181,7 +1181,7 @@ async function acceptX(id){
     // Notifier le gestionnaire
     if(CFG.gest_email && xr){
       const post=planning?.posts?.find(p=>p.id===xr.proposer_post);
-      // RÃ©cupÃ©rer le nom du proposant
+      // Récupérer le nom du proposant
       const {data:proposer}=await sb.from('doctors').select('firstname,lastname').eq('id',xr.proposer_id).maybeSingle();
       fetch(CFG.url+'/functions/v1/send-notification',{
         method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
@@ -1206,7 +1206,7 @@ async function confirmX(id){
   try{
     const {error}=await sb.from('exchange_requests').update({status:'confirmed',confirmed_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
-    toast('â Ãchange confirmÃ© !');
+    toast('✓ Échange confirmé !');
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
@@ -1214,22 +1214,22 @@ async function cancelX(id){
   try{
     const {error}=await sb.from('exchange_requests').update({status:'cancelled',cancelled_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
-    toast('Demande annulÃ©e.');
+    toast('Demande annulée.');
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // MODAL
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 function openModal(dk,pid){
   mDate=dk;mPost=pid;
   const post=planning?.posts?.find(p=>p.id===pid);
-  document.getElementById('ms').textContent=(post?post.full||post.name:pid)+' Â· '+fmtDate(dk);
+  document.getElementById('ms').textContent=(post?post.full||post.name:pid)+' · '+fmtDate(dk);
   document.getElementById('m-msg').value='';
   setTarget('all');
-  // Remplir le sÃ©lecteur de mÃ©decins (hors soi-mÃªme)
+  // Remplir le sélecteur de médecins (hors soi-même)
   const sel=document.getElementById('m-target-doc');
-  sel.innerHTML=doctors.filter(d=>d.id!==me.id).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} â ${shortRole(d.role)}</option>`).join('');
+  sel.innerHTML=doctors.filter(d=>d.id!==me.id).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
   document.getElementById('modal-bg').classList.add('show');
 }
 
@@ -1256,14 +1256,14 @@ async function submitExchange(){
     });
     if(error)throw error;
     closeModal();
-    toast(targetDocId?'Demande envoyÃ©e au mÃ©decin ciblÃ© !':'Demande envoyÃ©e Ã  tous les mÃ©decins !');
+    toast(targetDocId?'Demande envoyée au médecin ciblé !':'Demande envoyée à tous les médecins !');
     // Push notification au(x) destinataire(s)
     try {
       const _postName = planning?.posts?.find(p=>p.id===mPost)?.full || mPost;
       const _pushPayload = {
         hospital: CFG.hospital,
-        title: 'ð Demande dâÃ©change',
-        message: me.firstname+' '+me.lastname+' vous propose un Ã©change â '+_postName,
+        title: '🔄 Demande d’échange',
+        message: me.firstname+' '+me.lastname+' vous propose un échange — '+_postName,
         url: 'https://julandrex.github.io/julandrex-viewer/'
       };
       if(targetDocId) {
@@ -1275,7 +1275,7 @@ async function submitExchange(){
         body:JSON.stringify(_pushPayload)
       }).catch(()=>{});
     } catch(e){}
-    // Notifier le(s) destinataire(s) de l'Ã©change
+    // Notifier le(s) destinataire(s) de l'échange
     const post=planning?.posts?.find(p=>p.id===mPost);
     const _notifData={
       type:'exchange_requested',
@@ -1287,27 +1287,27 @@ async function submitExchange(){
       body:JSON.stringify({..._notifData,to_email:email,to_name:name,doctor_id:docId})
     }).catch(()=>{});
     if(targetDocId){
-      // Ãchange ciblÃ© â notifier uniquement ce mÃ©decin
+      // Échange ciblé → notifier uniquement ce médecin
       sb.from('doctors').select('id,email,firstname,lastname').eq('id',targetDocId).maybeSingle()
         .then(({data:d})=>{ if(d?.email) _sendNotif(d.email,d.firstname+' '+d.lastname,d.id); });
     } else {
-      // Ãchange ouvert Ã  tous â notifier tous les mÃ©decins actifs avec un email
+      // Échange ouvert à tous → notifier tous les médecins actifs avec un email
       sb.from('doctors').select('id,email,firstname,lastname').eq('active',true).eq('hospital_id',CFG.hospital).not('email','is',null)
         .then(({data:docs})=>{ (docs||[]).filter(d=>d.email&&d.id!==me.id).forEach(d=>_sendNotif(d.email,d.firstname+' '+d.lastname,d.id)); });
     }
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // NAV
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 function prevMonth(){cm--;if(cm<0){cm=11;cy--;}updateMonthLbl();loadAll();}
 function nextMonth(){cm++;if(cm>11){cm=0;cy++;}updateMonthLbl();loadAll();}
 function updateMonthLbl(){document.getElementById('mlbl').textContent=MO[cm]+' '+cy;}
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // UTILS
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 function dkStr(y,m,d){return y+'-'+('0'+(m+1)).slice(-2)+'-'+('0'+d).slice(-2);}
 
 function fmtDate(dk){const d=new Date(dk+'T12:00:00');return DS[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();}
@@ -1329,13 +1329,13 @@ function ini(doc,arr){
 
 function getLabel(doc,arr){
   const r=doc.role||'';
-  if(r.includes('Assistant')||r.includes('GÃ©nÃ©raliste'))return doc.lastname.substring(0,6).toUpperCase();
+  if(r.includes('Assistant')||r.includes('Généraliste'))return doc.lastname.substring(0,6).toUpperCase();
   return ini(doc,arr);
 }
 
 function shortRole(r){
   if(!r)return'';
-  const m={'PH Urgences':'PH Urg.','PH SMUR':'PH SMUR','CCA':'CCA','Assistant SMUR ok':'Ass. SMUR','Assistant Urgences':'Assistant','MÃ©decin GÃ©nÃ©raliste':'GÃ©nÃ©raliste'};
+  const m={'PH Urgences':'PH Urg.','PH SMUR':'PH SMUR','CCA':'CCA','Assistant SMUR ok':'Ass. SMUR','Assistant Urgences':'Assistant','Médecin Généraliste':'Généraliste'};
   return m[r]||r.substring(0,14);
 }
 
@@ -1346,21 +1346,21 @@ function toast(msg,err){
 }
 
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// MES ÃCHANGES
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
+// MES ÉCHANGES
+// ══════════════════════════════════════════════════════════
 async function openMesEchanges(){
   if(!me) return;
   document.getElementById('mesechanges-bg').style.display='block';
   const list=document.getElementById('mesechanges-list');
-  list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">â³ Chargement...</div>';
+  list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">⏳ Chargement...</div>';
   try{
     const {data,error}=await sb.from('exchange_requests')
       .select('*').eq('hospital_id',CFG.hospital).eq('proposer_id',me.id)
       .order('created_at',{ascending:false});
     if(error) throw error;
     if(!data||!data.length){
-      list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">Aucune demande d\'Ã©change en cours.</div>';
+      list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">Aucune demande d\'échange en cours.</div>';
       return;
     }
     const fmtD=dk=>{const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
@@ -1372,18 +1372,18 @@ async function openMesEchanges(){
       // Badge statut
       let badge='',color='';
       if(r.status==='open'){
-        badge='â³ En attente de rÃ©ponse';color='#f59e0b';
+        badge='⏳ En attente de réponse';color='#f59e0b';
       } else if(r.status==='accepted'){
-        badge='â AcceptÃ©e par '+(accName||'un mÃ©decin');color='#22c55e';
+        badge='✅ Acceptée par '+(accName||'un médecin');color='#22c55e';
       } else if(r.status==='confirmed'){
-        badge='â ValidÃ©e par le gestionnaire';color='#22c55e';
+        badge='✔ Validée par le gestionnaire';color='#22c55e';
       } else if(r.status==='cancelled'){
-        badge='â AnnulÃ©e par le gestionnaire';color='#ef4444';
+        badge='✗ Annulée par le gestionnaire';color='#ef4444';
       }
       const borderColor=r.status==='open'?'#f59e0b':r.status==='cancelled'?'#ef4444':'#22c55e';
       return `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid ${borderColor};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:13px;font-weight:700;">ð ${fmtD(r.proposer_date)} â ${postName}</span>
+          <span style="font-size:13px;font-weight:700;">📅 ${fmtD(r.proposer_date)} — ${postName}</span>
           <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:6px;background:${borderColor}22;color:${color};">${badge}</span>
         </div>
         ${r.message?`<div style="font-size:11px;color:var(--t3);font-style:italic;margin-bottom:6px;">"${r.message}"</div>`:''}
@@ -1460,11 +1460,11 @@ function updateNotifBtn(state) {
   if (state === 'subscribed') {
     pill.style.background = '#22c55e';
     dot.style.transform   = 'translateX(16px)';
-    btn.title = 'Notifications activÃ©es â cliquer pour dÃ©sactiver';
+    btn.title = 'Notifications activées — cliquer pour désactiver';
   } else if (state === 'denied') {
     pill.style.background = '#ef4444';
     dot.style.transform   = 'translateX(0)';
-    btn.title = 'Notifications bloquÃ©es â modifiez les paramÃ¨tres navigateur';
+    btn.title = 'Notifications bloquées — modifiez les paramètres navigateur';
   } else {
     pill.style.background = '#4b5563';
     dot.style.transform   = 'translateX(0)';
@@ -1475,7 +1475,7 @@ function updateNotifBtn(state) {
 
 async function toggleNotifications() {
   if (Notification.permission === 'denied') {
-    toast('Notifications bloquÃ©es. Modifiez les paramÃ¨tres de votre navigateur.', 4000);
+    toast('Notifications bloquées. Modifiez les paramètres de votre navigateur.', 4000);
     return;
   }
   const reg = await navigator.serviceWorker.getRegistration();
@@ -1491,7 +1491,7 @@ async function toggleNotifications() {
 async function subscribeToPush(reg) {
   try {
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { updateNotifBtn('denied'); toast('Permission refusÃ©e', 3000); return; }
+    if (perm !== 'granted') { updateNotifBtn('denied'); toast('Permission refusée', 3000); return; }
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
@@ -1508,7 +1508,7 @@ async function subscribeToPush(reg) {
     }, { onConflict: 'endpoint' });
     if (upsertErr) console.error('push_subscriptions upsert error:', upsertErr);
     updateNotifBtn('subscribed');
-    toast('ð Notifications activÃ©es !', 3000);
+    toast('🔔 Notifications activées !', 3000);
   } catch(e) {
     console.error('subscribeToPush error:', e);
     toast('Erreur activation notifications: ' + e.message, 4000);
@@ -1520,10 +1520,10 @@ async function unsubscribeFromPush(sub, reg) {
     await sub.unsubscribe();
     await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
     updateNotifBtn('unsubscribed');
-    toast('ð Notifications dÃ©sactivÃ©es', 3000);
+    toast('🔕 Notifications désactivées', 3000);
   } catch(e) {
     console.error('unsubscribeFromPush error:', e);
-    toast('Erreur dÃ©sactivation: ' + e.message, 4000);
+    toast('Erreur désactivation: ' + e.message, 4000);
   }
 }
 // ========== FIN PUSH NOTIFICATIONS ==========
@@ -1560,10 +1560,10 @@ async function renderMonPlanning() {
   if (!titleEl) return;
 
   titleEl.textContent = MO[mpM] + ' ' + mpY;
-  statsEl.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:8px;text-align:center">Chargementâ¦</div>';
+  statsEl.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:8px;text-align:center">Chargement…</div>';
   listEl.innerHTML = '';
 
-  // Charger le planning du mois si diffÃ©rent du mois courant
+  // Charger le planning du mois si différent du mois courant
   let pl = planning;
   if (mpY !== cy || mpM !== cm) {
     const { data: mpData } = await sb.from('planning_months')
@@ -1573,14 +1573,14 @@ async function renderMonPlanning() {
 
   if (!pl) {
     statsEl.innerHTML = '';
-    listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Planning non publiÃ© pour ce mois.</div>';
+    listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Planning non publié pour ce mois.</div>';
     return;
   }
 
   const { shifts, posts } = pl;
   const d2 = new Date(mpY, mpM + 1, 0).getDate();
   const today = new Date().toISOString().slice(0, 10);
-  const DN = ['âÂ Dim', 'âÂ Lun', 'âÂ Mar', 'âÂ Mer', 'âÂ Jeu', 'âÂ Ven', 'âÂ Sam'];
+  const DN = ['↓ Dim', '→ Lun', '→ Mar', '→ Mer', '→ Jeu', '→ Ven', '→ Sam'];
   const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
   // Collecter mes gardes
@@ -1627,7 +1627,7 @@ async function renderMonPlanning() {
     const canExchange = !isPast;
     const clickAttr = canExchange
       ? `onclick="closeMonPlanning();openModal('${dk}','${post.id}')"`
-      : `onclick="showToast('Les gardes passÃ©es ne peuvent pas Ãªtre Ã©changÃ©es', 2500)"`;
+      : `onclick="showToast('Les gardes passées ne peuvent pas être échangées', 2500)"`;
     return `<div ${clickAttr} style="
       display:flex;align-items:center;gap:12px;
       background:var(--bg2);border-radius:10px;padding:12px 14px;
@@ -1645,9 +1645,9 @@ async function renderMonPlanning() {
           <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${post.color || '#888'};flex-shrink:0"></span>
           <span style="font-size:13px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${post.full || post.name}</span>
         </div>
-        <div style="font-size:11px;color:var(--t3);margin-top:3px">${post.start}â${post.end}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:3px">${post.start}–${post.end}</div>
       </div>
-      <div style="font-size:16px;color:${canExchange ? 'var(--acc)' : 'var(--t3)'};">${canExchange ? 'ð' : 'ð'}</div>
+      <div style="font-size:16px;color:${canExchange ? 'var(--acc)' : 'var(--t3)'};">${canExchange ? '🔄' : '🔒'}</div>
     </div>`;
   }).join('');
 }
@@ -1672,10 +1672,10 @@ document.addEventListener('click', function(e) {
 // ===== FIN TOPBAR DROPDOWN MENU =====
 
 function rejectX(id){
-  if(!confirm('Refuser cette demande dâÃ©change ?'))return;
+  if(!confirm('Refuser cette demande d’échange ?'))return;
   sb.from('exchange_requests').update({status:'cancelled'}).eq('id',id).then(({error})=>{
     if(error){toast('Erreur: '+error.message,3000);return;}
-    toast('â Demande refusÃ©e',2500);
+    toast('✕ Demande refusée',2500);
     openMesEchanges();
   });
 }
@@ -1685,8 +1685,8 @@ function rejectX(id){
 <div id="mesechanges-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMesEchanges()">
   <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-size:15px;font-weight:700;">ð Mes demandes d'Ã©change</div>
-      <button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">â</button>
+      <div style="font-size:15px;font-weight:700;">🔄 Mes demandes d'échange</div>
+      <button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
     </div>
     <div id="mesechanges-list"></div>
   </div>
@@ -1697,11 +1697,11 @@ function rejectX(id){
   <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="display:flex;align-items:center;gap:10px;">
-        <button onclick="mpPrevMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">â¹</button>
+        <button onclick="mpPrevMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">‹</button>
         <span id="mp-title" style="font-size:15px;font-weight:700;min-width:140px;text-align:center;"></span>
-        <button onclick="mpNextMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">âº</button>
+        <button onclick="mpNextMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">›</button>
       </div>
-      <button onclick="closeMonPlanning()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px;">â</button>
+      <button onclick="closeMonPlanning()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px;">✕</button>
     </div>
     <div id="mp-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;"></div>
     <div id="mp-list"></div>
