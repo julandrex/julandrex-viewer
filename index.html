@@ -1545,7 +1545,7 @@ async function checkRappel24(){
   } catch(e){ console.warn('[Rappel24]', e); }
 }
 
-function toggleNotifications() {
+async function toggleNotifications() {
   if (Notification.permission === 'denied') {
     toast('Notifications bloquées. Modifiez les paramètres de votre navigateur.', 4000);
     return;
