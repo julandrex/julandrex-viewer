@@ -1751,7 +1751,39 @@ function rejectX(id){
     openMesEchanges();
   });
 }
-</script>
+
+// === Flux premiere connexion PIN ===
+function showPinSetup(){
+  var o=document.getElementById('pin-setup-overlay');
+  if(o){o.style.display='flex';}
+  setTimeout(function(){var i=document.getElementById('new-pin-inp');if(i)i.focus();},100);
+}
+function cancelPinSetup(){
+  var o=document.getElementById('pin-setup-overlay');
+  if(o){o.style.display='none';}
+}
+async function confirmNewPin(){
+  var np=document.getElementById('new-pin-inp').value.trim();
+  var cp=document.getElementById('confirm-pin-inp').value.trim();
+  var err=document.getElementById('pin-setup-err');
+  err.textContent='';
+  if(!/^\d{4,8}$/.test(np)){err.textContent='PIN invalide (4 a 8 chiffres numeriques).';return;}
+  if(np!==cp){err.textContent='Les deux PINs ne correspondent pas.';return;}
+  err.textContent='Enregistrement...';
+  try{
+    var hBuf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(np));
+    var hHex=Array.from(new Uint8Array(hBuf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+    var sb=await getSbClient();
+    var res=await sb.from('doctors').update({pin_hash:hHex,pin_set:true}).eq('id',window._loginDoc.id);
+    if(res.error)throw res.error;
+    window._loginDoc.pin_hash=hHex;
+    window._loginDoc.pin_set=true;
+    cancelPinSetup();
+    showMain(window._loginDoc);
+  }catch(e){
+    err.textContent='Erreur : '+e.message;
+  }
+}</script>
 
 <!-- MES ECHANGES PANEL -->
 <div id="mesechanges-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMesEchanges()">
@@ -1779,4 +1811,23 @@ function rejectX(id){
     <div id="mp-list"></div>
   </div>
 </div>
-</body>
+<div id="pin-setup-overlay" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+  <div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;">
+    <div style="font-size:28px;margin-bottom:8px;">🔐</div>
+    <h2 style="color:#e2e8f0;font-size:18px;margin:0 0 6px">Créez votre PIN</h2>
+    <p style="color:#94a3b8;font-size:13px;margin:0 0 20px">Choisissez un code PIN (min. 4 chiffres) pour accéder à votre planning.</p>
+    <input id="new-pin-inp" type="password" inputmode="numeric" pattern="[0-9]*" placeholder="Nouveau PIN" maxlength="8"
+      style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#fff;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;"/>
+    <input id="confirm-pin-inp" type="password" inputmode="numeric" pattern="[0-9]*" placeholder="Confirmer le PIN" maxlength="8"
+      style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#fff;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:14px;box-sizing:border-box;"/>
+    <div id="pin-setup-err" style="color:#f87171;font-size:12px;min-height:18px;margin-bottom:8px;"></div>
+    <button onclick="confirmNewPin()"
+      style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">
+      Valider mon PIN
+    </button>
+    <button onclick="cancelPinSetup()"
+      style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">
+      Retour
+    </button>
+  </div>
+</div></body>
