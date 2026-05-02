@@ -13,7 +13,7 @@
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Planning Urgences</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js">var _pinHash=null;document.addEventListener("DOMContentLoaded",function(){var pi=document.getElementById("pin-inp");if(pi){pi.addEventListener("input",function(){var v=pi.value;if(v){crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");});}else{window._pinHash=null;}});}});</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#0f1117;--bg1:#161b27;--bg2:#1c2235;--bg3:#232b3e;--t1:#dde3f0;--t2:#8892aa;--t3:#525e78;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--acc:#3b82f6;--acc2:#6366f1;--b:rgba(255,255,255,.08);}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -1779,4 +1779,47 @@ function rejectX(id){
     <div id="mp-list"></div>
   </div>
 </div>
-<div id="pin-setup-overlay" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:16px;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;"><div style="font-size:28px;margin-bottom:8px;">&#x1F510;</div><h2 style="color:#e2e8f0;font-size:18px;margin:0 0 6px">Cr&#233;ez votre PIN</h2><p style="color:#94a3b8;font-size:13px;margin:0 0 20px">Choisissez un code PIN (min. 4 chiffres).</p><input id="new-pin-inp" type="password" inputmode="numeric" placeholder="Nouveau PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;"/><input id="confirm-pin-inp" type="password" inputmode="numeric" placeholder="Confirmer le PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:14px;box-sizing:border-box;"/><div id="pin-setup-err" style="color:#f87171;font-size:12px;min-height:18px;margin-bottom:8px;"></div><button onclick="confirmNewPin()" style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">Valider mon PIN</button><button onclick="cancelPinSetup()" style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">Retour</button></div></div><script>function showPinSetup(){var o=document.getElementById('pin-setup-overlay');if(o){o.style.display='flex';}setTimeout(function(){var i=document.getElementById('new-pin-inp');if(i)i.focus();},100);}function cancelPinSetup(){var o=document.getElementById('pin-setup-overlay');if(o){o.style.display='none';}}function confirmNewPin(){var np=document.getElementById('new-pin-inp').value.trim();var cp=document.getElementById('confirm-pin-inp').value.trim();var err=document.getElementById('pin-setup-err');err.textContent='';if(!/^\d{4,8}$/.test(np)){err.textContent='PIN invalide (4 a 8 chiffres).';return;}if(np!==cp){err.textContent='Les deux PINs ne correspondent pas.';return;}err.textContent='Enregistrement...';crypto.subtle.digest('SHA-256',new TextEncoder().encode(np)).then(function(hBuf){var hHex=Array.from(new Uint8Array(hBuf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');fetch('https://zzqbcjtrtisexyokezaq.supabase.co/rest/v1/doctors?id=eq.'+window._loginDoc.id,{method:'PATCH',headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cWJjanRydGlzZXh5b2tlemFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDg1MzgsImV4cCI6MjA5MDc4NDUzOH0.m8DBLJ1T3gOYuZL9sGUDmrTvUHAZ6tRAIfJYIVUzGIE','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cWJjanRydGlzZXh5b2tlemFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDg1MzgsImV4cCI6MjA5MDc4NDUzOH0.m8DBLJ1T3gOYuZL9sGUDmrTvUHAZ6tRAIfJYIVUzGIE','Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({pin_hash:hHex,pin_set:true})}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);window._loginDoc.pin_hash=hHex;window._loginDoc.pin_set=true;window._pinHash=hHex;cancelPinSetup();showMain(window._loginDoc);}).catch(function(e){err.textContent='Erreur : '+e.message;});});}</script></body>
+<div id="pso" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;">
+<div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;">
+<div style="font-size:28px">&#x1F510;</div>
+<h2 style="color:#e2e8f0;font-size:18px;margin:8px 0">Creez votre PIN</h2>
+<p style="color:#94a3b8;font-size:13px;margin:0 0 16px">Choisissez un code PIN (min. 4 chiffres).</p>
+<input id="npi" type="password" inputmode="numeric" placeholder="Nouveau PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;">
+<input id="cpi" type="password" inputmode="numeric" placeholder="Confirmer PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:12px;box-sizing:border-box;">
+<div id="pse" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:8px;"></div>
+<button onclick="doConfirmPin()" style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">Valider mon PIN</button>
+<button onclick="doCancelPin()" style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">Retour</button>
+</div></div>
+<script>
+var _pinHash=null;
+document.addEventListener('DOMContentLoaded',function(){
+  var pi=document.getElementById('pin-inp');
+  if(pi){pi.addEventListener('input',function(){
+    if(pi.value){crypto.subtle.digest('SHA-256',new TextEncoder().encode(pi.value)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join('');});}
+    else{window._pinHash=null;}
+  });}
+});
+function showPinSetup(){var o=document.getElementById('pso');if(o)o.style.display='flex';setTimeout(function(){var i=document.getElementById('npi');if(i)i.focus();},100);}
+function doCancelPin(){var o=document.getElementById('pso');if(o)o.style.display='none';}
+function doConfirmPin(){
+  var np=document.getElementById('npi').value.trim();
+  var cp=document.getElementById('cpi').value.trim();
+  var err=document.getElementById('pse');
+  err.textContent='';
+  if(!/^\d{4,8}$/.test(np)){err.textContent='PIN invalide (4 a 8 chiffres).';return;}
+  if(np!==cp){err.textContent='Les deux PINs ne correspondent pas.';return;}
+  err.textContent='Enregistrement...';
+  crypto.subtle.digest('SHA-256',new TextEncoder().encode(np)).then(function(hb){
+    var hx=Array.from(new Uint8Array(hb)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+    fetch('https://zzqbcjtrtisexyokezaq.supabase.co/rest/v1/doctors?id=eq.'+window._loginDoc.id,{
+      method:'PATCH',
+      headers:{apikey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cWJjanRydGlzZXh5b2tlemFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDg1MzgsImV4cCI6MjA5MDc4NDUzOH0.m8DBLJ1T3gOYuZL9sGUDmrTvUHAZ6tRAIfJYIVUzGIE',Authorization:'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cWJjanRydGlzZXh5b2tlemFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDg1MzgsImV4cCI6MjA5MDc4NDUzOH0.m8DBLJ1T3gOYuZL9sGUDmrTvUHAZ6tRAIfJYIVUzGIE','Content-Type':'application/json',Prefer:'return=minimal'},
+      body:JSON.stringify({pin_hash:hx,pin_set:true})
+    }).then(function(r){
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      window._loginDoc.pin_hash=hx;window._loginDoc.pin_set=true;window._pinHash=hx;
+      doCancelPin();showMain(window._loginDoc);
+    }).catch(function(e){err.textContent='Erreur: '+e.message;});
+  });
+}
+</script></body>
