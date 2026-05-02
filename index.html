@@ -492,7 +492,7 @@ function selectDoc(id){
   document.getElementById('pin-inp').focus();
 }
 
-function doLogin(){
+async function doLogin(){
   var doc=selectedDoc;if(!doc)return;
   var now=Date.now();
   if(now<_pinLockedUntil){
