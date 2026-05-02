@@ -492,7 +492,7 @@ function selectDoc(id){
   document.getElementById('pin-inp').focus();
 }
 
-async function doLogin(){
+async async function doLogin(){
   var doc=selectedDoc;if(!doc)return;
   var now=Date.now();
   if(now<_pinLockedUntil){
@@ -501,7 +501,7 @@ async function doLogin(){
     errEl.style.display='block';return;
   }
   var pin=document.getElementById('pin-inp').value;
-  if(pin===doc.pin){
+  window._loginDoc=doc;if(!doc.pin_set||!doc.pin_hash){showPinSetup();return;}const _hBuf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pin));const _hHex=Array.from(new Uint8Array(_hBuf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');if(_hHex===doc.pin_hash){
     _pinAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     showMain();
