@@ -490,7 +490,7 @@ function selectDoc(id){
   pa.classList.add('show');
   document.getElementById('pin-inp').value='';
   document.getElementById('pin-err').style.display='none';
-  document.getElementById('pin-inp').focus();
+  var _pi=document.getElementById('pin-inp');window._pinHash=null;_pi.value='';_pi.removeEventListener('input',_pi._pinListener||function(){});_pi._pinListener=function(){var v=_pi.value;if(v)crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)).then(function(buf){window._pinHash=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');});else window._pinHash=null;};_pi.addEventListener('input',_pi._pinListener);_pi.focus();
 }
 
 function doLogin(){
