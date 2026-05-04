@@ -490,10 +490,10 @@ function selectDoc(id){
   pa.classList.add('show');
   document.getElementById('pin-inp').value='';
   document.getElementById('pin-err').style.display='none';
-  var _pi=document.getElementById('pin-inp');window._pinHash=null;_pi.value='';_pi.removeEventListener('input',_pi._pinListener||function(){});_pi._pinListener=function(){var v=_pi.value;if(v)crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)).then(function(buf){window._pinHash=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');});else window._pinHash=null;};_pi.addEventListener('input',_pi._pinListener);_pi.focus();
+  document.getElementById('pin-inp').focus();
 }
 
-async function doLogin(){var _pinVal=(document.getElementById('pin-inp')||{}).value||'';
+function doLogin(){
   var doc=selectedDoc;if(!doc)return;
   var now=Date.now();
   if(now<_pinLockedUntil){
@@ -502,7 +502,7 @@ async function doLogin(){var _pinVal=(document.getElementById('pin-inp')||{}).va
     errEl.style.display='block';return;
   }
   var pin=document.getElementById('pin-inp').value;
-  window._loginDoc=doc;if(!doc.pin_hash){showPinSetup(false);return;}const _hBuf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(_pinVal));const _hHex=Array.from(new Uint8Array(_hBuf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');window._pinHash=_hHex;if(_hHex===doc.pin_hash){if(!doc.pin_set){window._tempPin=inp.value;showPinSetup(true);return;}
+  window._loginDoc=doc;if(!doc.pin_hash){showPinSetup(false);return;}if(window._pinHash===doc.pin_hash){if(!doc.pin_set){window._tempPin=document.getElementById('pin-inp').value;showPinSetup(true);return;}
     _pinAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     showMain();
@@ -1796,7 +1796,10 @@ function rejectX(id){
     crypto.subtle.digest('SHA-256',new TextEncoder().encode(np)).then(function(buf){
       window._pinHash=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
     });
-    err.textContent=d.message||'PIN mis à jour';
+    err.textContent=d.message||'PIN mis à jour ✔';
+    setTimeout(function(){
+      document.getElementById('pin-setup-overlay').style.display='none';
+      document.getElementById('change-pin-overlay') && (document.getElementById('change-pin-overlay').style.display='none');
+    }, 1500);
   }).catch(function(){err.textContent='Erreur réseau';});
-}
-</script></body>
+}</script></body>
