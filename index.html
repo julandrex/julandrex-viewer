@@ -2,6 +2,15 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0f2847">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Julandrex">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Planning Urgences</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -125,6 +134,35 @@ button{font-family:inherit;}
 .ld{display:flex;align-items:center;justify-content:center;padding:48px 20px;color:var(--t3);gap:10px;flex-direction:column;font-size:12px;}
 .sp{width:18px;height:18px;border:2px solid var(--b);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+.tb-dd-item{display:block;width:100%;text-align:left;background:none;border:none;color:var(--t1);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;}
+.tb-dd-item:hover{background:var(--bg2);}
+
+/* ── OFFLINE / ERROR BANNERS ─── */
+.offline-banner{display:flex;align-items:center;gap:10px;background:rgba(230,126,34,.1);border:1px solid #e67e22;border-radius:10px;padding:10px 14px;margin:8px 8px 0;font-size:13px;color:#e67e22;}
+.err-banner{background:rgba(239,68,68,.08);border:1px solid var(--err);border-radius:10px;padding:12px 14px;margin:8px 8px 0;font-size:13px;color:var(--err);display:flex;flex-direction:column;gap:10px;}
+.err-retry{background:var(--err);color:#fff;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600;align-self:flex-start;}
+/* ── SHIFT WIDGET ─── */
+.shift-widget{margin:8px 8px 0;border-radius:10px;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:12px;}
+.shift-today{background:rgba(231,76,60,.13);border:1px solid #e74c3c;}
+.shift-next{background:var(--bg2);border:1px solid var(--b);}
+/* ── SESSION OVERLAY ─── */
+#session-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+#session-overlay.show{display:flex;}
+.sess-box{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:28px 32px;text-align:center;max-width:320px;}
+.sess-title{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:8px;}
+.sess-sub{font-size:13px;color:var(--t2);margin-bottom:20px;}
+.sess-pin{width:100%;background:var(--bg3);border:1px solid var(--b);border-radius:10px;padding:12px;color:var(--t1);font-size:26px;text-align:center;letter-spacing:8px;outline:none;margin-bottom:12px;}
+.sess-btn{width:100%;background:var(--acc);color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;}
+.pin-lockout{color:var(--err);font-size:12px;text-align:center;margin-top:4px;}
+
+/* ── RAPPEL 24H ── */
+#rappel24-btn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:none;color:var(--t1);padding:10px 14px;cursor:pointer;font-size:13px;border-radius:6px;transition:background .15s;}
+#rappel24-btn:hover{background:var(--bg3);}
+.r24-bar{display:inline-block;width:28px;height:14px;border-radius:7px;background:var(--err,#e53e3e);flex-shrink:0;transition:background .2s;position:relative;vertical-align:middle;}
+.r24-bar.on{background:var(--ok,#22c55e);}
+.r24-bar::after{content:'';position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#fff;transition:left .2s;}
+.r24-bar.on::after{left:16px;}
 </style>
 </head>
 <body>
@@ -138,7 +176,7 @@ button{font-family:inherit;}
     <div class="doc-grid" id="doc-grid"><div class="ld"><div class="sp"></div>Chargement...</div></div>
     <div class="pin-area" id="pin-area">
       <div class="pin-lbl" id="pin-lbl">Entrez votre code PIN</div>
-      <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="8" placeholder="••••••" autocomplete="off">
+      <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
       <div class="pin-err" id="pin-err">Code PIN incorrect — réessayez</div>
       <button class="pin-btn" onclick="doLogin()">Se connecter</button>
     </div>
@@ -157,11 +195,26 @@ button{font-family:inherit;}
         <div class="tb-role" id="tb-role"></div>
       </div>
     </div>
-    <button class="logout-btn" onclick="copyCalUrl()" id="cal-btn" style="display:none;background:none;border:1px solid var(--acc);color:var(--acc);">📅 Mon calendrier</button>
-    <button class="logout-btn" onclick="openMesDemandes()" id="demandes-btn" style="display:none;background:none;border:1px solid #a78bfa;color:#a78bfa;">📋 Mes demandes</button>
-    <button class="logout-btn" onclick="openMesEchanges()" id="echanges-btn" style="display:none;background:none;border:1px solid #22c55e;color:#22c55e;">🔄 Mes échanges</button>
-    <button class="logout-btn" onclick="openDesiderata()" id="desid-btn" style="display:none;background:none;border:1px solid var(--warn);color:var(--warn);">+ Desiderata</button>
-    <button class="logout-btn" onclick="logout()">Déconnexion</button>
+    <button class="logout-btn" id="mon-planning-btn" onclick="openMonPlanning()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">📅 Mon planning</button>
+    <div id="tb-menu-wrap" style="position:relative;display:none;">
+      <button id="tb-menu-btn" onclick="toggleTbMenu()" style="background:var(--bg2);border:1px solid var(--b);color:var(--t1);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:15px;line-height:1;" title="Menu">☰</button>
+      <div id="tb-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg1);border:1px solid var(--b);border-radius:12px;padding:6px;z-index:200;min-width:195px;box-shadow:0 8px 28px rgba(0,0,0,.45);">
+        <button id="cal-btn" onclick="copyCalUrl();closeTbMenu()" class="tb-dd-item" style="display:none;">📅 Mon calendrier</button>
+        <button id="demandes-btn" onclick="openMesDemandes();closeTbMenu()" class="tb-dd-item" style="display:none;">📋 Mes demandes</button>
+        <button id="echanges-btn" onclick="openMesEchanges();closeTbMenu()" class="tb-dd-item" style="display:none;">🔄 Mes échanges</button>
+        <button id="desid-btn" onclick="openDesiderata();closeTbMenu()" class="tb-dd-item" style="display:none;">+ Desiderata</button>
+        <button id="notif-btn" onclick="toggleNotifications()" class="tb-dd-item" style="display:none;align-items:center;gap:7px;">
+          <span id="notif-pill" style="display:inline-flex;align-items:center;width:34px;height:18px;border-radius:9px;background:#4b5563;padding:0 2px;transition:background .25s;flex-shrink:0;position:relative;">
+            <span id="notif-dot" style="width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:transform .25s;transform:translateX(0);"></span>
+          </span>
+          <span id="notif-lbl">Notif.</span>
+        </button>
+<button id="rappel24-btn" onclick="toggleRappel24()"><span class="r24-bar" id="rappel24-bar"></span> Rappel 24h</button>
+        <div style="border-top:1px solid var(--b);margin:5px 0;"></div>
+<button onclick="showChangePin()" style="display:block;width:100%;text-align:left;padding:8px 16px;background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;">&#x1F510; Changer mon PIN</button>
+        <button onclick="logout();closeTbMenu()" class="tb-dd-item" style="color:#f87171;">→ Déconnexion</button>
+      </div>
+    </div>
   </div>
   <div class="month-bar">
     <button class="mnav" onclick="prevMonth()">‹</button>
@@ -169,9 +222,20 @@ button{font-family:inherit;}
     <button class="mnav" onclick="nextMonth()">›</button>
     <span class="exch-pill" id="exch-pill" onclick="togglePanel()">0 échange</span>
   </div>
+  <div id="shift-widget"></div>
   <div id="grid-area"><div class="ld"><div class="sp"></div>Chargement du planning...</div></div>
 </div>
 
+<!-- SESSION OVERLAY -->
+<div id="session-overlay">
+  <div class="sess-box">
+    <div class="sess-title">&#x23F1; Session expirée</div>
+    <div class="sess-sub">Entrez votre PIN pour reprendre</div>
+    <input class="sess-pin" id="sess-pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" oninput="onSessPinInput(this.value)">
+    <div id="sess-pin-err" class="pin-lockout"></div>
+    <button class="sess-btn" onclick="onSessPinSubmit()">Déverrouiller</button>
+  </div>
+</div>
 <!-- EXCHANGE PANEL -->
 <div id="exch-panel">
   <div class="ep-hdr">
@@ -343,11 +407,6 @@ button{font-family:inherit;}
 
 <script>
 // ══════════════════════════════════════════════════════════
-// SÉCURITÉ — Échappement HTML (anti-XSS)
-// ══════════════════════════════════════════════════════════
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-
-// ══════════════════════════════════════════════════════════
 // CONFIG — Remplacer par vos valeurs depuis supabase.com
 // ══════════════════════════════════════════════════════════
 const CFG = {
@@ -365,7 +424,10 @@ let planning=null, exchanges=[];
 let cy=new Date().getFullYear(), cm=new Date().getMonth();
 let mDate=null, mPost=null;
 let rtChannel=null;
-let _pinHash='';
+var _sessTimer=null, _sessActive=false;
+var SESS_TIMEOUT=25*60*1000;
+var PIN_MAX_ATTEMPTS=5;
+var _pinAttempts=0, _pinLockedUntil=0;
 
 const MO=['Janvier','Février','Mars','Avril','Mai','Juin',
           'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -377,6 +439,8 @@ const SEC_LBL={jour:'JOURNÉE SEMAINE',soir:'SOIRÉE',nuit:'GARDES NUIT SEM.',we
 // INIT
 // ══════════════════════════════════════════════════════════
 async function init(){
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW:',e));}
+
   if(CFG.url==='VOTRE_SUPABASE_URL'){
     document.getElementById('doc-grid').innerHTML='<div class="ld" style="color:var(--err);">⚠ Configurez les clés Supabase dans le fichier viewer (variables CFG).</div>';
     return;
@@ -392,7 +456,7 @@ async function init(){
 // ══════════════════════════════════════════════════════════
 async function loadDoctors(){
   try{
-    const {data,error}=await sb.from('doctors').select('id,firstname,lastname,role,color,pin_hash,pin_set').eq('active',true).eq('hospital_id',CFG.hospital).order('role').order('lastname');
+    const {data,error}=await sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin_hash,pin_set').eq('hospital_id',CFG.hospital).eq('active',true).order('role').order('lastname');
     if(error)throw error;
     doctors=data||[];
     renderLoginDocs();
@@ -407,7 +471,7 @@ function renderLoginDocs(){
   g.innerHTML=doctors.map(d=>`
     <div class="doc-card" id="dc-${d.id}" onclick="selectDoc(${d.id})">
       <div class="doc-av" style="background:${d.color}33;color:${d.color};">${ini(d,doctors)}</div>
-      <div><div class="doc-nm">${esc(d.lastname)}</div><div class="doc-rl">${esc(shortRole(d.role))}</div></div>
+      <div><div class="doc-nm">${d.lastname}</div><div class="doc-rl">${shortRole(d.role)}</div></div>
     </div>`).join('');
   // Pré-sélection via paramètre URL ?doc=ID (lien email)
   const _urlDoc = new URLSearchParams(window.location.search).get('doc');
@@ -424,37 +488,35 @@ function selectDoc(id){
   document.getElementById('pin-lbl').textContent='PIN de '+selectedDoc.firstname+' '+selectedDoc.lastname;
   const pa=document.getElementById('pin-area');
   pa.classList.add('show');
-  const inp=document.getElementById('pin-inp');
-  inp.value='';_pinHash='';
+  document.getElementById('pin-inp').value='';
   document.getElementById('pin-err').style.display='none';
-  // Précalcul SHA-256 synchrone dès saisie → doLogin reste synchrone
-  inp.oninput=function(){
-    const v=this.value;
-    crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)).then(buf=>{
-      _pinHash=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-    });
-  };
-  inp.focus();
+  document.getElementById('pin-inp').focus();
 }
 
 function doLogin(){
-  const doc=selectedDoc;
-  if(!doc)return;
-  // PIN temporaire : pin_set===false → forcer changement de PIN
-  if(!doc.pin_set){
-    window._tempPin=document.getElementById('pin-inp').value;
-    showPinSetup(true);
-    return;
+  var doc=selectedDoc;if(!doc)return;
+  var now=Date.now();
+  if(now<_pinLockedUntil){
+    var errEl=document.getElementById('pin-err');
+    errEl.textContent='Trop de tentatives. Patientez '+Math.ceil((_pinLockedUntil-now)/1000)+'s.';
+    errEl.style.display='block';return;
   }
-  // PIN permanent : comparaison hash côté client
-  if(_pinHash===doc.pin_hash){
-    me={...doc};
+  var pin=document.getElementById('pin-inp').value;
+  window._loginDoc=doc;if(!doc.pin_hash){showPinSetup(false);return;}if(window._pinHash===doc.pin_hash){if(!doc.pin_set){showPinSetup(true);return;}
+    _pinAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     showMain();
   }else{
-    document.getElementById('pin-err').style.display='block';
+    _pinAttempts++;
+    var errEl=document.getElementById('pin-err');
+    if(_pinAttempts>=PIN_MAX_ATTEMPTS){
+      _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
+      errEl.textContent='5 tentatives échouées. Bloqué 30s.';
+    }else{
+      errEl.textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
+    }
+    errEl.style.display='block';
     document.getElementById('pin-inp').value='';
-    _pinHash='';
     document.getElementById('pin-inp').focus();
   }
 }
@@ -464,6 +526,12 @@ document.addEventListener('keydown',e=>{
 });
 
 function logout(){
+  logAccess('logout','');
+  window._r24DocId = me.local_id ?? me.id;
+  initRappel24Btn();
+  setTimeout(checkRappel24, 2000);
+  clearTimeout(_sessTimer);
+  _sessActive=false;
   sessionStorage.removeItem('jlx_me');
   me=null;planning=null;
   if(rtChannel){sb.removeChannel(rtChannel);rtChannel=null;}
@@ -477,96 +545,7 @@ function logout(){
   document.getElementById('echanges-btn').style.display='none';
 }
 
-// ══════════════════════════════════════════════════════════
-// PIN SETUP / CHANGE
-// ══════════════════════════════════════════════════════════
-function showPinSetup(isTemp){
-  // Création overlay si absent
-  let ov=document.getElementById('pin-setup-ov');
-  if(!ov){
-    ov=document.createElement('div');
-    ov.id='pin-setup-ov';
-    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:flex;align-items:center;justify-content:center;';
-    ov.innerHTML=`<div style="background:var(--bg1);border-radius:16px;padding:28px 24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
-      <div id="pin-setup-title" style="font-size:17px;font-weight:700;margin-bottom:6px;"></div>
-      <div id="pin-setup-sub" style="font-size:12px;color:var(--t3);margin-bottom:20px;"></div>
-      <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:6px;">Nouveau PIN (6–8 chiffres)</label>
-      <input id="pin-new1" type="password" inputmode="numeric" maxlength="8" placeholder="••••••"
-        style="width:100%;background:var(--bg2);border:1px solid var(--b);border-radius:10px;padding:12px;color:var(--t1);font-size:24px;text-align:center;letter-spacing:8px;box-sizing:border-box;margin-bottom:10px;">
-      <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:6px;">Confirmer le PIN</label>
-      <input id="pin-new2" type="password" inputmode="numeric" maxlength="8" placeholder="••••••"
-        style="width:100%;background:var(--bg2);border:1px solid var(--b);border-radius:10px;padding:12px;color:var(--t1);font-size:24px;text-align:center;letter-spacing:8px;box-sizing:border-box;margin-bottom:14px;">
-      <div id="pin-setup-err" style="color:var(--err);font-size:12px;margin-bottom:10px;display:none;"></div>
-      <button onclick="doSavePin()" style="width:100%;background:var(--acc);color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;">Définir mon PIN</button>
-    </div>`;
-    document.body.appendChild(ov);
-  }
-  const title=document.getElementById('pin-setup-title');
-  const sub=document.getElementById('pin-setup-sub');
-  if(isTemp){
-    title.textContent='🔐 Définir votre PIN permanent';
-    sub.textContent='Votre gestionnaire vous a attribué un PIN temporaire. Veuillez définir votre PIN personnel (6 à 8 chiffres).';
-  }else{
-    title.textContent='🔑 Changer votre PIN';
-    sub.textContent='Choisissez un nouveau PIN (6 à 8 chiffres).';
-  }
-  document.getElementById('pin-new1').value='';
-  document.getElementById('pin-new2').value='';
-  document.getElementById('pin-setup-err').style.display='none';
-  ov.style.display='flex';
-  setTimeout(()=>document.getElementById('pin-new1').focus(),100);
-}
-
-function showChangePin(){
-  const cur=document.getElementById('change-pin-cur')?.value||'';
-  window._curPinForSave=cur;
-  showPinSetup(false);
-}
-
-async function doSavePin(){
-  const np=document.getElementById('pin-new1').value;
-  const nc=document.getElementById('pin-new2').value;
-  const errEl=document.getElementById('pin-setup-err');
-  if(!np||np.length<6||np.length>8||!/^\d+$/.test(np)){
-    errEl.textContent='PIN invalide : 6 à 8 chiffres uniquement.';errEl.style.display='block';return;
-  }
-  if(np!==nc){
-    errEl.textContent='Les deux PIN ne correspondent pas.';errEl.style.display='block';return;
-  }
-  errEl.style.display='none';
-  const doc=selectedDoc||me;
-  // Déterminer l'action : set_permanent (PIN temp) ou change_pin (PIN existant)
-  const isTemp=doc&&!doc.pin_set;
-  const action=isTemp?'set_permanent':'change_pin';
-  const current_pin=isTemp?(window._tempPin||''):(window._curPinForSave||'');
-  try{
-    const res=await fetch(CFG.url+'/functions/v1/update-pin',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action,doctor_id:doc.id,current_pin,new_pin:np})
-    });
-    const json=await res.json();
-    if(!res.ok||json.error){
-      errEl.textContent=json.error||'Erreur serveur. Vérifiez votre PIN actuel.';
-      errEl.style.display='block';return;
-    }
-    // Succès
-    document.getElementById('pin-setup-ov').style.display='none';
-    if(isTemp){
-      // Connexion automatique après définition PIN
-      doc.pin_set=true;
-      me={...doc};
-      sessionStorage.setItem('jlx_me',JSON.stringify(me));
-      showMain();
-    }else{
-      alert('✅ PIN changé avec succès.');
-    }
-  }catch(e){
-    errEl.textContent='Erreur réseau : '+e.message;errEl.style.display='block';
-  }
-}
-
-
+// Desiderata state
 let _desidCgs=[], _desidInds=[], _desidForms=[], _desidPrefs=[];
 
 async function openDesiderata(){
@@ -891,7 +870,7 @@ async function openMesDemandes(){
     list.innerHTML=data.map(r=>{
       const cgs=(r.conges||[]).map(c=>`🏖 ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}`).join('<br>');
       const inds=(r.indispos||[]).map(i=>`🚫 ${fmtD(i.date||i.start)}`).join('<br>');
-      const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">💬 ${esc(r.remarques)}</div>`:'';
+      const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">💬 ${r.remarques}</div>`:'';
       return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:10px;border-left:3px solid ${r.status==='pending'?'#fbbf24':r.status==='validated'||r.status==='accepted'?'#22c55e':'#ef4444'};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <span style="font-size:13px;font-weight:700;">${Q[(r.quarter||1)-1]} ${r.year}</span>
@@ -914,7 +893,7 @@ function closeMesDemandes(){
 function copyCalUrl(){
   if(!me) return;
   const base='https://zzqbcjtrtisexyokezaq.supabase.co/functions/v1/ical';
-  const url=base+'?doc='+me.id+'&h='+CFG.hospital;
+  const url=base+'?doc='+me.id+'&pin='+(me.pin||'')+'&h='+CFG.hospital;
   const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
   if(isIOS){
     // Sur iOS : ouvrir l'URL déclenche l'ajout au calendrier natif
@@ -934,10 +913,14 @@ function copyCalUrl(){
 function showMain(){
   document.getElementById('scr-login').style.display='none';
   document.getElementById('scr-main').style.display='flex';
-  document.getElementById('cal-btn').style.display='';
-  document.getElementById('desid-btn').style.display='';
-  document.getElementById('demandes-btn').style.display='';
-  document.getElementById('echanges-btn').style.display='';
+  document.getElementById('mon-planning-btn').style.display='';
+  document.getElementById('tb-menu-wrap').style.display='';
+  // Afficher tous les items du dropdown
+  ['cal-btn','demandes-btn','echanges-btn','desid-btn'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='';
+  });
+  initNotifBtn();
+  initRappel24Btn();
   const av=document.getElementById('tb-av');
   av.textContent=ini(me,doctors);av.style.background=me.color+'33';av.style.color=me.color;
   document.getElementById('tb-nm').textContent=me.firstname+' '+me.lastname;
@@ -945,6 +928,8 @@ function showMain(){
   updateMonthLbl();
   loadAll();
   subscribeRT();
+  initSession();
+  logAccess('login','');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -952,25 +937,42 @@ function showMain(){
 // ══════════════════════════════════════════════════════════
 async function loadAll(){
   document.getElementById('grid-area').innerHTML='<div class="ld"><div class="sp"></div>Chargement...</div>';
-  try{
-    const [pr,dr,xr]=await Promise.all([
-      sb.from('planning_months').select('shifts,posts').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
-      sb.from('doctors').select('id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
-      sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
-    ]);
-    if(pr.error)throw pr.error;
-    doctors=dr.data||[];
-    exchanges=xr.data||[];
-    planning=pr.data||null;
-    if(!planning){
-      document.getElementById('grid-area').innerHTML='<div class="ld"><div>Planning non disponible pour ce mois.</div><div style="color:var(--t3)">Contactez le gestionnaire de planning.</div></div>';
-    }else{
-      renderGrid();
+  document.getElementById('shift-widget').innerHTML='';
+  var CK='jlx_c_'+CFG.hospital+'_'+cy+'_'+cm;
+  (async function(){
+    try{
+      var res=await Promise.all([
+        sb.from('planning_months').select('shifts,posts').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
+        sb.from('doctors').select('id,local_id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
+        sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
+      ]);
+      var pr=res[0],dr=res[1],xr=res[2];
+      if(pr.error)throw pr.error;
+      doctors=dr.data||[];exchanges=xr.data||[];planning=pr.data||null;
+      if(planning&&doctors.length){try{localStorage.setItem(CK,JSON.stringify({planning:planning,doctors:doctors,ts:Date.now()}));}catch(ce){}}
+      logAccess('view_planning',cy+'-'+(cm+1<10?'0':'')+(cm+1));
+      if(!planning){
+        document.getElementById('grid-area').innerHTML='<div class="ld"><div>Planning non disponible pour ce mois.</div><div style="color:var(--t3)">Contactez le gestionnaire de planning.</div></div>';
+      }else{renderGrid();renderShiftWidget();}
+      renderBadge();
+    }catch(e){
+      var cached=null;
+      try{var raw=localStorage.getItem(CK);if(raw)cached=JSON.parse(raw);}catch(ce){}
+      if(cached){
+        doctors=cached.doctors||doctors;planning=cached.planning||null;
+        var age=Math.round((Date.now()-cached.ts)/60000);
+        var ageStr=age<60?age+'min':Math.round(age/60)+'h';
+        var dt=new Date(cached.ts).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+        document.getElementById('grid-area').innerHTML='<div class="offline-banner">📵 Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
+        if(planning){renderGrid();renderShiftWidget();}
+      }else{
+        var isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
+        var msg=isNet?'Impossible de joindre le serveur. Vérifiez votre connexion.':'Erreur serveur : '+e.message;
+        document.getElementById('grid-area').innerHTML='<div class="err-banner"><div>⚠️ '+msg+'</div><button class="err-retry" onclick="loadAll()">↻ Réessayer</button></div>';
+      }
+      renderBadge();
     }
-    renderBadge();
-  }catch(e){
-    document.getElementById('grid-area').innerHTML=`<div class="ld" style="color:var(--err);">Erreur : ${e.message}</div>`;
-  }
+  })();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1028,7 +1030,7 @@ function renderGrid(){
         const isTd=dk===today;
         if(!isActive(p,dk)){h+=`<td class="c-inactive${isTd?' c-today':''}"></td>`;continue;}
         const docId=(shifts[dk]||{})[p.id];
-        const doc=docId?doctors.find(x=>x.id===docId):null;
+        const doc=docId?doctors.find(x=>(x.local_id??x.id)===docId):null;
         if(!doc){h+=`<td class="${we?'c-we':''}${isTd?' c-today':''}"></td>`;continue;}
         const isMe2=doc.id===me.id;
         const hasX=exchanges.some(r=>r.proposer_date===dk&&r.proposer_post===p.id&&r.status==='open');
@@ -1043,6 +1045,80 @@ function renderGrid(){
   }
   h+='</tbody></table>';
   document.getElementById('grid-area').innerHTML=h;
+}
+
+// ════════ SHIFT WIDGET ════════
+function renderShiftWidget(){
+  var el=document.getElementById('shift-widget');
+  if(!el||!planning||!me)return;
+  var sf=planning.shifts,po=planning.posts;
+  var today=new Date().toISOString().slice(0,10);
+  var d2=new Date(cy,cm+1,0).getDate();
+  var todayS=[],nextS=null;
+  for(var d=1;d<=d2;d++){
+    var dk=dkStr(cy,cm,d);
+    if(dk<today)continue;
+    for(var pi=0;pi<po.length;pi++){
+      var p=po[pi];
+      if((sf[dk]||{})[p.id]===(me.local_id??me.id)){
+        if(dk===today)todayS.push({dk:dk,p:p});
+        else if(!nextS&&dk>today)nextS={dk:dk,p:p};
+      }
+    }
+  }
+  if(todayS.length){
+    var p=todayS[0].p;
+    el.className='shift-widget shift-today';
+    el.innerHTML='<span style="font-size:20px">🔴</span><div><strong>Shift aujourd\'hui !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' · '+p.start+'–'+p.end+'</span></div>';
+  }else if(nextS){
+    var dt=new Date(nextS.dk+'T12:00:00');
+    var diff=Math.round((dt.getTime()-new Date().setHours(0,0,0,0))/86400000);
+    var DS2=['dim','lun','mar','mer','jeu','ven','sam'];
+    var dlbl=DS2[dt.getDay()]+' '+dt.getDate()+' '+MO[dt.getMonth()].toLowerCase().slice(0,3)+'.';
+    var pp=nextS.p;
+    el.className='shift-widget shift-next';
+    el.innerHTML='<span style="font-size:20px">📅</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' — '+(pp.full||pp.name)+' '+pp.start+'–'+pp.end+' · <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
+  }else{el.className='';el.innerHTML='';}
+}
+
+// ════════ SESSION TIMEOUT ════════
+function initSession(){
+  _sessActive=true;resetSessTimer();
+  ['click','touchstart','keydown'].forEach(function(ev){document.addEventListener(ev,resetSessTimer,{passive:true});});
+}
+function resetSessTimer(){clearTimeout(_sessTimer);_sessTimer=setTimeout(lockSession,SESS_TIMEOUT);}
+function lockSession(){
+  _sessActive=false;
+  var ov=document.getElementById('session-overlay');if(ov)ov.classList.add('show');
+  var inp=document.getElementById('sess-pin-inp');if(inp){inp.value='';inp.focus();}
+  document.getElementById('sess-pin-err').textContent='';
+}
+function onSessPinInput(v){if(v.length>=6)onSessPinSubmit();}
+function onSessPinSubmit(){
+  var now=Date.now();
+  if(now<_pinLockedUntil){document.getElementById('sess-pin-err').textContent='Trop de tentatives. Patientez '+Math.ceil((_pinLockedUntil-now)/1000)+'s.';return;}
+  var inp=document.getElementById('sess-pin-inp');
+  if(inp.value===me.pin){
+    _pinAttempts=0;
+    document.getElementById('session-overlay').classList.remove('show');
+    _sessActive=true;resetSessTimer();logAccess('session_resume','');
+  }else{
+    _pinAttempts++;
+    if(_pinAttempts>=PIN_MAX_ATTEMPTS){
+      _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
+      document.getElementById('sess-pin-err').textContent='5 tentatives échouées. Bloqué 30s.';
+      logAccess('pin_lockout','');
+    }else{
+      document.getElementById('sess-pin-err').textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
+    }
+    inp.value='';
+  }
+}
+
+// ════════ LOGS RGPD ════════
+function logAccess(action,detail){
+  if(!sb||!me)return;
+  try{sb.from('access_logs').insert({hospital_id:CFG.hospital,doctor_id:me.id,action:action,detail:detail||'',ts:new Date().toISOString()}).then(function(){});}catch(e){}
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1074,7 +1150,7 @@ function renderPanel(){
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
-    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button>`;
+    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
     if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">✓ Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
     let stLbl='';
@@ -1082,11 +1158,11 @@ function renderPanel(){
     if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">✓ Confirmé</span>';
     return `<div class="xcard">
       <div class="xcard-hdr">
-        <div style="font-size:12px;font-weight:600;">${prop?esc(prop.firstname)+' '+esc(prop.lastname):'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
+        <div style="font-size:12px;font-weight:600;">${prop?prop.firstname+' '+prop.lastname:'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
         <span class="xbadge exch">🔄 Échange</span>
       </div>
-      <div class="xinfo">${post?esc(post.full||post.name):esc(r.proposer_post)} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${esc(acc.firstname)} ${esc(acc.lastname)}</b>`:''}</div>
-      ${r.message?`<div class="xmsg">"${esc(r.message)}"</div>`:''}
+      <div class="xinfo">${post?post.full||post.name:r.proposer_post} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
+      ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
   }).join('');
@@ -1099,6 +1175,23 @@ async function acceptX(id){
     const {error}=await sb.from('exchange_requests').update({status:'accepted',acceptor_id:me.id,accepted_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
     toast('Demande acceptée — en attente de confirmation.');
+    // Push au proposeur
+    try {
+      if(xr) {
+        const _postName = planning?.posts?.find(p=>p.id===xr.proposer_post)?.full || xr.proposer_post;
+        fetch(CFG.url+'/functions/v1/send-push',{
+          method:'POST',
+          headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
+          body:JSON.stringify({
+            hospital: CFG.hospital,
+            doctor_ids: [String(xr.proposer_id)],
+            title: '✓ Demande acceptée',
+            message: me.firstname+' '+me.lastname+' a accepté votre demande d’échange — '+_postName,
+            url: 'https://julandrex.github.io/julandrex-viewer/'
+          })
+        }).catch(()=>{});
+      }
+    } catch(e){}
     // Notifier le gestionnaire
     if(CFG.gest_email && xr){
       const post=planning?.posts?.find(p=>p.id===xr.proposer_post);
@@ -1117,21 +1210,6 @@ async function acceptX(id){
             post_name:post?.full||post?.name||xr.proposer_post,
             date:xr.proposer_date
           }
-        })
-      }).catch(()=>{});
-    }
-    // Push au proposant : son échange a été accepté
-    if(xr?.proposer_id){
-      const _viewerUrl = window.location.href.split('?')[0];
-      fetch(CFG.url+'/functions/v1/send-push',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','apikey':CFG.key},
-        body:JSON.stringify({
-          hospital:CFG.hospital,
-          doctor_ids:[xr.proposer_id],
-          title:'✅ Échange accepté',
-          message:me.firstname+' '+me.lastname+' a accepté votre demande d\'échange.',
-          url:_viewerUrl
         })
       }).catch(()=>{});
     }
@@ -1193,6 +1271,24 @@ async function submitExchange(){
     if(error)throw error;
     closeModal();
     toast(targetDocId?'Demande envoyée au médecin ciblé !':'Demande envoyée à tous les médecins !');
+    // Push notification au(x) destinataire(s)
+    try {
+      const _postName = planning?.posts?.find(p=>p.id===mPost)?.full || mPost;
+      const _pushPayload = {
+        hospital: CFG.hospital,
+        title: '🔄 Demande d’échange',
+        message: me.firstname+' '+me.lastname+' vous propose un échange — '+_postName,
+        url: 'https://julandrex.github.io/julandrex-viewer/'
+      };
+      if(targetDocId) {
+        _pushPayload.doctor_ids = [String(targetDocId)];
+      }
+      fetch(CFG.url+'/functions/v1/send-push',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
+        body:JSON.stringify(_pushPayload)
+      }).catch(()=>{});
+    } catch(e){}
     // Notifier le(s) destinataire(s) de l'échange
     const post=planning?.posts?.find(p=>p.id===mPost);
     const _notifData={
@@ -1284,9 +1380,9 @@ async function openMesEchanges(){
     const fmtD=dk=>{const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
     list.innerHTML=data.map(r=>{
       const post=planning?.posts?.find(p=>p.id===r.proposer_post);
-      const postName=esc(post?.full||post?.name||r.proposer_post);
+      const postName=post?.full||post?.name||r.proposer_post;
       const acc=r.acceptor_id?doctors.find(d=>d.id===r.acceptor_id):null;
-      const accName=acc?esc(acc.firstname)+' '+esc(acc.lastname):null;
+      const accName=acc?acc.firstname+' '+acc.lastname:null;
       // Badge statut
       let badge='',color='';
       if(r.status==='open'){
@@ -1304,7 +1400,7 @@ async function openMesEchanges(){
           <span style="font-size:13px;font-weight:700;">📅 ${fmtD(r.proposer_date)} — ${postName}</span>
           <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:6px;background:${borderColor}22;color:${color};">${badge}</span>
         </div>
-        ${r.message?`<div style="font-size:11px;color:var(--t3);font-style:italic;margin-bottom:6px;">"${esc(r.message)}"</div>`:''}
+        ${r.message?`<div style="font-size:11px;color:var(--t3);font-style:italic;margin-bottom:6px;">"${r.message}"</div>`:''}
         ${r.status==='open'?`<button onclick="cancelX('${r.id}');closeMesEchanges();" style="background:transparent;border:1px solid var(--b);color:var(--t3);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">Annuler</button>`:''}
       </div>`;
     }).join('');
@@ -1318,6 +1414,344 @@ function closeMesEchanges(){
 
 init();
 
+
+
+// ========== PUSH NOTIFICATIONS ==========
+const VAPID_PUBLIC_KEY = 'BJDakPq7fiVgU4fD8RYEyhWssNVumlgiIknIeyMyd4mn98xet6XP0R0h1Kqy3IxiTwiwhSbkMH_wAHOn_gNK_Us';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function initNotifBtn() {
+  const btn = document.getElementById('notif-btn');
+  if (!btn) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  btn.style.display = '';
+  const perm = Notification.permission;
+  if (perm === 'granted') {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) {
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        updateNotifBtn('subscribed');
+        // Sauvegarder en base si absent (cas reconnexion)
+        const hospital = CFG && CFG.hospital ? CFG.hospital : 'citadelle';
+        const doctorId = me && me.id ? String(me.id) : null;
+        if (doctorId) {
+          sb.from('push_subscriptions').upsert({
+            doctor_id: doctorId, hospital,
+            subscription: sub.toJSON(), endpoint: sub.endpoint,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'endpoint' }).then(({error}) => {
+            if (error) console.warn('initNotifBtn upsert:', error.message);
+          });
+        }
+      } else { updateNotifBtn('unsubscribed'); }
+    } else { updateNotifBtn('unsubscribed'); }
+  } else if (perm === 'denied') {
+    updateNotifBtn('denied');
+  } else {
+    updateNotifBtn('unsubscribed');
+  }
+}
+
+function updateNotifBtn(state) {
+  const btn  = document.getElementById('notif-btn');
+  const pill = document.getElementById('notif-pill');
+  const dot  = document.getElementById('notif-dot');
+  const lbl  = document.getElementById('notif-lbl');
+  if (!btn || !pill || !dot) return;
+
+  btn.style.display     = 'flex';
+  btn.style.background  = '';
+  btn.style.borderColor = '';
+  btn.style.color       = '';
+
+  if (state === 'subscribed') {
+    pill.style.background = '#22c55e';
+    dot.style.transform   = 'translateX(16px)';
+    btn.title = 'Notifications activées — cliquer pour désactiver';
+  } else if (state === 'denied') {
+    pill.style.background = '#ef4444';
+    dot.style.transform   = 'translateX(0)';
+    btn.title = 'Notifications bloquées — modifiez les paramètres navigateur';
+  } else {
+    pill.style.background = '#4b5563';
+    dot.style.transform   = 'translateX(0)';
+    btn.title = 'Activer les notifications push';
+  }
+  if (lbl) lbl.textContent = 'Notif.';
+}
+
+/* ══ RAPPEL 24H ════════════════════════════════════════════════ */
+function r24Key(){ return 'jlx_r24_' + (window._r24DocId||''); }
+function r24DoneKey(d,pid){ return 'jlx_r24done_'+(window._r24DocId||'')+'_'+d+'_'+pid; }
+function initRappel24Btn(){ updateRappel24Btn(); }
+function updateRappel24Btn(){
+  const on = localStorage.getItem(r24Key()) === '1';
+  const bar = document.getElementById('rappel24-bar');
+  if(bar) bar.className = 'r24-bar' + (on ? ' on' : '');
+}
+async function toggleRappel24(){
+  const wasOn = localStorage.getItem(r24Key()) === '1';
+  if(!wasOn){
+    if(Notification.permission === 'default'){
+      const perm = await Notification.requestPermission();
+      if(perm !== 'granted'){ updateRappel24Btn(); return; }
+    }
+    if(Notification.permission === 'denied'){
+      alert('Notifications bloquées par votre navigateur. Autorisez-les dans les paramètres du site.');
+      return;
+    }
+    localStorage.setItem(r24Key(), '1');
+    await checkRappel24();
+  } else {
+    localStorage.setItem(r24Key(), '0');
+  }
+  updateRappel24Btn();
+}
+async function checkRappel24(){
+  if(Notification.permission !== 'granted') return;
+  if(localStorage.getItem(r24Key()) !== '1') return;
+  const docId = window._r24DocId;
+  if(!docId) return;
+  const tomorrow = new Date(Date.now()+86400000).toISOString().slice(0,10);
+  const ym = tomorrow.slice(0,7);
+  try {
+    const { data: row } = await supabase.from('planning_months').select('data')
+      .eq('hospital_id', HOSPITAL_ID).eq('month', ym).single();
+    if(!row || !row.data) return;
+    const shifts = row.data.shifts || {};
+    const posts  = row.data.posts  || [];
+    const dayShifts = shifts[tomorrow] || {};
+    Object.entries(dayShifts).forEach(([pid, did]) => {
+      if(String(did) !== String(docId)) return;
+      const doneKey = r24DoneKey(tomorrow, pid);
+      if(localStorage.getItem(doneKey)) return;
+      const post = posts.find(pp => pp.id === pid);
+      const postName = post ? (post.name || pid) : pid;
+      const postTime = post ? (post.start || '') : '';
+      const dayStr = tomorrow.split('-').reverse().join('/');
+      new Notification('⏰ Rappel shift — Julandrex', {
+        body: 'Demain '+dayStr+' : '+postName+(postTime?' ('+postTime+')':''),
+        icon: '/julandrex-viewer/icon-192.png',
+        tag: 'r24_'+tomorrow+'_'+pid
+      });
+      localStorage.setItem(doneKey, '1');
+    });
+  } catch(e){ console.warn('[Rappel24]', e); }
+}
+
+async function toggleNotifications() {
+  if (Notification.permission === 'denied') {
+    toast('Notifications bloquées. Modifiez les paramètres de votre navigateur.', 4000);
+    return;
+  }
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (!reg) { toast('Service Worker non disponible', 3000); return; }
+  const sub = await reg.pushManager.getSubscription();
+  if (sub) {
+    await unsubscribeFromPush(sub, reg);
+  } else {
+    await subscribeToPush(reg);
+  }
+}
+
+async function subscribeToPush(reg) {
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { updateNotifBtn('denied'); toast('Permission refusée', 3000); return; }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    // Sauvegarder en base
+    const hospital = CFG.hospital || 'citadelle';
+    const doctorId = me && me.id ? String(me.id) : 'unknown';
+    const { error: upsertErr } = await sb.from('push_subscriptions').upsert({
+      doctor_id: doctorId,
+      hospital: hospital,
+      subscription: sub.toJSON(),
+      endpoint: sub.endpoint,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'endpoint' });
+    if (upsertErr) console.error('push_subscriptions upsert error:', upsertErr);
+    updateNotifBtn('subscribed');
+    toast('🔔 Notifications activées !', 3000);
+  } catch(e) {
+    console.error('subscribeToPush error:', e);
+    toast('Erreur activation notifications: ' + e.message, 4000);
+  }
+}
+
+async function unsubscribeFromPush(sub, reg) {
+  try {
+    await sub.unsubscribe();
+    await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+    updateNotifBtn('unsubscribed');
+    toast('🔕 Notifications désactivées', 3000);
+  } catch(e) {
+    console.error('unsubscribeFromPush error:', e);
+    toast('Erreur désactivation: ' + e.message, 4000);
+  }
+}
+// ========== FIN PUSH NOTIFICATIONS ==========
+
+
+// ========== MON PLANNING ==========
+let mpY = null, mpM = null;
+
+function openMonPlanning() {
+  if (!me || !planning) { toast('Planning non disponible', 2000); return; }
+  mpY = cy; mpM = cm;
+  document.getElementById('mon-planning-bg').style.display = 'block';
+  renderMonPlanning();
+}
+
+function closeMonPlanning() {
+  document.getElementById('mon-planning-bg').style.display = 'none';
+}
+
+function mpPrevMonth() {
+  mpM--; if (mpM < 0) { mpM = 11; mpY--; }
+  renderMonPlanning();
+}
+
+function mpNextMonth() {
+  mpM++; if (mpM > 11) { mpM = 0; mpY++; }
+  renderMonPlanning();
+}
+
+async function renderMonPlanning() {
+  const titleEl = document.getElementById('mp-title');
+  const statsEl = document.getElementById('mp-stats');
+  const listEl  = document.getElementById('mp-list');
+  if (!titleEl) return;
+
+  titleEl.textContent = MO[mpM] + ' ' + mpY;
+  statsEl.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:8px;text-align:center">Chargement…</div>';
+  listEl.innerHTML = '';
+
+  // Charger le planning du mois si différent du mois courant
+  let pl = planning;
+  if (mpY !== cy || mpM !== cm) {
+    const { data: mpData } = await sb.from('planning_months')
+      .select('shifts,posts').eq('hospital_id', CFG.hospital).eq('year', mpY).eq('month', mpM).maybeSingle();
+    pl = mpData || null;
+  }
+
+  if (!pl) {
+    statsEl.innerHTML = '';
+    listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Planning non publié pour ce mois.</div>';
+    return;
+  }
+
+  const { shifts, posts } = pl;
+  const d2 = new Date(mpY, mpM + 1, 0).getDate();
+  const today = new Date().toISOString().slice(0, 10);
+  const DN = ['↓ Dim', '→ Lun', '→ Mar', '→ Mer', '→ Jeu', '→ Ven', '→ Sam'];
+  const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+
+  // Collecter mes gardes
+  const myShifts = [];
+  for (let d = 1; d <= d2; d++) {
+    const dk = dkStr(mpY, mpM, d);
+    for (const p of posts) {
+      if ((shifts[dk] || {})[p.id] === (me.local_id??me.id)) {
+        myShifts.push({ dk, post: p });
+      }
+    }
+  }
+
+  // Stats
+  const total = myShifts.length;
+  const nuits = myShifts.filter(s => s.post.section === 'nuit').length;
+  const wes = myShifts.filter(s => {
+    const dw = new Date(s.dk + 'T12:00:00').getDay();
+    return dw === 0 || dw === 6;
+  }).length;
+  const smur = myShifts.filter(s => (s.post.name || '').toLowerCase().includes('smur')).length;
+
+  statsEl.innerHTML = [
+    ['Total', total, '#4f8ef7'],
+    ['Nuits', nuits, '#9b59b6'],
+    ['WE', wes, '#e67e22'],
+    ['SMUR', smur, '#1abc9c']
+  ].map(([l, v, c]) => `<div style="background:var(--bg2);border-radius:10px;padding:10px 6px;text-align:center;">
+    <div style="font-size:22px;font-weight:800;color:${c}">${v}</div>
+    <div style="font-size:11px;color:var(--t3);margin-top:2px">${l}</div>
+  </div>`).join('');
+
+  if (!myShifts.length) {
+    listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Aucune garde ce mois.</div>';
+    return;
+  }
+
+  listEl.innerHTML = myShifts.map(({ dk, post }) => {
+    const dt = new Date(dk + 'T12:00:00');
+    const isToday = dk === today;
+    const isPast = dk < today;
+    const dayName = DAYS[dt.getDay()];
+    const dayNum = dt.getDate();
+    const canExchange = !isPast;
+    const clickAttr = canExchange
+      ? `onclick="closeMonPlanning();openModal('${dk}','${post.id}')"`
+      : `onclick="showToast('Les gardes passées ne peuvent pas être échangées', 2500)"`;
+    return `<div ${clickAttr} style="
+      display:flex;align-items:center;gap:12px;
+      background:var(--bg2);border-radius:10px;padding:12px 14px;
+      margin-bottom:8px;cursor:pointer;
+      border:1px solid ${isToday ? 'var(--acc)' : 'transparent'};
+      opacity:${isPast ? '0.5' : '1'};"
+      onmouseenter="this.style.background='var(--bg3,#2a3550)'"
+      onmouseleave="this.style.background='var(--bg2)'">
+      <div style="min-width:44px;text-align:center;flex-shrink:0;">
+        <div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase">${dayName}</div>
+        <div style="font-size:22px;font-weight:800;color:${isToday ? 'var(--acc)' : 'var(--t1)'};line-height:1.1">${dayNum}</div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${post.color || '#888'};flex-shrink:0"></span>
+          <span style="font-size:13px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${post.full || post.name}</span>
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-top:3px">${post.start}–${post.end}</div>
+      </div>
+      <div style="font-size:16px;color:${canExchange ? 'var(--acc)' : 'var(--t3)'};">${canExchange ? '🔄' : '🔒'}</div>
+    </div>`;
+  }).join('');
+}
+// ========== FIN MON PLANNING ==========
+
+// ===== TOPBAR DROPDOWN MENU =====
+function toggleTbMenu() {
+  const dd = document.getElementById('tb-dropdown');
+  if (!dd) return;
+  const isOpen = dd.style.display !== 'none';
+  dd.style.display = isOpen ? 'none' : 'block';
+}
+function closeTbMenu() {
+  const dd = document.getElementById('tb-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+// Fermer le menu si clic en dehors
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('tb-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) closeTbMenu();
+});
+// ===== FIN TOPBAR DROPDOWN MENU =====
+
+function rejectX(id){
+  if(!confirm('Refuser cette demande d’échange ?'))return;
+  sb.from('exchange_requests').update({status:'cancelled'}).eq('id',id).then(({error})=>{
+    if(error){toast('Erreur: '+error.message,3000);return;}
+    toast('✕ Demande refusée',2500);
+    openMesEchanges();
+  });
+}
 </script>
 
 <!-- MES ECHANGES PANEL -->
@@ -1331,4 +1765,19 @@ init();
   </div>
 </div>
 
-</body>
+
+<div id="mon-planning-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMonPlanning()">
+  <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button onclick="mpPrevMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">‹</button>
+        <span id="mp-title" style="font-size:15px;font-weight:700;min-width:140px;text-align:center;"></span>
+        <button onclick="mpNextMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">›</button>
+      </div>
+      <button onclick="closeMonPlanning()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px;">✕</button>
+    </div>
+    <div id="mp-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;"></div>
+    <div id="mp-list"></div>
+  </div>
+</div>
+<div id="pso" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;"><div id="pso-icon" style="font-size:28px;margin-bottom:6px">&#x1F510;</div><h2 id="pso-title" style="color:#e2e8f0;font-size:18px;margin:0 0 6px">Créez votre PIN</h2><p id="pso-desc" style="color:#94a3b8;font-size:13px;margin:0 0 18px">Choisissez un code PIN permanent (min. 6 chiffres).</p><div id="pso-cur-wrap" style="display:none;margin-bottom:10px;"><input id="pso-cur" type="password" inputmode="numeric" placeholder="PIN actuel" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;box-sizing:border-box;"></div><input id="npi" type="password" inputmode="numeric" placeholder="Nouveau PIN (6-8 chiffres)" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;"><input id="cpi" type="password" inputmode="numeric" placeholder="Confirmer nouveau PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:14px;box-sizing:border-box;"><div id="pse" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:10px;"></div><button onclick="doConfirmPin()" style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">Valider mon PIN</button><button id="pso-cancel-btn" onclick="doCancelPin()" style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">Retour</button></div></div><div id="pso-msg" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px">⚠️</div><p id="pso-msg-text" style="color:#e2e8f0;font-size:15px;margin:0 0 20px"></p><button onclick="document.getElementById('pso-msg').style.display='none'" style="padding:10px 24px;background:#1e3a5f;color:#e2e8f0;border:none;border-radius:8px;font-size:14px;cursor:pointer;">OK</button></div></div><script>window._pinHash=null;window._pinSetupForce=false;document.addEventListener("DOMContentLoaded",function(){  var pi=document.getElementById("pin-inp");  if(pi)pi.addEventListener("input",function(){    if(pi.value)crypto.subtle.digest("SHA-256",new TextEncoder().encode(pi.value)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");});    else window._pinHash=null;  });});function showPinMsg(msg){  document.getElementById("pso-msg-text").textContent=msg;  document.getElementById("pso-msg").style.display="flex";}function showPinSetup(forced){  window._pinSetupForce=!!forced;  var o=document.getElementById("pso");  if(!o)return;  if(forced){    document.getElementById("pso-title").textContent="Créez votre PIN permanent";    document.getElementById("pso-desc").textContent="Pour sécuriser votre accès, choisissez un PIN personnel (6–8 chiffres). Il remplacera le PIN temporaire.";    document.getElementById("pso-cur-wrap").style.display="none";    document.getElementById("pso-cancel-btn").style.display="none";  } else {    document.getElementById("pso-title").textContent="Changer mon PIN";    document.getElementById("pso-desc").textContent="Entrez votre PIN actuel puis choisissez un nouveau PIN (6–8 chiffres).";    document.getElementById("pso-cur-wrap").style.display="block";    document.getElementById("pso-cancel-btn").style.display="inline-block";  }  document.getElementById("pse").textContent="";  document.getElementById("npi").value="";  document.getElementById("cpi").value="";  if(!forced){var c=document.getElementById("pso-cur");if(c)c.value="";}  o.style.display="flex";  setTimeout(function(){var i=document.getElementById(forced?"npi":"pso-cur");if(i)i.focus();},100);}function showChangePin(){showPinSetup(false);}function doCancelPin(){var o=document.getElementById("pso");if(o)o.style.display="none";}function doConfirmPin(){  var np=document.getElementById("npi").value.trim();  var cp=document.getElementById("cpi").value.trim();  var err=document.getElementById("pse");  err.textContent="";  if(!/^\d{6,8}$/.test(np)){err.textContent="PIN invalide : 6 à 8 chiffres numériques requis.";return;}  if(np!==cp){err.textContent="Les deux PINs ne correspondent pas.";return;}  if(!window._pinSetupForce){    var cur=document.getElementById("pso-cur").value.trim();    if(!cur){err.textContent="Entrez votre PIN actuel.";return;}    crypto.subtle.digest("SHA-256",new TextEncoder().encode(cur)).then(function(b){      var h=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");      if(h!==window._loginDoc.pin_hash){err.textContent="PIN actuel incorrect.";return;}      doSavePin(np,err);    });    return;  }  doSavePin(np,err);}function doSavePin(np,err){  err.textContent="Enregistrement...";  crypto.subtle.digest("SHA-256",new TextEncoder().encode(np)).then(function(hb){    var hx=Array.from(new Uint8Array(hb)).map(function(b){return b.toString(16).padStart(2,"0");}).join("");    fetch("https://zzqbcjtrtisexyokezaq.supabase.co/rest/v1/doctors?id=eq."+window._loginDoc.id,{      method:"PATCH",      headers:{apikey:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cWJjanRydGlzZXh5b2tlemFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDg1MzgsImV4cCI6MjA5MDc4NDUzOH0.m8DBLJ1T3gOYuZL9sGUDmrTvUHAZ6tRAIfJYIVUzGIE",Authorization:"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cWJjanRydGlzZXh5b2tlemFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDg1MzgsImV4cCI6MjA5MDc4NDUzOH0.m8DBLJ1T3gOYuZL9sGUDmrTvUHAZ6tRAIfJYIVUzGIE","Content-Type":"application/json",Prefer:"return=minimal"},      body:JSON.stringify({pin_hash:hx,pin_set:true})    }).then(function(r){      if(!r.ok)throw new Error("HTTP "+r.status);      window._loginDoc.pin_hash=hx;window._loginDoc.pin_set=true;window._pinHash=hx;      doCancelPin();      if(window._pinSetupForce){location.reload();}      else{showPinMsg("PIN modifié avec succès !");}    }).catch(function(e){err.textContent="Erreur: "+e.message;});  });}</script></body>
