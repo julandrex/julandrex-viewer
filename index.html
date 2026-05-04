@@ -407,6 +407,7 @@ button{font-family:inherit;}
 <div id="toast"></div>
 
 <script>
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 // ══════════════════════════════════════════════════════════
 // CONFIG — Remplacer par vos valeurs depuis supabase.com
 // ══════════════════════════════════════════════════════════
@@ -472,7 +473,7 @@ function renderLoginDocs(){
   g.innerHTML=doctors.map(d=>`
     <div class="doc-card" id="dc-${d.id}" onclick="selectDoc(${d.id})">
       <div class="doc-av" style="background:${d.color}33;color:${d.color};">${ini(d,doctors)}</div>
-      <div><div class="doc-nm">${d.lastname}</div><div class="doc-rl">${shortRole(d.role)}</div></div>
+      <div><div class="doc-nm">${esc(d.lastname)}</div><div class="doc-rl">${esc(shortRole(d.role))}</div></div>
     </div>`).join('');
   // Pré-sélection via paramètre URL ?doc=ID (lien email)
   const _urlDoc = new URLSearchParams(window.location.search).get('doc');
@@ -871,7 +872,7 @@ async function openMesDemandes(){
     list.innerHTML=data.map(r=>{
       const cgs=(r.conges||[]).map(c=>`🏖 ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}`).join('<br>');
       const inds=(r.indispos||[]).map(i=>`🚫 ${fmtD(i.date||i.start)}`).join('<br>');
-      const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">💬 ${r.remarques}</div>`:'';
+      const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">💬 ${esc(r.remarques)}</div>`:'';
       return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:10px;border-left:3px solid ${r.status==='pending'?'#fbbf24':r.status==='validated'||r.status==='accepted'?'#22c55e':'#ef4444'};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <span style="font-size:13px;font-weight:700;">${Q[(r.quarter||1)-1]} ${r.year}</span>
@@ -1163,7 +1164,7 @@ function renderPanel(){
         <span class="xbadge exch">🔄 Échange</span>
       </div>
       <div class="xinfo">${post?post.full||post.name:r.proposer_post} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
-      ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
+      ${r.message?`<div class="xmsg">"${esc(r.message)}"</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
   }).join('');
@@ -1401,7 +1402,7 @@ async function openMesEchanges(){
           <span style="font-size:13px;font-weight:700;">📅 ${fmtD(r.proposer_date)} — ${postName}</span>
           <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:6px;background:${borderColor}22;color:${color};">${badge}</span>
         </div>
-        ${r.message?`<div style="font-size:11px;color:var(--t3);font-style:italic;margin-bottom:6px;">"${r.message}"</div>`:''}
+        ${r.message?`<div style="font-size:11px;color:var(--t3);font-style:italic;margin-bottom:6px;">"${esc(r.message)}"</div>`:''}
         ${r.status==='open'?`<button onclick="cancelX('${r.id}');closeMesEchanges();" style="background:transparent;border:1px solid var(--b);color:var(--t3);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">Annuler</button>`:''}
       </div>`;
     }).join('');
