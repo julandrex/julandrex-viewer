@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- julandrex-viewer v-sec-1777874549740 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -12,7 +13,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Planning Urgences — CHR Huy</title>
+<title>Planning Urgences</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#0f1117;--bg1:#161b27;--bg2:#1c2235;--bg3:#232b3e;--t1:#dde3f0;--t2:#8892aa;--t3:#525e78;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--acc:#3b82f6;--acc2:#6366f1;--b:rgba(255,255,255,.08);}
@@ -155,6 +156,14 @@ button{font-family:inherit;}
 .sess-pin{width:100%;background:var(--bg3);border:1px solid var(--b);border-radius:10px;padding:12px;color:var(--t1);font-size:26px;text-align:center;letter-spacing:8px;outline:none;margin-bottom:12px;}
 .sess-btn{width:100%;background:var(--acc);color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;}
 .pin-lockout{color:var(--err);font-size:12px;text-align:center;margin-top:4px;}
+
+/* ── RAPPEL 24H ── */
+#rappel24-btn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:none;color:var(--t1);padding:10px 14px;cursor:pointer;font-size:13px;border-radius:6px;transition:background .15s;}
+#rappel24-btn:hover{background:var(--bg3);}
+.r24-bar{display:inline-block;width:28px;height:14px;border-radius:7px;background:var(--err,#e53e3e);flex-shrink:0;transition:background .2s;position:relative;vertical-align:middle;}
+.r24-bar.on{background:var(--ok,#22c55e);}
+.r24-bar::after{content:'';position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#fff;transition:left .2s;}
+.r24-bar.on::after{left:16px;}
 </style>
 </head>
 <body>
@@ -201,7 +210,9 @@ button{font-family:inherit;}
           </span>
           <span id="notif-lbl">Notif.</span>
         </button>
+<button id="rappel24-btn" onclick="toggleRappel24()"><span class="r24-bar" id="rappel24-bar"></span> Rappel 24h</button>
         <div style="border-top:1px solid var(--b);margin:5px 0;"></div>
+<button onclick="showChangePin()" style="display:block;width:100%;text-align:left;padding:8px 16px;background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;">&#x1F510; Changer mon PIN</button>
         <button onclick="logout();closeTbMenu()" class="tb-dd-item" style="color:#f87171;">→ Déconnexion</button>
       </div>
     </div>
@@ -396,6 +407,7 @@ button{font-family:inherit;}
 <div id="toast"></div>
 
 <script>
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 // ══════════════════════════════════════════════════════════
 // CONFIG — Remplacer par vos valeurs depuis supabase.com
 // ══════════════════════════════════════════════════════════
@@ -446,7 +458,7 @@ async function init(){
 // ══════════════════════════════════════════════════════════
 async function loadDoctors(){
   try{
-    const {data,error}=await sb.from('doctors').select('id,firstname,lastname,role,color,pin').eq('hospital_id',CFG.hospital).eq('active',true).order('role').order('lastname');
+    const {data,error}=await sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin_hash,pin_set').eq('hospital_id',CFG.hospital).eq('active',true).order('role').order('lastname');
     if(error)throw error;
     doctors=data||[];
     renderLoginDocs();
@@ -461,7 +473,7 @@ function renderLoginDocs(){
   g.innerHTML=doctors.map(d=>`
     <div class="doc-card" id="dc-${d.id}" onclick="selectDoc(${d.id})">
       <div class="doc-av" style="background:${d.color}33;color:${d.color};">${ini(d,doctors)}</div>
-      <div><div class="doc-nm">${d.lastname}</div><div class="doc-rl">${shortRole(d.role)}</div></div>
+      <div><div class="doc-nm">${esc(d.lastname)}</div><div class="doc-rl">${esc(shortRole(d.role))}</div></div>
     </div>`).join('');
   // Pré-sélection via paramètre URL ?doc=ID (lien email)
   const _urlDoc = new URLSearchParams(window.location.search).get('doc');
@@ -492,7 +504,7 @@ function doLogin(){
     errEl.style.display='block';return;
   }
   var pin=document.getElementById('pin-inp').value;
-  if(pin===doc.pin){
+  window._loginDoc=doc;if(!doc.pin_hash){showPinSetup(false);return;}if(window._pinHash===doc.pin_hash){if(!doc.pin_set){window._tempPin=document.getElementById('pin-inp').value;showPinSetup(true);return;}
     _pinAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     showMain();
@@ -517,6 +529,9 @@ document.addEventListener('keydown',e=>{
 
 function logout(){
   logAccess('logout','');
+  window._r24DocId = me.local_id ?? me.id;
+  initRappel24Btn();
+  setTimeout(checkRappel24, 2000);
   clearTimeout(_sessTimer);
   _sessActive=false;
   sessionStorage.removeItem('jlx_me');
@@ -857,7 +872,7 @@ async function openMesDemandes(){
     list.innerHTML=data.map(r=>{
       const cgs=(r.conges||[]).map(c=>`🏖 ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}`).join('<br>');
       const inds=(r.indispos||[]).map(i=>`🚫 ${fmtD(i.date||i.start)}`).join('<br>');
-      const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">💬 ${r.remarques}</div>`:'';
+      const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">💬 ${esc(r.remarques)}</div>`:'';
       return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:10px;border-left:3px solid ${r.status==='pending'?'#fbbf24':r.status==='validated'||r.status==='accepted'?'#22c55e':'#ef4444'};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <span style="font-size:13px;font-weight:700;">${Q[(r.quarter||1)-1]} ${r.year}</span>
@@ -907,6 +922,7 @@ function showMain(){
     const el=document.getElementById(id); if(el) el.style.display='';
   });
   initNotifBtn();
+  initRappel24Btn();
   const av=document.getElementById('tb-av');
   av.textContent=ini(me,doctors);av.style.background=me.color+'33';av.style.color=me.color;
   document.getElementById('tb-nm').textContent=me.firstname+' '+me.lastname;
@@ -929,7 +945,7 @@ async function loadAll(){
     try{
       var res=await Promise.all([
         sb.from('planning_months').select('shifts,posts').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
-        sb.from('doctors').select('id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
+        sb.from('doctors').select('id,local_id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
         sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
       ]);
       var pr=res[0],dr=res[1],xr=res[2];
@@ -1016,7 +1032,7 @@ function renderGrid(){
         const isTd=dk===today;
         if(!isActive(p,dk)){h+=`<td class="c-inactive${isTd?' c-today':''}"></td>`;continue;}
         const docId=(shifts[dk]||{})[p.id];
-        const doc=docId?doctors.find(x=>x.id===docId):null;
+        const doc=docId?doctors.find(x=>(x.local_id??x.id)===docId):null;
         if(!doc){h+=`<td class="${we?'c-we':''}${isTd?' c-today':''}"></td>`;continue;}
         const isMe2=doc.id===me.id;
         const hasX=exchanges.some(r=>r.proposer_date===dk&&r.proposer_post===p.id&&r.status==='open');
@@ -1046,7 +1062,7 @@ function renderShiftWidget(){
     if(dk<today)continue;
     for(var pi=0;pi<po.length;pi++){
       var p=po[pi];
-      if((sf[dk]||{})[p.id]===me.id){
+      if((sf[dk]||{})[p.id]===(me.local_id??me.id)){
         if(dk===today)todayS.push({dk:dk,p:p});
         else if(!nextS&&dk>today)nextS={dk:dk,p:p};
       }
@@ -1148,7 +1164,7 @@ function renderPanel(){
         <span class="xbadge exch">🔄 Échange</span>
       </div>
       <div class="xinfo">${post?post.full||post.name:r.proposer_post} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
-      ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
+      ${r.message?`<div class="xmsg">"${esc(r.message)}"</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
   }).join('');
@@ -1189,7 +1205,7 @@ async function acceptX(id){
           type:'exchange_accepted',
           to_email:CFG.gest_email,
           to_name:'Gestionnaire',
-          hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
+          hospital_name:CFG.hospital==='huy_2'?'CHR Huy':'CHR Huy',
           data:{
             acceptor_name:me.firstname+' '+me.lastname,
             proposer_name:proposer?proposer.firstname+' '+proposer.lastname:'?',
@@ -1279,7 +1295,7 @@ async function submitExchange(){
     const post=planning?.posts?.find(p=>p.id===mPost);
     const _notifData={
       type:'exchange_requested',
-      hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
+      hospital_name:CFG.hospital==='huy_2'?'CHR Huy':'CHR Huy',
       data:{proposer_name:me.firstname+' '+me.lastname,post_name:post?.full||post?.name||mPost,date:mDate,message:document.getElementById('m-msg').value.trim()||null}
     };
     const _sendNotif=(email,name,docId)=>fetch(CFG.url+'/functions/v1/send-notification',{
@@ -1386,7 +1402,7 @@ async function openMesEchanges(){
           <span style="font-size:13px;font-weight:700;">📅 ${fmtD(r.proposer_date)} — ${postName}</span>
           <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:6px;background:${borderColor}22;color:${color};">${badge}</span>
         </div>
-        ${r.message?`<div style="font-size:11px;color:var(--t3);font-style:italic;margin-bottom:6px;">"${r.message}"</div>`:''}
+        ${r.message?`<div style="font-size:11px;color:var(--t3);font-style:italic;margin-bottom:6px;">"${esc(r.message)}"</div>`:''}
         ${r.status==='open'?`<button onclick="cancelX('${r.id}');closeMesEchanges();" style="background:transparent;border:1px solid var(--b);color:var(--t3);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">Annuler</button>`:''}
       </div>`;
     }).join('');
@@ -1425,7 +1441,7 @@ async function initNotifBtn() {
       if (sub) {
         updateNotifBtn('subscribed');
         // Sauvegarder en base si absent (cas reconnexion)
-        const hospital = CFG && CFG.hospital ? CFG.hospital : 'citadelle';
+        const hospital = CFG && CFG.hospital ? CFG.hospital : 'huy_2';
         const doctorId = me && me.id ? String(me.id) : null;
         if (doctorId) {
           sb.from('push_subscriptions').upsert({
@@ -1473,6 +1489,65 @@ function updateNotifBtn(state) {
   if (lbl) lbl.textContent = 'Notif.';
 }
 
+/* ══ RAPPEL 24H ════════════════════════════════════════════════ */
+function r24Key(){ return 'jlx_r24_' + (window._r24DocId||''); }
+function r24DoneKey(d,pid){ return 'jlx_r24done_'+(window._r24DocId||'')+'_'+d+'_'+pid; }
+function initRappel24Btn(){ updateRappel24Btn(); }
+function updateRappel24Btn(){
+  const on = localStorage.getItem(r24Key()) === '1';
+  const bar = document.getElementById('rappel24-bar');
+  if(bar) bar.className = 'r24-bar' + (on ? ' on' : '');
+}
+async function toggleRappel24(){
+  const wasOn = localStorage.getItem(r24Key()) === '1';
+  if(!wasOn){
+    if(Notification.permission === 'default'){
+      const perm = await Notification.requestPermission();
+      if(perm !== 'granted'){ updateRappel24Btn(); return; }
+    }
+    if(Notification.permission === 'denied'){
+      alert('Notifications bloquées par votre navigateur. Autorisez-les dans les paramètres du site.');
+      return;
+    }
+    localStorage.setItem(r24Key(), '1');
+    await checkRappel24();
+  } else {
+    localStorage.setItem(r24Key(), '0');
+  }
+  updateRappel24Btn();
+}
+async function checkRappel24(){
+  if(Notification.permission !== 'granted') return;
+  if(localStorage.getItem(r24Key()) !== '1') return;
+  const docId = window._r24DocId;
+  if(!docId) return;
+  const tomorrow = new Date(Date.now()+86400000).toISOString().slice(0,10);
+  const ym = tomorrow.slice(0,7);
+  try {
+    const { data: row } = await supabase.from('planning_months').select('data')
+      .eq('hospital_id', HOSPITAL_ID).eq('month', ym).single();
+    if(!row || !row.data) return;
+    const shifts = row.data.shifts || {};
+    const posts  = row.data.posts  || [];
+    const dayShifts = shifts[tomorrow] || {};
+    Object.entries(dayShifts).forEach(([pid, did]) => {
+      if(String(did) !== String(docId)) return;
+      const doneKey = r24DoneKey(tomorrow, pid);
+      if(localStorage.getItem(doneKey)) return;
+      const post = posts.find(pp => pp.id === pid);
+      const postName = post ? (post.name || pid) : pid;
+      const postTime = post ? (post.start || '') : '';
+      const dayStr = tomorrow.split('-').reverse().join('/');
+      new Notification('⏰ Rappel shift — Julandrex', {
+        body: 'Demain '+dayStr+' : '+postName+(postTime?' ('+postTime+')':''),
+        icon: '/julandrex-viewer/icon-192.png',
+        tag: 'r24_'+tomorrow+'_'+pid
+      });
+      localStorage.setItem(doneKey, '1');
+    });
+  } catch(e){ console.warn('[Rappel24]', e); }
+}
+
 async function toggleNotifications() {
   if (Notification.permission === 'denied') {
     toast('Notifications bloquées. Modifiez les paramètres de votre navigateur.', 4000);
@@ -1497,7 +1572,7 @@ async function subscribeToPush(reg) {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
     // Sauvegarder en base
-    const hospital = CFG.hospital || 'citadelle';
+    const hospital = CFG.hospital || 'huy_2';
     const doctorId = me && me.id ? String(me.id) : 'unknown';
     const { error: upsertErr } = await sb.from('push_subscriptions').upsert({
       doctor_id: doctorId,
@@ -1588,7 +1663,7 @@ async function renderMonPlanning() {
   for (let d = 1; d <= d2; d++) {
     const dk = dkStr(mpY, mpM, d);
     for (const p of posts) {
-      if ((shifts[dk] || {})[p.id] === me.id) {
+      if ((shifts[dk] || {})[p.id] === (me.local_id??me.id)) {
         myShifts.push({ dk, post: p });
       }
     }
@@ -1707,4 +1782,26 @@ function rejectX(id){
     <div id="mp-list"></div>
   </div>
 </div>
-</body>
+<div id="pso" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;"><div id="pso-icon" style="font-size:28px;margin-bottom:6px">&#x1F510;</div><h2 id="pso-title" style="color:#e2e8f0;font-size:18px;margin:0 0 6px">Créez votre PIN</h2><p id="pso-desc" style="color:#94a3b8;font-size:13px;margin:0 0 18px">Choisissez un code PIN permanent (min. 6 chiffres).</p><div id="pso-cur-wrap" style="display:none;margin-bottom:10px;"><input id="pso-cur" type="password" inputmode="numeric" placeholder="PIN actuel" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;box-sizing:border-box;"></div><input id="npi" type="password" inputmode="numeric" placeholder="Nouveau PIN (6-8 chiffres)" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;"><input id="cpi" type="password" inputmode="numeric" placeholder="Confirmer nouveau PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:14px;box-sizing:border-box;"><div id="pse" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:10px;"></div><button onclick="doConfirmPin()" style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">Valider mon PIN</button><button id="pso-cancel-btn" onclick="doCancelPin()" style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">Retour</button></div></div><div id="pso-msg" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px">⚠️</div><p id="pso-msg-text" style="color:#e2e8f0;font-size:15px;margin:0 0 20px"></p><button onclick="document.getElementById('pso-msg').style.display='none'" style="padding:10px 24px;background:#1e3a5f;color:#e2e8f0;border:none;border-radius:8px;font-size:14px;cursor:pointer;">OK</button></div></div><script>window._pinHash=null;window._pinSetupForce=false;document.addEventListener("DOMContentLoaded",function(){  var pi=document.getElementById("pin-inp");  if(pi)pi.addEventListener("input",function(){    if(pi.value)crypto.subtle.digest("SHA-256",new TextEncoder().encode(pi.value)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");});    else window._pinHash=null;  });});function showPinMsg(msg){  document.getElementById("pso-msg-text").textContent=msg;  document.getElementById("pso-msg").style.display="flex";}function showPinSetup(forced){  window._pinSetupForce=!!forced;  var o=document.getElementById("pso");  if(!o)return;  if(forced){    document.getElementById("pso-title").textContent="Créez votre PIN permanent";    document.getElementById("pso-desc").textContent="Pour sécuriser votre accès, choisissez un PIN personnel (6–8 chiffres). Il remplacera le PIN temporaire.";    document.getElementById("pso-cur-wrap").style.display="none";    document.getElementById("pso-cancel-btn").style.display="none";  } else {    document.getElementById("pso-title").textContent="Changer mon PIN";    document.getElementById("pso-desc").textContent="Entrez votre PIN actuel puis choisissez un nouveau PIN (6–8 chiffres).";    document.getElementById("pso-cur-wrap").style.display="block";    document.getElementById("pso-cancel-btn").style.display="inline-block";  }  document.getElementById("pse").textContent="";  document.getElementById("npi").value="";  document.getElementById("cpi").value="";  if(!forced){var c=document.getElementById("pso-cur");if(c)c.value="";}  o.style.display="flex";  setTimeout(function(){var i=document.getElementById(forced?"npi":"pso-cur");if(i)i.focus();},100);}function showChangePin(){showPinSetup(false);}function doCancelPin(){var o=document.getElementById("pso");if(o)o.style.display="none";}function doConfirmPin(){  var np=document.getElementById("npi").value.trim();  var cp=document.getElementById("cpi").value.trim();  var err=document.getElementById("pse");  err.textContent="";  if(!/^\d{6,8}$/.test(np)){err.textContent="PIN invalide : 6 à 8 chiffres numériques requis.";return;}  if(np!==cp){err.textContent="Les deux PINs ne correspondent pas.";return;}  if(!window._pinSetupForce){    var cur=document.getElementById("pso-cur").value.trim();    if(!cur){err.textContent="Entrez votre PIN actuel.";return;}    crypto.subtle.digest("SHA-256",new TextEncoder().encode(cur)).then(function(b){      var h=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");      if(h!==window._loginDoc.pin_hash){err.textContent="PIN actuel incorrect.";return;}      window._curPinForSave=cur;doSavePin(np,err);    });    return;  }  doSavePin(np,err);}function doSavePin(np,err){
+  err.textContent='Enregistrement...';
+  var isFirst=(_loginDoc&&_loginDoc.pin_set===false);
+  var action=isFirst?'set_permanent':'change_pin';
+  var curPin=isFirst?(window._tempPin||''):(window._curPinForSave||'');
+  fetch(CFG.url+'/functions/v1/update-pin',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:action,doctor_id:_loginDoc.id,current_pin:curPin,new_pin:np})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.error){err.textContent=d.error;return;}
+    if(isFirst)_loginDoc.pin_set=true;
+    window._tempPin=null;window._curPinForSave=null;
+    crypto.subtle.digest('SHA-256',new TextEncoder().encode(np)).then(function(buf){
+      window._pinHash=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+    });
+    err.textContent=d.message||'PIN mis à jour ✔';
+    setTimeout(function(){
+      document.getElementById('pin-setup-overlay').style.display='none';
+      document.getElementById('change-pin-overlay') && (document.getElementById('change-pin-overlay').style.display='none');
+    }, 1500);
+  }).catch(function(){err.textContent='Erreur réseau';});
+}</script></body>
