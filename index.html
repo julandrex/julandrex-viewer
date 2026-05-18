@@ -589,6 +589,8 @@ function desidClickDay(yr,mo,dn){
   var nd=new Date(yr,mo,dn);
   if(!_desidD1||_desidD2){_desidD1=nd;_desidD2=null;_desidType=null;desidResetType();}
   else{_desidD2=nd;}
+  // Pour indispo poste : un seul jour suffit → forcer D2=D1
+  if(window._desidCurType==='ip') _desidD2=new Date(_desidD1);
   desidUpdPanel();desidRenderCal();
 }
 
@@ -680,7 +682,8 @@ function desidUpdAdd(){
   if(window._desidCurType==='ip'){
     const pn=document.getElementById('desid-ip-post-sel')&&document.getElementById('desid-ip-post-sel').value;
     const btn=document.getElementById('desid-add-btn');
-    if(btn) btn.style.opacity=(_desidD1&&pn)?'1':'0.4';
+    const canAdd=!!_desidD1&&!!pn;
+    if(btn){btn.style.opacity=canAdd?'1':'0.4';btn.disabled=!canAdd;}
     return;
   }
   var ps=document.getElementById('desid-p-select');
@@ -711,7 +714,8 @@ function desidAddRequest(){
     if(!_desidD1){alert('Sélectionnez un jour dans le calendrier.');return;}
     const pn=document.getElementById('desid-ip-post-sel').value;
     if(!pn){alert('Choisissez un poste.');return;}
-    const dk=_desidD1.toISOString().substring(0,10);
+    const _ipd=_desidD1;
+    const dk=_ipd.getFullYear()+'-'+String(_ipd.getMonth()+1).padStart(2,'0')+'-'+String(_ipd.getDate()).padStart(2,'0');
     const label='🚫 '+pn+' le '+_desidD1.toLocaleDateString('fr-BE',{day:'2-digit',month:'short'});
     _desidReqs.push({type:'ip',date_start:dk,date_end:dk,detail:pn,label:label});
     desidRenderReqs();
