@@ -739,7 +739,7 @@ function desidRenderReqs(){
   if(!el||!em)return;
   el.innerHTML='';em.style.display=_desidReqs.length?'none':'block';
   var TCOLS={c:'#3b82f6',r:'#8b5cf6',f:'#10b981',p:'#f59e0b'};
-  var TLABS={c:'Congé',r:'Repos',f:'Formation',p:'Poste'};
+  var TLABS={c:'Congé',r:'Repos',f:'Formation',p:'Poste',ip:'Indispo poste'};
   _desidReqs.forEach(function(r){
     var lo=r.date_start.split('-'),hi=r.date_end.split('-');
     var loS=parseInt(lo[2])+' '+_DESID_MNS[parseInt(lo[1])-1];
