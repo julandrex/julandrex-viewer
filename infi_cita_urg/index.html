@@ -391,8 +391,8 @@ var _pinAttempts=0, _pinLockedUntil=0;
 const MO=['Janvier','Février','Mars','Avril','Mai','Juin',
           'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const DS=['Di','Lu','Ma','Me','Je','Ve','Sa'];
-const SEC_ORDER=['jour','soir','nuit','we'];
-const SEC_LBL={jour:'JOURNÉE SEMAINE',soir:'SOIRÉE',nuit:'GARDES NUIT SEM.',we:'WEEK-END'};
+const SEC_ORDER=['A','B','N','BN'];
+const SEC_LBL={A:'Matin (A)',B:'Après-midi (B)',N:'Nuit (N)',BN:'Soir-nuit (BN)'};
 
 // ══════════════════════════════════════════════════════════
 // INIT
@@ -940,7 +940,7 @@ function renderGrid(){
   const d2=new Date(cy,cm+1,0).getDate();
   const today=new Date().toISOString().slice(0,10);
   const byS={};SEC_ORDER.forEach(s=>byS[s]=[]);
-  posts.forEach(p=>{const s=p.section||'jour';if(byS[s])byS[s].push(p);});
+  posts.forEach(p=>{const s=p.section||'A';if(byS[s])byS[s].push(p);});
 
   let h='<table class="pgrid"><thead><tr>';
   h+='<th class="post-hdr">POSTE</th>';
