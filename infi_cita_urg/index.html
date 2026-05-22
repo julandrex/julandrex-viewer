@@ -657,7 +657,7 @@ function desidPickType(t){
   if(ps){
     if(t==='p'){
       ps.innerHTML='<option value="">-- Choisir un poste --</option>';
-      desidGetPosts().forEach(function(pn){var o=document.createElement('option');o.value=pn;o.textContent=pn;ps.appendChild(o);});
+      ['A (matin)','B (apres-midi)','N (nuit)','BN (soir-nuit)'].forEach(function(pn){var o=document.createElement('option');o.value=pn;o.textContent=pn;ps.appendChild(o);});
       ps.style.display='block';
     }else ps.style.display='none';
   }
