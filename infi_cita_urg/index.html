@@ -460,7 +460,7 @@ function doLogin(){
     errEl.textContent='Trop de tentatives. Patientez '+Math.ceil((_pinLockedUntil-now)/1000)+'s.';
     errEl.style.display='block';return;
   }
-  var pin=document.getElementById('pin-inp').value;
+  var pin=document.getElementById('pin-inp').value;window._rawPin=pin;
   window._loginDoc=doc;if(!doc.pin_hash){showPinSetup(false);return;}if(window._pinHash===doc.pin_hash){if(!doc.pin_set){showPinSetup(true);return;}
     _pinAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
@@ -1737,7 +1737,7 @@ function rejectX(id){
   fetch(CFG.url+'/functions/v1/update-pin',{
     method:'POST',
     headers:{'Content-Type':'application/json','apikey':CFG.key},
-    body:JSON.stringify({action:'set_permanent',doctor_id:doc.id,local_id:doc.local_id,hospital_id:CFG.hospital,new_pin:String(np)})
+    body:JSON.stringify({action:'set_permanent',doctor_id:doc.id,local_id:doc.local_id,hospital_id:CFG.hospital,new_pin:String(np),current_pin:window._rawPin||undefined})
   }).then(function(r){return r.json();}).then(function(data){
     if(data.success){
       crypto.subtle.digest("SHA-256",new TextEncoder().encode(String(np))).then(function(hb){
