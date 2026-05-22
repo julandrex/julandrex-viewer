@@ -1623,6 +1623,7 @@ async function renderMonPlanning() {
     const dw = new Date(s.dk + 'T12:00:00').getDay();
     return dw === 0 || dw === 6;
   }).length;
+  const bn = myShifts.filter(s => s.post.section==='BN').length;
   const smur = myShifts.filter(s => s.post.section==='B').length;
 
   statsEl.innerHTML = [
