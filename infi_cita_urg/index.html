@@ -921,9 +921,9 @@ function subscribeRT(){
           if(document.getElementById('exch-panel').classList.contains('show'))renderPanel();
           const ev=payload.eventType;
           const n=payload.new||{};
-          if(ev==='INSERT'&&n.proposer_id!==me.id) toast('📬 Nouvelle demande d\'échange !');
-          if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('✅ Votre échange a été accepté !');
-          if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('✅ Échange confirmé !');
+          if(ev==='INSERT'&&n.proposer_id!==(me.local_id??me.id)) toast('📬 Nouvelle demande d\'échange !');
+          if(ev==='UPDATE'&&n.proposer_id==(me.local_id??me.id)&&n.status==='accepted') toast('✅ Votre échange a été accepté !');
+          if(ev==='UPDATE'&&n.acceptor_id==(me.local_id??me.id)&&n.status==='confirmed') toast('✅ Échange confirmé !');
         });
     })
     .subscribe((status)=>{
@@ -963,7 +963,7 @@ function renderGrid(){
         const docId=(shifts[dk]||{})[p.id];
         const doc=docId?doctors.find(x=>(x.local_id??x.id)===docId):null;
         if(!doc){h+=`<td class="${we?'c-we':''}${isTd?' c-today':''}"></td>`;continue;}
-        const isMe2=doc.id===me.id;
+        const isMe2=doc.id==(me.local_id??me.id);
         const hasX=exchanges.some(r=>r.proposer_date===dk&&r.proposer_post===p.id&&r.status==='open');
         const lbl=getLabel(doc,doctors);
         h+=`<td class="c-filled${isMe2?' c-mine':''}${hasX?' c-exch':''}${isTd?' c-today':''}"
@@ -1057,7 +1057,7 @@ function logAccess(action,detail){
 // ══════════════════════════════════════════════════════════
 function renderBadge(){
   const open=exchanges.filter(r=>r.status==='open').length;
-  const act=exchanges.filter(r=>(r.status==='accepted'&&r.proposer_id===me.id)||(r.status==='open'&&r.proposer_id!==me.id)).length;
+  const act=exchanges.filter(r=>(r.status==='accepted'&&r.proposer_id==(me.local_id??me.id))||(r.status==='open'&&r.proposer_id!==(me.local_id??me.id))).length;
   const pill=document.getElementById('exch-pill');
   if(open>0){
     pill.textContent=act>0?`${act} action(s)`:`${open} échange(s)`;
@@ -1079,7 +1079,7 @@ function renderPanel(){
     const prop=doctors.find(d=>d.id===r.proposer_id);
     const acc=r.acceptor_id?doctors.find(d=>d.id===r.acceptor_id):null;
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
-    const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
+    const isMe2=r.proposer_id==(me.local_id??me.id),isMeAcc=r.acceptor_id==(me.local_id??me.id);
     let acts='';
     if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
@@ -1174,7 +1174,7 @@ function openModal(dk,pid){
   setTarget('all');
   // Remplir le sélecteur de médecins (hors soi-même)
   const sel=document.getElementById('m-target-doc');
-  sel.innerHTML=doctors.filter(d=>d.id!==me.id).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
+  sel.innerHTML=doctors.filter(d=>d.id!==(me.local_id??me.id)).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
   document.getElementById('modal-bg').classList.add('show');
 }
 
@@ -1238,7 +1238,7 @@ async function submitExchange(){
     } else {
       // Échange ouvert à tous → notifier tous les médecins actifs avec un email
       sb.from('doctors').select('id,email,firstname,lastname').eq('active',true).eq('hospital_id',CFG.hospital).not('email','is',null)
-        .then(({data:docs})=>{ (docs||[]).filter(d=>d.email&&d.id!==me.id).forEach(d=>_sendNotif(d.email,d.firstname+' '+d.lastname,d.id)); });
+        .then(({data:docs})=>{ (docs||[]).filter(d=>d.email&&d.id!==(me.local_id??me.id)).forEach(d=>_sendNotif(d.email,d.firstname+' '+d.lastname,d.id)); });
     }
   }catch(e){toast('Erreur : '+e.message,true);}
 }
