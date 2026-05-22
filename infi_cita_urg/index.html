@@ -1610,7 +1610,7 @@ async function renderMonPlanning() {
   for (let d = 1; d <= d2; d++) {
     const dk = dkStr(mpY, mpM, d);
     for (const p of posts) {
-      if ((shifts[dk] || {})[p.id] === (me.local_id??me.id)) {
+      if ((shifts[dk] || {})[p.id] == (me.local_id??me.id)) {
         myShifts.push({ dk, post: p });
       }
     }
