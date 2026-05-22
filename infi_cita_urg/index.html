@@ -1618,7 +1618,7 @@ async function renderMonPlanning() {
 
   // Stats
   const total = myShifts.length;
-  const nuits = myShifts.filter(s => s.post.section==='N'||s.post.section==='BN').length;
+  const nuits = myShifts.filter(s => s.post.section==='N').length;
   const wes = myShifts.filter(s => {
     const dw = new Date(s.dk + 'T12:00:00').getDay();
     return dw === 0 || dw === 6;
@@ -1627,7 +1627,8 @@ async function renderMonPlanning() {
 
   statsEl.innerHTML = [
     ['Total', total, '#4f8ef7'],
-    ['N+BN', nuits, '#9b59b6'],
+    ['N', nuits, '#9b59b6'],
+    ['BN', bn, '#7c3aed'],
     ['B', wes, '#e67e22'],
     ['A', smur, '#1abc9c']
   ].map(([l, v, c]) => `<div style="background:var(--bg2);border-radius:10px;padding:10px 6px;text-align:center;">
