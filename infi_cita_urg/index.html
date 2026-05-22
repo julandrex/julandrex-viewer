@@ -1586,8 +1586,8 @@ async function renderMonPlanning() {
   listEl.innerHTML = '';
 
   // Charger le planning du mois si différent du mois courant
-  let pl = planning;
-  if (mpY !== cy || mpM !== cm) {
+  let pl = null;
+  if (true) { // toujours charger depuis Supabase
     const { data: mpData } = await sb.from('planning_months')
       .select('shifts,posts').eq('hospital_id', CFG.hospital).eq('year', mpY).eq('month', mpM).maybeSingle();
     pl = mpData || null;
