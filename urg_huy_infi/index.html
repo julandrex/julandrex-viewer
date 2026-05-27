@@ -960,10 +960,14 @@ function toggleView(){
   if(btn){btn.textContent=_grdMode==='cal'?'⊞':'📅';btn.title=_grdMode==='cal'?'Vue détaillée':'Vue calendrier';}
   renderView();
 }
-function renderView(){const ob=document.getElementById('offline-bar');if(ob)ob.innerHTML='';if(_grdMode==='tbl')renderGrid();else renderCalendar();}
+function renderView(){
+  const ob=document.getElementById('offline-bar');if(ob)ob.innerHTML='';
+  if(_grdMode==='tbl')renderGrid();else renderCalendar();
+}
 function renderCalendar(){
   const el=document.getElementById('grid-area');
   if(!el||!planning||!me)return;
+  const today=new Date().toISOString().slice(0,10);
   const myId=me.local_id??me.id;
   const d2=new Date(cy,cm+1,0).getDate();
   const firstDow=new Date(dkStr(cy,cm,1)+'T12:00:00').getDay();
@@ -971,20 +975,30 @@ function renderCalendar(){
   const GBG={A:'#1d4ed8',B:'#5b21b6',N:'#1e1b4b',BN:'#7c3aed'};
   const GTC={A:'#dbeafe',B:'#ede9fe',N:'#818cf8',BN:'#ede9fe'};
   let h='<div class="month-cal">';
-  ['Lu','Ma','Me','Je','Ve','Sa','Di'].forEach(d=>{h+=`<div class="mc-hdr">${d}</div>`;});
-  for(let i=0;i<startPad;i++)h+='<div class="mc-cell mc-empty"></div>';
-  for(let d=1;d<=d2;d++){
-    const dk=dkStr(cy,cm,d);
-    const dw=new Date(dk+'T12:00:00').getDay();
-    const isWe=dw===0||dw===6,isTd=dk===today;
-    let grp=null;
-    for(const p of planning.posts){if((planning.shifts[dk]||{})[p.id]===myId){grp=p.section;break;}}
-    const bg=grp?GBG[grp]:'',tc=grp?GTC[grp]:'';
-    h+=`<div class="mc-cell${isWe?' mc-we':''}${isTd?' mc-today':''}${grp?' mc-has':''}" style="${bg?`background:${bg};color:${tc};border-color:${bg}`:''}"><span class="mc-dn">${d}</span>${grp?`<span class="mc-gl">${grp}</span>`:''}</div>`;
+  var days=['Lu','Ma','Me','Je','Ve','Sa','Di'];
+  for(var x=0;x<days.length;x++)h+='<div class="mc-hdr">'+days[x]+'</div>';
+  for(var i=0;i<startPad;i++)h+='<div class="mc-cell mc-empty"></div>';
+  for(var d=1;d<=d2;d++){
+    var dk=dkStr(cy,cm,d);
+    var dw=new Date(dk+'T12:00:00').getDay();
+    var isWe=dw===0||dw===6;
+    var isTd=dk===today;
+    var grp=null;
+    var dayShifts=(planning.shifts[dk]||{});
+    for(var pi=0;pi<planning.posts.length;pi++){
+      if(dayShifts[planning.posts[pi].id]===myId){grp=planning.posts[pi].section;break;}
+    }
+    var st=grp?(GBG[grp]?'background:'+GBG[grp]+';color:'+GTC[grp]+';border-color:'+GBG[grp]:''):'';
+    var cls='mc-cell'+(isWe?' mc-we':'')+(isTd?' mc-today':'')+(grp?' mc-has':'');
+    h+='<div class="'+cls+'"'+(st?' style="'+st+'"':'')+'>';
+    h+='<span class="mc-dn">'+d+'</span>';
+    if(grp)h+='<span class="mc-gl">'+grp+'</span>';
+    h+='</div>';
   }
   h+='</div>';
   el.innerHTML=h;
 }
+
 function renderGrid(){
   if(!planning)return;
   const {shifts,posts}=planning;
