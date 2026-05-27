@@ -957,7 +957,7 @@ function subscribeRT(){
 // ══════════════════════════════════════════════════════════
 // RENDER GRID
 // ══════════════════════════════════════════════════════════
-function openCalCell(dk){if(!me||!planning)return;var myId=me.local_id??me.id;var dayShifts=planning.shifts[dk]||{};var myPost=null;for(var pi=0;pi<planning.posts.length;pi++){if(dayShifts[planning.posts[pi].id]===myId){myPost=planning.posts[pi];break;}}if(!myPost)return;var myRole=me.role||'';var sameRoleIds=doctors.filter(function(d){return d.role===myRole&&(d.local_id??d.id)!==myId;}).map(function(d){return d.local_id??d.id;});var count=Object.values(dayShifts).filter(function(id){return sameRoleIds.includes(id);}).length;window._calInfo={postFull:myPost.full,count:count,role:myRole};openModal(dk,myPost.id);}
+function openCalCell(dk){if(!me||!planning)return;var myId=me.local_id??me.id;var dayShifts=planning.shifts[dk]||{};var myPost=null;for(var pi=0;pi<planning.posts.length;pi++){if(dayShifts[planning.posts[pi].id]===myId){myPost=planning.posts[pi];break;}}if(!myPost)return;var myRole=me.role||'';var sameRoleIds=doctors.filter(function(d){return d.role===myRole&&(d.local_id??d.id)!==myId;}).map(function(d){return d.local_id??d.id;});var sameSectionPostIds=planning.posts.filter(function(p){return p.section===myPost.section;}).map(function(p){return p.id;});var count=sameSectionPostIds.filter(function(pid){return sameRoleIds.includes(dayShifts[pid]);}).length;window._calInfo={postFull:myPost.full,count:count,role:myRole};openModal(dk,myPost.id);}
 // ── VIEW MODE ──────────────────────────────────────
 let _grdMode='cal';
 function toggleView(){
