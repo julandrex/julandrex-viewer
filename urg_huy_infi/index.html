@@ -1269,11 +1269,12 @@ function closeModal(){document.getElementById('modal-bg').classList.remove('show
 let mTarget='all';
 function setTarget(t){
   window._exchTarget=t;
-  ['r-all','r-specific','r-group'].forEach(function(id){document.getElementById(id).classList.remove('on');});
-  document.getElementById('r-'+t).classList.add('on');
-  document.getElementById('m-target-wrap').style.display=t==='specific'?'':'none';
-  document.getElementById('m-group-wrap').style.display=t==='group'?'':'none';
+  ['r-all','r-specific','r-group'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('on');});
+  var rb=document.getElementById('r-'+t);if(rb)rb.classList.add('on');
+  var tw=document.getElementById('m-target-wrap');if(tw)tw.style.display=t==='specific'?'':'none';
+  var gw=document.getElementById('m-group-wrap');if(gw)gw.style.display=t==='group'?'':'none';
 }
+
 
 
 async function submitExchange(){
