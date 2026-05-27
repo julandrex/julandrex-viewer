@@ -137,7 +137,7 @@ button{font-family:inherit;}
 .mi-post{font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px;}
 .mi-count{font-size:12px;color:var(--t2);}
 .mi-count strong{color:var(--acc);}
-.mfield{margin-bottom:14px;}
+.mfield{margin-bottom:14px;}.m-group-wrap{display:none;margin-top:8px;}.mgroup-sel{width:100%;background:var(--bg2);border:1px solid var(--b);border-radius:8px;color:var(--t1);padding:10px 12px;font-size:13px;outline:none;cursor:pointer;}
 .mlbl{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:block;}
 .mradio-g{display:flex;gap:8px;}
 .mradio{flex:1;border:1px solid var(--b);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center;font-size:12px;font-weight:500;transition:all .14s;color:var(--t2);}
@@ -368,6 +368,7 @@ button{font-family:inherit;}
       <div class="mradio-g">
         <div class="mradio on" id="r-all" onclick="setTarget('all')">👥 Tout le monde</div>
         <div class="mradio" id="r-specific" onclick="setTarget('specific')">👤 Un collègue en particulier</div>
+        <div class="mradio" id="r-group" onclick="setTarget('group')">🏷️ Un groupe</div>
       </div>
     </div>
     <div class="mfield" id="m-target-wrap" style="display:none;">
@@ -1255,7 +1256,7 @@ function openModal(dk,pid){
   const post=planning?.posts?.find(p=>p.id===pid);
   document.getElementById('ms').textContent=(post?post.full||post.name:pid)+' · '+fmtDate(dk);
   document.getElementById('m-msg').value='';
-  setTarget('all');
+  setTarget('all');var _gs=document.getElementById('m-group-sel');if(_gs&&typeof hospitalConfig!=='undefined'&&hospitalConfig.role_groups){_gs.innerHTML=(hospitalConfig.role_groups||[]).map(function(g){var gn=Array.isArray(g)?g[0]:g;return '<option value="'+gn+'">'+gn+'</option>';}).join('');}else if(_gs){_gs.innerHTML=['AS','A1/A2','SISU','SMUR','Polyvalent'].map(function(g){return '<option value="'+g+'">'+g+'</option>';}).join('');}
   // Remplir le sélecteur de médecins (hors soi-même)
   const sel=document.getElementById('m-target-doc');
   sel.innerHTML=doctors.filter(d=>d.id!==(me.local_id??me.id)).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
@@ -1267,11 +1268,13 @@ function closeModal(){document.getElementById('modal-bg').classList.remove('show
 
 let mTarget='all';
 function setTarget(t){
-  mTarget=t;
-  document.getElementById('r-all').classList.toggle('on',t==='all');
-  document.getElementById('r-specific').classList.toggle('on',t==='specific');
+  window._exchTarget=t;
+  ['r-all','r-specific','r-group'].forEach(function(id){document.getElementById(id).classList.remove('on');});
+  document.getElementById('r-'+t).classList.add('on');
   document.getElementById('m-target-wrap').style.display=t==='specific'?'':'none';
+  document.getElementById('m-group-wrap').style.display=t==='group'?'':'none';
 }
+
 
 async function submitExchange(){
   if(!mDate||!mPost)return;
@@ -1282,11 +1285,12 @@ async function submitExchange(){
       proposer_date:mDate,proposer_post:mPost,
       type:'exchange',status:'open',
       target_doctor_id:targetDocId,
+      target_group_role:(window._exchTarget==='group'?document.getElementById('m-group-sel').value:null),
       message:document.getElementById('m-msg').value.trim()||null
     });
     if(error)throw error;
     closeModal();
-    toast(targetDocId?'Demande envoyée au médecin ciblé !':'Demande envoyée à tous les médecins !');
+    var _tMsg=targetDocId?'Demande envoyée au médecin ciblé !':(window._exchTarget==='group'?'Demande envoyée au groupe '+document.getElementById('m-group-sel').value+' !':'Demande envoyée à tous !');toast(_tMsg);
     // Push notification au(x) destinataire(s)
     try {
       const _postName = planning?.posts?.find(p=>p.id===mPost)?.full || mPost;
