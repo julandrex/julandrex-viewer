@@ -912,12 +912,12 @@ async function loadAll(){
         var age=Math.round((Date.now()-cached.ts)/60000);
         var ageStr=age<60?age+'min':Math.round(age/60)+'h';
         var dt=new Date(cached.ts).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-        document.getElementById('offline-bar').innerHTML='<div class="offline-banner">'📵 Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
+        document.getElementById('offline-bar').innerHTML='<div class="offline-banner">📵 Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
         if(planning){renderView();renderShiftWidget();}
       }else{
         var isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
         var msg=isNet?'Impossible de joindre le serveur. Vérifiez votre connexion.':'Erreur serveur : '+e.message;
-        document.getElementById('offline-bar').innerHTML='<div class="err-banner">'<div>⚠️ '+msg+'</div><button class="err-retry" onclick="loadAll()">↻ Réessayer</button></div>';
+        document.getElementById('offline-bar').innerHTML='<div class="err-banner"><div>⚠️ '+msg+'</div><button class="err-retry" onclick="loadAll()">↻ Réessayer</button></div>';
       }
       renderBadge();
     }
@@ -1022,7 +1022,7 @@ function renderGrid(){
       const dk=dkStr(cy,cm,d),isTd=dk===today;
       let grp=null;
       for(const p of planning.posts){if((planning.shifts[dk]||{})[p.id]===myId){grp=p.section;break;}}
-      h+=`<td class="grp-cell${isTd?' c-today':''}">${grp?`<span class="grp-badge grp-${grp}">${grp}</span>`:''}</td>`;
+      var _gcls='grp-cell'+(isTd?' c-today':'');var _gsp=grp?('<span class="grp-badge grp-'+grp+'">'+grp+'</span>'):'';h+='<td class="'+_gcls+'">'+_gsp+'</td>';
     }
     h+='</tr>';
   }
