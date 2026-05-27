@@ -62,7 +62,7 @@ button{font-family:inherit;}
 .exch-pill.show{display:block;}
 .exch-pill.urgent{background:var(--err);color:#fff;}
 
-#grid-area{flex:1;overflow:auto;}
+#offline-bar{flex-shrink:0;}#grid-area{flex:1;overflow:auto;}
 
 /* ── PLANNING GRID ──────────────────────────── */
 .pgrid{border-collapse:collapse;min-width:100%;font-size:11px;}
@@ -240,7 +240,7 @@ button{font-family:inherit;}
     <button class="mnav" onclick="nextMonth()">›</button>
     <span class="exch-pill" id="exch-pill" onclick="togglePanel()">0 échange</span>
   </div>
-  <div id="shift-widget"></div>
+  <div id="shift-widget"></div><div id="offline-bar"></div>
   <div id="grid-area"><div class="ld"><div class="sp"></div>Chargement du planning...</div></div>
 </div>
 
@@ -912,12 +912,12 @@ async function loadAll(){
         var age=Math.round((Date.now()-cached.ts)/60000);
         var ageStr=age<60?age+'min':Math.round(age/60)+'h';
         var dt=new Date(cached.ts).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-        document.getElementById('grid-area').innerHTML='<div class="offline-banner">📵 Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
+        document.getElementById('offline-bar').innerHTML='<div class="offline-banner">'📵 Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
         if(planning){renderView();renderShiftWidget();}
       }else{
         var isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
         var msg=isNet?'Impossible de joindre le serveur. Vérifiez votre connexion.':'Erreur serveur : '+e.message;
-        document.getElementById('grid-area').innerHTML='<div class="err-banner"><div>⚠️ '+msg+'</div><button class="err-retry" onclick="loadAll()">↻ Réessayer</button></div>';
+        document.getElementById('offline-bar').innerHTML='<div class="err-banner">'<div>⚠️ '+msg+'</div><button class="err-retry" onclick="loadAll()">↻ Réessayer</button></div>';
       }
       renderBadge();
     }
@@ -960,7 +960,7 @@ function toggleView(){
   if(btn){btn.textContent=_grdMode==='cal'?'⊞':'📅';btn.title=_grdMode==='cal'?'Vue détaillée':'Vue calendrier';}
   renderView();
 }
-function renderView(){if(_grdMode==='tbl')renderGrid();else renderCalendar();}
+function renderView(){const ob=document.getElementById('offline-bar');if(ob)ob.innerHTML='';if(_grdMode==='tbl')renderGrid();else renderCalendar();}
 function renderCalendar(){
   const el=document.getElementById('grid-area');
   if(!el||!planning||!me)return;
