@@ -81,7 +81,11 @@ button{font-family:inherit;}
 .c-filled{font-size:10px;font-weight:600;}
 .c-mine{background:rgba(59,130,246,.1)!important;border:1.5px solid var(--acc)!important;cursor:pointer;}
 .c-mine:hover{background:rgba(59,130,246,.2)!important;}
-.grp-row td{height:34px;text-align:center;vertical-align:middle;padding:2px;}
+.grp-row td{height:34px;
+.dc-peer{position:absolute;bottom:3px;right:4px;font-size:9px;font-weight:700;border-radius:4px;padding:1px 4px;line-height:1.3;}
+.dc-peer-ok{background:rgba(34,197,94,.18);color:#22c55e;}
+.dc-peer-warn{background:rgba(245,158,11,.22);color:#f59e0b;}
+.dc-peer-alert{background:rgba(239,68,68,.22);color:#ef4444;}text-align:center;vertical-align:middle;padding:2px;}
 .grp-badge{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;font-size:13px;font-weight:900;line-height:1;}
 .grp-A{background:#1d4ed8;color:#dbeafe;}
 .grp-B{background:#5b21b6;color:#ede9fe;}
@@ -546,7 +550,7 @@ async function openDesiderata(){
   const bg=document.getElementById('desid-bg');
   bg.style.display='block';bg.dataset.quarter=nextQNum;bg.dataset.year=nextQYear;
   _desidCalY=nextQYear;_desidCalM=(nextQNum-1)*3;
-  desidResetType();desidRenderCal();desidRenderReqs();desidUpdPanel();
+  desidResetType();desidUpdPanel();desidLoadPeerData().then(function(){desidRenderCal();desidRenderReqs();});
   const info=document.getElementById('desid-deadline-info');
   info.textContent='⏳ Chargement...';
   try{
@@ -561,12 +565,43 @@ function closeDesiderata(){
   _desidD1=null;_desidD2=null;_desidType=null;_desidReqs=[];
 }
 
+async function desidLoadPeerData(){
+  if(!me||!planning)return;
+  window._desidPeer={};
+  var myRole=me.role||'';
+  var myId=me.local_id??me.id;
+  // Taille du groupe hors moi
+  window._desidPeerN=doctors.filter(function(d){return d.role===myRole&&(d.local_id??d.id)!==myId;}).length;
+  if(!window._desidPeerN)return;
+  // Calcul du trimestre
+  var qtr=Math.floor(_desidCalM/3)+1;
+  try{
+    var res=await sb.from('desiderata_requests')
+      .select('doctor_id,requests')
+      .eq('hospital_id',CFG.hospital)
+      .eq('year',_desidCalY)
+      .eq('quarter',qtr);
+    if(res.error||!res.data)return;
+    var sameRole=doctors.filter(function(d){return d.role===myRole&&(d.local_id??d.id)!==myId;}).map(function(d){return d.id;});
+    res.data.forEach(function(row){
+      if(!sameRole.includes(row.doctor_id))return;
+      (row.requests||[]).forEach(function(req){
+        if(req.type!=='c'&&req.type!=='r')return;
+        var s=new Date(req.date_start),e=new Date(req.date_end);
+        for(var dt=new Date(s);dt<=e;dt.setDate(dt.getDate()+1)){
+          var dk=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+          window._desidPeer[dk]=(window._desidPeer[dk]||0)+1;
+        }
+      });
+    });
+  }catch(e){}
+}
 function desidChMo(d){
   _desidCalM+=d;
   if(_desidCalM>11){_desidCalM=0;_desidCalY++;}
   if(_desidCalM<0){_desidCalM=11;_desidCalY--;}
   _desidD1=null;_desidD2=null;_desidType=null;
-  desidResetType();desidUpdPanel();desidRenderCal();
+  desidResetType();desidUpdPanel();desidLoadPeerData().then(function(){desidRenderCal();});
 }
 
 function desidFmtDate(dt){
@@ -587,6 +622,18 @@ function desidMkDay(dn,yr,mo,isCur,loT,hiT){
   }else if(_desidD1&&ndT===_desidD1.getTime()){b.style.background='#c9983a';b.style.color='#0d2240';b.style.fontWeight='700';}
   b.textContent=dn;
   (function(y2,m2,d2){b.onclick=function(){desidClickDay(y2,m2,d2);};})(yr,mo,dn);
+  if(isCur&&window._desidPeer&&window._desidPeerN){
+    var dk2=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(dn).padStart(2,'0');
+    var cnt=window._desidPeer[dk2]||0;
+    if(cnt>0){
+      var sp=document.createElement('span');
+      var ratio=cnt/window._desidPeerN;
+      sp.className='dc-peer '+(ratio>=0.75?'dc-peer-alert':ratio>=0.5?'dc-peer-warn':'dc-peer-ok');
+      sp.textContent=cnt+'/'+window._desidPeerN;
+      b.style.position='relative';
+      b.appendChild(sp);
+    }
+  }
   return b;
 }
 
@@ -1110,37 +1157,25 @@ function lockSession(){
   document.getElementById('sess-pin-err').textContent='';
 }
 function onSessPinInput(v){if(v.length>=6)onSessPinSubmit();}
-async function onSessPinSubmit(){
-  const now=Date.now();
-  const inp=document.getElementById('sess-pin-inp');
-  const errEl=document.getElementById('sess-pin-err');
-  if(now<_pinLockedUntil){
-    const secs=Math.ceil((_pinLockedUntil-now)/1000);
-    if(errEl)errEl.textContent='Trop de tentatives. Patientez '+secs+'s.';
-    return;
-  }
-  // Hasher le PIN saisi et comparer à me.pin_hash
-  try{
-    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(inp.value));
-    const hash=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-    if(hash===me.pin_hash){
-      window._rawPin=inp.value;
-      _pinAttempts=0;
-      document.getElementById('session-overlay').classList.remove('show');
-      logAccess('session_resume','');
+function onSessPinSubmit(){
+  var now=Date.now();
+  if(now<_pinLockedUntil){document.getElementById('sess-pin-err').textContent='Trop de tentatives. Patientez '+Math.ceil((_pinLockedUntil-now)/1000)+'s.';return;}
+  var inp=document.getElementById('sess-pin-inp');
+  if(inp.value===me.pin){
+    _pinAttempts=0;
+    document.getElementById('session-overlay').classList.remove('show');
+    _sessActive=true;resetSessTimer();logAccess('session_resume','');
+  }else{
+    _pinAttempts++;
+    if(_pinAttempts>=PIN_MAX_ATTEMPTS){
+      _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
+      document.getElementById('sess-pin-err').textContent='5 tentatives échouées. Bloqué 30s.';
+      logAccess('pin_lockout','');
     }else{
-      _pinAttempts++;
-      if(_pinAttempts>=PIN_MAX_ATTEMPTS){
-        _pinLockedUntil=Date.now()+PIN_LOCKOUT_MS;
-        _pinAttempts=0;
-        if(errEl)errEl.textContent='Trop de tentatives. Patienter.';
-        logAccess('pin_lockout','');
-      }else{
-        if(errEl)errEl.textContent='PIN erroné. Tentative '+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+'.';
-      }
-      inp.value='';inp.focus();
+      document.getElementById('sess-pin-err').textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
     }
-  }catch(e){if(errEl)errEl.textContent='Erreur: '+e.message;}
+    inp.value='';
+  }
 }
 
 // ════════ LOGS RGPD ════════
