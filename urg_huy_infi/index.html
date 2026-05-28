@@ -689,16 +689,12 @@ function desidPickType(t){
 }
 
 function desidGetPosts(){
-  const src=(planning&&planning.posts)?planning.posts:[];
+  var src=planning?planning.posts:[];
   if(!src.length)return[];
-  var names=[],seen={};
-  src.filter(function(p){return p.section!=='we';}).forEach(function(p){
-    if(p.name==='U3'){
-      if(!seen['U3-1']){names.push('U3-1 (tôt)');seen['U3-1']=true;}
-      else if(!seen['U3-2']){names.push('U3-2 à 5');seen['U3-2']=true;}
-    }else if(!seen[p.name]){names.push(p.name);seen[p.name]=true;}
-  });
-  return names;
+  var seen={};
+  src.forEach(function(p){if(p.section&&!seen[p.section])seen[p.section]=true;});
+  // Ordre fixe A → B → N → BN
+  return ['A','B','N','BN'].filter(function(s){return seen[s];});
 }
 
 function desidUpdAdd(){
@@ -737,7 +733,7 @@ function desidAddRequest(){
   if(window._desidCurType==='ip'){
     if(!_desidD1){alert('Sélectionnez un jour dans le calendrier.');return;}
     const pn=document.getElementById('desid-ip-post-sel').value;
-    if(!pn){alert('Choisissez un poste.');return;}
+    if(!pn){alert('Choisissez un groupe (A, B ou N).');return;}
     const _ipd=_desidD1;
     const dk=_ipd.getFullYear()+'-'+String(_ipd.getMonth()+1).padStart(2,'0')+'-'+String(_ipd.getDate()).padStart(2,'0');
     const label='🚫 '+pn+' le '+_desidD1.toLocaleDateString('fr-BE',{day:'2-digit',month:'short'});
@@ -1260,7 +1256,7 @@ function openModal(dk,pid){
   // Remplir le sélecteur de médecins (hors soi-même)
   const sel=document.getElementById('m-target-doc');
   sel.innerHTML=doctors.filter(d=>d.id!==(me.local_id??me.id)).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
-  var _mi=document.getElementById('modal-info');if(window._calInfo){_mi.className='modal-info show';document.getElementById('mi-post').textContent=window._calInfo.postFull;document.getElementById('mi-count').innerHTML='<strong>'+window._calInfo.count+'</strong> collègue'+(window._calInfo.count>1?'s':'')+' du groupe <strong>'+window._calInfo.role+'</strong> présent'+(window._calInfo.count>1?'s':'')+' lors de cette pause';window._calInfo=null;}else{_mi.className='modal-info';}
+  var _mi=document.getElementById('modal-info');if(window._calInfo){_mi.className='modal-info show';document.getElementById('mi-post').textContent=window._calInfo.postFull;document.getElementById('mi-count').innerHTML='<strong>'+window._calInfo.count+'</strong> collègue'+(window._calInfo.count>1?'s':'')+' du groupe <strong>'+window._calInfo.role+'</strong> présent'+(window._calInfo.count>1?'s':'')+' ce jour';window._calInfo=null;}else{_mi.className='modal-info';}
   document.getElementById('modal-bg').classList.add('show');
 }
 
