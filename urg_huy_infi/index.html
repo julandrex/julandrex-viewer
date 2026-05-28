@@ -958,7 +958,7 @@ function subscribeRT(){
 // ══════════════════════════════════════════════════════════
 // RENDER GRID
 // ══════════════════════════════════════════════════════════
-function openCalCell(dk){if(!me||!planning)return;var myId=me.local_id??me.id;var dayShifts=planning.shifts[dk]||{};var myPost=null;for(var pi=0;pi<planning.posts.length;pi++){if(dayShifts[planning.posts[pi].id]===myId){myPost=planning.posts[pi];break;}}if(!myPost)return;var myRole=me.role||'';var sameRoleIds=doctors.filter(function(d){return d.role===myRole&&(d.local_id??d.id)!==myId;}).map(function(d){return d.local_id??d.id;});var sameSectionPostIds=planning.posts.filter(function(p){return p.section===myPost.section;}).map(function(p){return p.id;});var count=sameSectionPostIds.filter(function(pid){return sameRoleIds.includes(dayShifts[pid]);}).length;window._calInfo={postFull:myPost.full,count:count,role:myRole};openModal(dk,myPost.id);}
+function openCalCell(dk){if(!me||!planning)return;var _today=new Date().toISOString().slice(0,10);if(dk<_today)return;var myId=me.local_id??me.id;var dayShifts=planning.shifts[dk]||{};var myPost=null;for(var pi=0;pi<planning.posts.length;pi++){if(dayShifts[planning.posts[pi].id]===myId){myPost=planning.posts[pi];break;}}if(!myPost)return;var myRole=me.role||'';var sameRoleIds=doctors.filter(function(d){return d.role===myRole&&(d.local_id??d.id)!==myId;}).map(function(d){return d.local_id??d.id;});var sameSectionPostIds=planning.posts.filter(function(p){return p.section===myPost.section;}).map(function(p){return p.id;});var count=sameSectionPostIds.filter(function(pid){return sameRoleIds.includes(dayShifts[pid]);}).length;window._calInfo={postFull:myPost.full,count:count,role:myRole};openModal(dk,myPost.id);}
 // ── VIEW MODE ──────────────────────────────────────
 let _grdMode='cal';
 function toggleView(){
@@ -1252,8 +1252,6 @@ async function cancelX(id){
 // MODAL
 // ══════════════════════════════════════════════════════════
 function openModal(dk,pid){
-  if(!document.getElementById('m-group-wrap')){var _tw=document.getElementById('m-target-wrap');if(_tw){var _gw=document.createElement('div');_gw.className='mfield';_gw.id='m-group-wrap';_gw.style.display='none';var _rg=(typeof hospitalConfig!=='undefined'&&hospitalConfig.role_groups)||[['AS'],['A1/A2'],['SISU'],['SMUR'],['Polyvalent']];_gw.innerHTML='<span class="mlbl">Choisir le groupe</span><select class="mgroup-sel" id="m-group-sel">'+_rg.map(function(g){var n=Array.isArray(g)?g[0]:g;return '<option value="'+n+'">'+n+'</option>';}).join('')+'</select>';_tw.parentNode.insertBefore(_gw,_tw.nextSibling);}}
-  
   mDate=dk;mPost=pid;
   const post=planning?.posts?.find(p=>p.id===pid);
   document.getElementById('ms').textContent=(post?post.full||post.name:pid)+' · '+fmtDate(dk);
