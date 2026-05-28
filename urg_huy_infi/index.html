@@ -1269,11 +1269,24 @@ function closeModal(){document.getElementById('modal-bg').classList.remove('show
 let mTarget='all';
 function setTarget(t){
   window._exchTarget=t;
+  // Créer m-group-wrap dynamiquement si absent (compat cache ancien)
+  if(!document.getElementById('m-group-wrap')){
+    var tw=document.getElementById('m-target-wrap');
+    if(tw){
+      var gw=document.createElement('div');
+      gw.className='mfield';gw.id='m-group-wrap';gw.style.display='none';
+      var roleGroups=(typeof hospitalConfig!=='undefined'&&hospitalConfig.role_groups)||[['AS'],['A1/A2'],['SISU'],['SMUR'],['Polyvalent']];
+      var opts=roleGroups.map(function(g){var n=Array.isArray(g)?g[0]:g;return '<option value="'+n+'">'+n+'</option>';}).join('');
+      gw.innerHTML='<span class="mlbl">Choisir le groupe</span><select class="mgroup-sel" id="m-group-sel">'+opts+'</select>';
+      tw.parentNode.insertBefore(gw,tw.nextSibling);
+    }
+  }
   ['r-all','r-specific','r-group'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('on');});
   var rb=document.getElementById('r-'+t);if(rb)rb.classList.add('on');
-  var tw=document.getElementById('m-target-wrap');if(tw)tw.style.display=t==='specific'?'':'none';
-  var gw=document.getElementById('m-group-wrap');if(gw)gw.style.display=t==='group'?'':'none';
+  var tw2=document.getElementById('m-target-wrap');if(tw2)tw2.style.display=t==='specific'?'':'none';
+  var gw2=document.getElementById('m-group-wrap');if(gw2)gw2.style.display=t==='group'?'':'none';
 }
+
 
 
 
