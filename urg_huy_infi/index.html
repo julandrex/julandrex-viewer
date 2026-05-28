@@ -689,12 +689,16 @@ function desidPickType(t){
 }
 
 function desidGetPosts(){
-  var src=planning?planning.posts:[];
+  const src=(planning&&planning.posts)?planning.posts:[];
   if(!src.length)return[];
-  var seen={};
-  src.forEach(function(p){if(p.section&&!seen[p.section])seen[p.section]=true;});
-  // Ordre fixe A → B → N → BN
-  return ['A','B','N','BN'].filter(function(s){return seen[s];});
+  var names=[],seen={};
+  src.filter(function(p){return p.section!=='we';}).forEach(function(p){
+    if(p.name==='U3'){
+      if(!seen['U3-1']){names.push('U3-1 (tôt)');seen['U3-1']=true;}
+      else if(!seen['U3-2']){names.push('U3-2 à 5');seen['U3-2']=true;}
+    }else if(!seen[p.name]){names.push(p.name);seen[p.name]=true;}
+  });
+  return names;
 }
 
 function desidUpdAdd(){
@@ -733,7 +737,7 @@ function desidAddRequest(){
   if(window._desidCurType==='ip'){
     if(!_desidD1){alert('Sélectionnez un jour dans le calendrier.');return;}
     const pn=document.getElementById('desid-ip-post-sel').value;
-    if(!pn){alert('Choisissez un groupe (A, B ou N).');return;}
+    if(!pn){alert('Choisissez un poste.');return;}
     const _ipd=_desidD1;
     const dk=_ipd.getFullYear()+'-'+String(_ipd.getMonth()+1).padStart(2,'0')+'-'+String(_ipd.getDate()).padStart(2,'0');
     const label='🚫 '+pn+' le '+_desidD1.toLocaleDateString('fr-BE',{day:'2-digit',month:'short'});
@@ -1106,25 +1110,37 @@ function lockSession(){
   document.getElementById('sess-pin-err').textContent='';
 }
 function onSessPinInput(v){if(v.length>=6)onSessPinSubmit();}
-function onSessPinSubmit(){
-  var now=Date.now();
-  if(now<_pinLockedUntil){document.getElementById('sess-pin-err').textContent='Trop de tentatives. Patientez '+Math.ceil((_pinLockedUntil-now)/1000)+'s.';return;}
-  var inp=document.getElementById('sess-pin-inp');
-  if(inp.value===me.pin){
-    _pinAttempts=0;
-    document.getElementById('session-overlay').classList.remove('show');
-    _sessActive=true;resetSessTimer();logAccess('session_resume','');
-  }else{
-    _pinAttempts++;
-    if(_pinAttempts>=PIN_MAX_ATTEMPTS){
-      _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
-      document.getElementById('sess-pin-err').textContent='5 tentatives échouées. Bloqué 30s.';
-      logAccess('pin_lockout','');
-    }else{
-      document.getElementById('sess-pin-err').textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
-    }
-    inp.value='';
+async function onSessPinSubmit(){
+  const now=Date.now();
+  const inp=document.getElementById('sess-pin-inp');
+  const errEl=document.getElementById('sess-pin-err');
+  if(now<_pinLockedUntil){
+    const secs=Math.ceil((_pinLockedUntil-now)/1000);
+    if(errEl)errEl.textContent='Trop de tentatives. Patientez '+secs+'s.';
+    return;
   }
+  // Hasher le PIN saisi et comparer à me.pin_hash
+  try{
+    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(inp.value));
+    const hash=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    if(hash===me.pin_hash){
+      window._rawPin=inp.value;
+      _pinAttempts=0;
+      document.getElementById('session-overlay').classList.remove('show');
+      logAccess('session_resume','');
+    }else{
+      _pinAttempts++;
+      if(_pinAttempts>=PIN_MAX_ATTEMPTS){
+        _pinLockedUntil=Date.now()+PIN_LOCKOUT_MS;
+        _pinAttempts=0;
+        if(errEl)errEl.textContent='Trop de tentatives. Patienter.';
+        logAccess('pin_lockout','');
+      }else{
+        if(errEl)errEl.textContent='PIN erroné. Tentative '+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+'.';
+      }
+      inp.value='';inp.focus();
+    }
+  }catch(e){if(errEl)errEl.textContent='Erreur: '+e.message;}
 }
 
 // ════════ LOGS RGPD ════════
