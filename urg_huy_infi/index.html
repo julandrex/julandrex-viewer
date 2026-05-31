@@ -509,7 +509,7 @@ function doLogin(){
 }
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&document.getElementById('pin-area').classList.contains('show'))doLogin();
+  if(e.key==='Enter'&&document.getElementById('pin-area').classList.contains('show')){var _pi=document.getElementById('pin-inp');if(_pi&&_pi.value)crypto.subtle.digest('SHA-256',new TextEncoder().encode(_pi.value)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join('');doLogin();});else doLogin();}
 });
 
 function logout(){
