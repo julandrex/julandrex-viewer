@@ -1005,6 +1005,7 @@ function renderCalPerso(){
       var sc0=p0.id==='u3-1'?'U3 tôt':p0.name;
       var sc1=p1.id==='u3-1'?'U3 tôt':p1.name;
       cell.style.cssText+=';overflow:hidden;position:relative;background:transparent;';
+      dspan.style.display='none';
       var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('style','position:absolute;inset:0;width:100%;height:100%;pointer-events:none;');
       svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('viewBox','0 0 100 100');
@@ -1016,14 +1017,17 @@ function renderCalPerso(){
       diag.setAttribute('x1','0');diag.setAttribute('y1','100');diag.setAttribute('x2','100');diag.setAttribute('y2','0');
       diag.setAttribute('stroke','rgba(255,255,255,0.25)');diag.setAttribute('stroke-width','2');
       svg.appendChild(poly0);svg.appendChild(poly1);svg.appendChild(diag);cell.appendChild(svg);
-      dspan.style.color=p0.color+'dd';
+      var dn=document.createElement('span');
+      dn.style.cssText='position:absolute;top:3px;left:5px;font-size:9px;font-weight:500;color:'+p0.color+'bb;line-height:1;';
+      dn.textContent=d;
+      cell.appendChild(dn);
       var s0=document.createElement('span');
       s0.className='cp-sc';
-      s0.style.cssText='position:absolute;top:6px;left:5px;right:5px;color:'+p0.color+';';
+      s0.style.cssText='position:absolute;top:50%;left:5px;transform:translateY(-130%);color:'+p0.color+';';
       s0.textContent=sc0;
       var s1=document.createElement('span');
       s1.className='cp-sc';
-      s1.style.cssText='position:absolute;bottom:5px;right:5px;left:5px;text-align:right;color:'+p1.color+';';
+      s1.style.cssText='position:absolute;bottom:4px;right:5px;text-align:right;color:'+p1.color+';';
       s1.textContent=sc1;
       cell.appendChild(s0);cell.appendChild(s1);
       cell.title=p0.name+' + '+p1.name;
