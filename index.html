@@ -188,6 +188,21 @@ button{font-family:inherit;}
 @media(max-width:500px){.cp-sc{font-size:8px;}}
 @media(min-width:501px) and (max-width:900px){.cp-sc{font-size:10px;}}
 @media(min-width:901px){.cp-sc{font-size:12px;}}
+
+.cal-bottom{padding:0 12px 16px;display:flex;flex-direction:column;gap:10px;}
+.cal-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.cs-card{background:var(--bg2);border-radius:10px;padding:8px 6px;text-align:center;border:1px solid var(--line);}
+.cs-val{font-size:17px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;margin-bottom:3px;}
+.cs-lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;line-height:1.2;}
+.cal-upcoming{display:flex;flex-direction:column;gap:6px;}
+.cu-title{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;padding:0 2px 2px;border-bottom:1px solid var(--line);margin-bottom:2px;}
+.cu-item{display:flex;align-items:center;gap:10px;background:var(--bg2);border-radius:10px;padding:9px 12px;border:1px solid var(--line);cursor:pointer;transition:background .15s;}
+.cu-item:hover{background:var(--bg3);}
+.cu-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cu-date{font-size:11px;font-weight:600;color:var(--t2);width:54px;flex-shrink:0;}
+.cu-name{font-size:12px;font-weight:600;color:var(--t1);flex:1;}
+.cu-time{font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace;flex-shrink:0;}
+.cu-today{border-color:var(--acc);background:rgba(59,130,246,.08);}
 </style>
 </head>
 <body>
@@ -1036,7 +1051,89 @@ function renderCalPerso(){
     grid.appendChild(cell);
   }
   ga.appendChild(grid);
+  var today2=new Date().toISOString().slice(0,10);
+  var totalShifts=0,totalH=0,nNuit=0,nWE=0;
+  var pids2,did2;
+  var d3=new Date(cy,cm+1,0).getDate();
+  for(var dd=1;dd<=d3;dd++){
+    var dk2=dkStr(cy,cm,dd);
+    var dw2=new Date(dk2+'T12:00:00').getDay();
+    var dayS2=shifts[dk2]||{};
+    pids2=Object.keys(dayS2);
+    for(var pi2=0;pi2<pids2.length;pi2++){
+      did2=dayS2[pids2[pi2]];
+      if(did2==me.local_id||did2==me.id){
+        var post2=null;
+        for(var pp2=0;pp2<posts.length;pp2++){if(posts[pp2].id===pids2[pi2]){post2=posts[pp2];break;}}
+        if(post2){
+          totalShifts++;
+          var h0=parseFloat(post2.start),h1=parseFloat(post2.end);
+          var dur=(post2.overnight?(24-h0+h1):(h1-h0));
+          if(!isNaN(dur)&&dur>0) totalH+=dur;
+          if(post2.section==='nuit'||post2.overnight) nNuit++;
+          if(dw2===0||dw2===6) nWE++;
+        }
+      }
+    }
+  }
+  var bottom=document.createElement('div'); bottom.className='cal-bottom';
+  var statsDiv=document.createElement('div'); statsDiv.className='cal-stats';
+  function mkStat(val,lbl,color){
+    var c=document.createElement('div'); c.className='cs-card';
+    var v=document.createElement('div'); v.className='cs-val'; v.style.color=color||'var(--t1)'; v.textContent=val;
+    var l=document.createElement('div'); l.className='cs-lbl'; l.textContent=lbl;
+    c.appendChild(v); c.appendChild(l); return c;
+  }
+  statsDiv.appendChild(mkStat(totalShifts,'Shifts','var(--acc)'));
+  statsDiv.appendChild(mkStat(Math.round(totalH)+'h','Heures','var(--ok)'));
+  statsDiv.appendChild(mkStat(nNuit,'Nuits','#a78bfa'));
+  statsDiv.appendChild(mkStat(nWE,'Week-end','var(--warn)'));
+  bottom.appendChild(statsDiv);
+  var upcomingDiv=document.createElement('div'); upcomingDiv.className='cal-upcoming';
+  var utitle=document.createElement('div'); utitle.className='cu-title'; utitle.textContent='Prochains shifts';
+  upcomingDiv.appendChild(utitle);
+  var upCount=0;
+  var MO=['Jan','Fév','Mar','Avr','Mai','Jui','Jui','Aoû','Sep','Oct','Nov','Déc'];
+  var DN=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  for(var fd=0;fd<60&&upCount<5;fd++){
+    var fDate=new Date(); fDate.setDate(fDate.getDate()+fd);
+    var fdk=fDate.toISOString().slice(0,10);
+    var fdayS=shifts[fdk]||{};
+    var fpids=Object.keys(fdayS);
+    for(var fpi=0;fpi<fpids.length&&upCount<5;fpi++){
+      var fdid=fdayS[fpids[fpi]];
+      if(fdid==me.local_id||fdid==me.id){
+        var fpost=null;
+        for(var fpp=0;fpp<posts.length;fpp++){if(posts[fpp].id===fpids[fpi]){fpost=posts[fpp];break;}}
+        if(fpost){
+          var isToday=(fdk===today2);
+          var fsc=fpost.id==='u3-1'?'U3 tôt':fpost.name;
+          var item=document.createElement('div');
+          item.className='cu-item'+(isToday?' cu-today':'')+' cp-shift';
+          var dot=document.createElement('div'); dot.className='cu-dot'; dot.style.background=fpost.color;
+          var datelbl=document.createElement('div'); datelbl.className='cu-date';
+          datelbl.textContent=(isToday?'Auj.':DN[fDate.getDay()]+' '+fDate.getDate()+' '+MO[fDate.getMonth()]);
+          if(isToday) datelbl.style.color='var(--acc)';
+          var namelbl=document.createElement('div'); namelbl.className='cu-name'; namelbl.style.color=fpost.color; namelbl.textContent=fpost.full;
+          var timelbl=document.createElement('div'); timelbl.className='cu-time'; timelbl.textContent=fpost.start+'–'+fpost.end;
+          item.appendChild(dot);item.appendChild(datelbl);item.appendChild(namelbl);item.appendChild(timelbl);
+          (function(dk3,pid3){item.addEventListener('click',function(){openModal(dk3,pid3);});})(fdk,fpost.id);
+          upcomingDiv.appendChild(item);
+          upCount++;
+        }
+      }
+    }
+  }
+  if(upCount===0){
+    var noUp=document.createElement('div');
+    noUp.style.cssText='text-align:center;color:var(--t3);font-size:12px;padding:12px;';
+    noUp.textContent='Aucun shift à venir';
+    upcomingDiv.appendChild(noUp);
+  }
+  bottom.appendChild(upcomingDiv);
+  ga.appendChild(bottom);
 }
+
 
 
 function openGrille(){
