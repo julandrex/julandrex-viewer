@@ -988,6 +988,8 @@ function renderGrid(){
         }
       }
       h+=`</tr>`;
+  h+='</tbody></table>';
+  document.getElementById('grid-area').innerHTML=h;
     }
   }
 }
