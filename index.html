@@ -1067,9 +1067,11 @@ function renderCalPerso(){
         for(var pp2=0;pp2<posts.length;pp2++){if(posts[pp2].id===pids2[pi2]){post2=posts[pp2];break;}}
         if(post2){
           totalShifts++;
-          var h0=parseFloat(post2.start),h1=parseFloat(post2.end);
-          var dur=(post2.overnight?(24-h0+h1):(h1-h0));
-          if(!isNaN(dur)&&dur>0) totalH+=dur;
+          var p0s=post2.start.split(':'),p1s=post2.end.split(':');
+          var h0=parseInt(p0s[0])+parseInt(p0s[1])/60,h1=parseInt(p1s[0])+parseInt(p1s[1])/60;
+          var isON=(h1<=h0)||post2.overnight;
+          var dur=isON?(h1===h0?24:(24-h0+h1)):(h1-h0);
+          if(dur>0) totalH+=dur;
           if(post2.section==='nuit'||post2.overnight) nNuit++;
           if(dw2===0||dw2===6) nWE++;
         }
