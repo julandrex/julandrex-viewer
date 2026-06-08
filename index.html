@@ -76,11 +76,11 @@ button{font-family:inherit;}
 .ph{font-size:9px;color:var(--t3);display:block;}
 .pdot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle;flex-shrink:0;}
 .pgrid tr.sr td{background:rgba(255,255,255,.025);color:var(--t3);font-size:9px;font-weight:700;letter-spacing:.5px;padding:3px 8px;text-align:left;border-top:1px solid rgba(255,255,255,.1);height:18px;}
-.c-inactive{background:var(--bg)!important;}
-.c-we{background:rgba(255,255,255,.018);}
-.c-filled{font-size:10px;font-weight:600;}
-.c-mine{background:rgba(59,130,246,.1)!important;border:1.5px solid var(--acc)!important;cursor:pointer;}
-.c-mine:hover{background:rgba(59,130,246,.2)!important;}
+.c-inactive{background:#1a0a0a!important;}
+.c-empty{background:#3d1a1a;cursor:default;}
+.c-we{}
+.c-filled{cursor:default;position:relative;overflow:hidden;}
+.c-mine{}
 .c-today{border-top:2px solid var(--acc)!important;}
 .c-exch{position:relative;}
 .c-exch::after{content:'';position:absolute;top:2px;right:2px;width:5px;height:5px;border-radius:50%;background:var(--warn);}
@@ -143,9 +143,9 @@ button{font-family:inherit;}
 .err-banner{background:rgba(239,68,68,.08);border:1px solid var(--err);border-radius:10px;padding:12px 14px;margin:8px 8px 0;font-size:13px;color:var(--err);display:flex;flex-direction:column;gap:10px;}
 .err-retry{background:var(--err);color:#fff;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600;align-self:flex-start;}
 /* ── SHIFT WIDGET ─── */
-.shift-widget{margin:8px 8px 0;border-radius:10px;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:12px;}
-.shift-today{background:rgba(231,76,60,.13);border:1px solid #e74c3c;}
-.shift-next{background:var(--bg2);border:1px solid var(--b);}
+.shift-widget{margin:8px 8px 0;border-radius:12px;padding:13px 16px;font-size:13px;display:flex;align-items:center;gap:12px;border:1px solid transparent;}
+.shift-today{background:rgba(231,76,60,.18);border-color:#e74c3c;box-shadow:0 0 0 1px rgba(231,76,60,.25);}
+.shift-next{background:var(--bg2);border-color:var(--b);}
 /* ── SESSION OVERLAY ─── */
 #session-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
 #session-overlay.show{display:flex;}
@@ -951,31 +951,45 @@ function renderGrid(){
   h+='</tr></thead><tbody>';
 
   for(const sec of SEC_ORDER){
-    const sp=byS[sec]||[];if(!sp.length)continue;
-    h+=`<tr class="sr"><td colspan="${d2+1}">${SEC_LBL[sec]}</td></tr>`;
+    const sp=byS[sec];if(!sp?.length)continue;
+    h+=`<tr class="sr"><td class="pc"><span class="sec-label">${sec}</span></td>${Array.from({length:d2},(_,i)=>{const dk2=dkStr(cy,cm,i+1);const dw2=new Date(dk2+'T12:00:00').getDay();const isTd2=dk2===today;return `<td class="${dw2===0||dw2===6?'c-we':''}${isTd2?' c-today':''}" style="height:4px;padding:0;"></td>`;}).join('')}</tr>`;
     for(const p of sp){
-      h+='<tr>';
-      h+=`<td class="pc"><span class="pdot" style="background:${p.color||'#888'}"></span><span class="pn">${p.full||p.name}</span><span class="ph">${p.start}–${p.end}</span></td>`;
+      h+=`<td class="pc"><span class="pdot" style="background:${p.color}"></span><span class="pn">${p.name}</span><span class="ph">${p.start}–${p.end}</span></td>`;
       for(let d=1;d<=d2;d++){
-        const dk=dkStr(cy,cm,d),dw=new Date(dk+'T12:00:00').getDay(),we=dw===0||dw===6;
-        const isTd=dk===today;
-        if(!isActive(p,dk)){h+=`<td class="c-inactive${isTd?' c-today':''}"></td>`;continue;}
-        const docId=(shifts[dk]||{})[p.id];
-        const doc=docId?doctors.find(x=>(x.local_id??x.id)===docId):null;
-        if(!doc){h+=`<td class="${we?'c-we':''}${isTd?' c-today':''}"></td>`;continue;}
-        const isMe2=doc.id===me.id;
-        const hasX=exchanges.some(r=>r.proposer_date===dk&&r.proposer_post===p.id&&r.status==='open');
-        const lbl=getLabel(doc,doctors);
-        h+=`<td class="c-filled${isMe2?' c-mine':''}${hasX?' c-exch':''}${isTd?' c-today':''}"
-          style="${isMe2?`border-color:${me.color};`:`color:${p.color};`}"
-          ${isMe2?`onclick="openModal('${dk}','${p.id}')"`:''} title="${doc.firstname} ${doc.lastname}">
-          ${lbl}</td>`;
+        const dk=dkStr(cy,cm,d),dw=new Date(dk+'T12:00:00').getDay(),we=dw===0||dw===6,isTd=dk===today;
+        const isTdCls=isTd?' c-today':'';
+        if(!isActive(p,dk)){h+=`<td class="c-inactive${isTdCls}"></td>`;continue;}
+        const docId=shifts[dk]?.[p.id];
+        const doc=docId!=null?doctors.find(x=>x.local_id==docId||x.id==docId):null;
+        if(!doc){h+=`<td class="c-empty${isTdCls}" title="Poste non attribué"></td>`;continue;}
+        const isMe2=me&&doc.id===me.id;
+        const hasX=pendingX.some(x=>x.proposer_date===dk&&x.proposer_post===p.id&&x.proposer_id===me?.id&&x.status==='pending');
+        // Short code for display
+        const sc=p.id==='u3-1'?'U3 tôt':p.name;
+        // Check for double shift: same doctor has another post in same day
+        const allDocPosts=Object.entries(shifts[dk]||{}).filter(([pid2,did2])=>did2==docId&&pid2!==p.id);
+        const p2=allDocPosts.length>0?posts.find(x=>x.id===allDocPosts[0][0]):null;
+        const sc2=p2?(p2.id==='u3-1'?'U3 tôt':p2.name):null;
+        if(p2&&sc2){
+          // Diagonal split cell
+          const c1=p.color||'#475569',c2=p2.color||'#475569';
+          h+=`<td class="c-filled${isMe2?' c-mine':''}${hasX?' c-exch':''}${isTdCls}" ${isMe2?'onclick="openMesEchanges()"':''}  title="${doc.firstname} ${doc.lastname}">
+            <div style="position:relative;width:100%;height:46px;overflow:hidden;">
+              <div style="position:absolute;inset:0;background:${c1}22;display:flex;align-items:flex-end;justify-content:flex-start;padding:2px 4px;clip-path:polygon(0 0,0 100%,100% 100%);font-size:9px;font-weight:800;color:${c1};line-height:1;">${sc}</div>
+              <div style="position:absolute;inset:0;background:${c2}22;display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 4px;clip-path:polygon(0 0,100% 0,100% 100%);font-size:9px;font-weight:800;color:${c2};line-height:1;">${sc2}</div>
+              <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;" preserveAspectRatio="none"><line x1="0" y1="100%" x2="100%" y2="0" stroke="rgba(255,255,255,0.15)" stroke-width="1"/></svg>
+            </div></td>`;
+        } else {
+          h+=`<td class="c-filled${isMe2?' c-mine':''}${hasX?' c-exch':''}${isTdCls}" ${isMe2?'onclick="openMesEchanges()"':''}  title="${doc.firstname} ${doc.lastname}">
+            <div style="width:100%;height:46px;background:${p.color}22;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;">
+              <span style="font-size:11px;font-weight:800;color:${p.color};letter-spacing:.3px;line-height:1;">${sc}</span>
+              ${isMe2?'<span style="font-size:8px;color:'+p.color+'99;line-height:1;">moi</span>':''}
+            </div></td>`;
+        }
       }
-      h+='</tr>';
+      h+=`</tr>`;
     }
   }
-  h+='</tbody></table>';
-  document.getElementById('grid-area').innerHTML=h;
 }
 
 // ════════ SHIFT WIDGET ════════
