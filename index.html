@@ -955,14 +955,14 @@ function subscribeRT(){
 // ══════════════════════════════════════════════════════════
 function renderCalPerso(){
   if(!planning||!me) return;
-  var ga=document.getElementById('grid-area');
-  ga.innerHTML='';
   var shifts=planning.shifts||{};
   var posts=planning.posts||[];
   var d2=new Date(cy,cm+1,0).getDate();
   var today=new Date().toISOString().slice(0,10);
   var DAYS=['LU','MA','ME','JE','VE','SA','DI'];
   var fw=(new Date(cy,cm,1).getDay()||7);
+  var ga=document.getElementById('grid-area');
+  ga.innerHTML='';
   var hdr=document.createElement('div'); hdr.className='cal-perso-hdr';
   DAYS.forEach(function(d){var el=document.createElement('div');el.className='cp-hd';el.textContent=d;hdr.appendChild(el);});
   ga.appendChild(hdr);
@@ -971,7 +971,7 @@ function renderCalPerso(){
   for(var d=1;d<=d2;d++){
     var dk=dkStr(cy,cm,d);
     var dw=new Date(dk+'T12:00:00').getDay();
-    var we=dw===0||dw===6, isTd=dk===today, isPast=dk<today;
+    var we=dw===0||dw===6, isTd=dk===today;
     var dayS=shifts[dk]||{}, myPosts=[], pids=Object.keys(dayS);
     for(var pi=0;pi<pids.length;pi++){
       var pid=pids[pi],did=dayS[pid];
@@ -979,6 +979,7 @@ function renderCalPerso(){
         for(var pp=0;pp<posts.length;pp++){if(posts[pp].id===pid){myPosts.push(posts[pp]);break;}}
       }
     }
+    myPosts.sort(function(a,b){var order={jour:0,soir:1,nuit:2,we:3};return (order[a.section]||0)-(order[b.section]||0);});
     var cell=document.createElement('div');
     cell.className='cp-day'+(we?' cp-we':'')+' '+(isTd?'cp-today':'')+' '+(myPosts.length?'cp-shift':'cp-empty');
     var dspan=document.createElement('span'); dspan.className='cp-dnum'; dspan.textContent=d;
@@ -987,38 +988,42 @@ function renderCalPerso(){
       var p0=myPosts[0];
       var sc=p0.id==='u3-1'?'U3 tôt':p0.name;
       cell.style.background=p0.color+'33';
-      dspan.style.color=p0.color+'aa';
+      dspan.style.color=p0.color+'cc';
       var cspan=document.createElement('span'); cspan.className='cp-code';
       cspan.style.color=p0.color; cspan.textContent=sc; cell.appendChild(cspan);
       cell.title=p0.full+' · '+p0.start+'–'+p0.end;
-      if(isPast||isTd) cell.addEventListener('click',openMesEchanges);
+      (function(d2,pid){cell.addEventListener('click',function(){openModal(d2,pid);});})(dk,p0.id);
     } else if(myPosts.length>=2){
       var p0=myPosts[0],p1=myPosts[1];
       var sc0=p0.id==='u3-1'?'U3 tôt':p0.name;
       var sc1=p1.id==='u3-1'?'U3 tôt':p1.name;
-      cell.style.cssText+=';overflow:hidden;background:'+p0.color+'22;';
-      dspan.style.color=p0.color+'aa';
+      cell.style.cssText+=';overflow:hidden;position:relative;background:transparent;';
       var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('style','position:absolute;inset:0;width:100%;height:100%;pointer-events:none;');
-      svg.setAttribute('preserveAspectRatio','none');
-      var poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
-      poly.setAttribute('points','0,100 100,100 100,0'); poly.setAttribute('fill',p1.color+'33');
+      svg.setAttribute('preserveAspectRatio','none'); svg.setAttribute('viewBox','0 0 100 100');
+      var poly0=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      poly0.setAttribute('points','0,0 100,0 0,100'); poly0.setAttribute('fill',p0.color+'44');
+      var poly1=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      poly1.setAttribute('points','100,100 0,100 100,0'); poly1.setAttribute('fill',p1.color+'44');
       var line=document.createElementNS('http://www.w3.org/2000/svg','line');
-      line.setAttribute('x1','0');line.setAttribute('y1','100%');line.setAttribute('x2','100%');line.setAttribute('y2','0');
-      line.setAttribute('stroke','rgba(255,255,255,0.12)');line.setAttribute('stroke-width','1');
-      svg.appendChild(poly);svg.appendChild(line);cell.appendChild(svg);
+      line.setAttribute('x1','0');line.setAttribute('y1','100');line.setAttribute('x2','100');line.setAttribute('y2','0');
+      line.setAttribute('stroke','rgba(255,255,255,0.2)');line.setAttribute('stroke-width','1.5');
+      svg.appendChild(poly0);svg.appendChild(poly1);svg.appendChild(line);cell.appendChild(svg);
+      dspan.style.color=p0.color+'cc';
       var s0=document.createElement('span');
-      s0.style.cssText='position:absolute;bottom:4px;left:5px;font-size:10px;font-weight:800;color:'+p0.color;
+      s0.style.cssText='position:absolute;top:20px;left:8px;font-size:11px;font-weight:800;color:'+p0.color+';line-height:1;';
       s0.textContent=sc0; cell.appendChild(s0);
       var s1=document.createElement('span');
-      s1.style.cssText='position:absolute;top:4px;right:5px;font-size:10px;font-weight:800;color:'+p1.color;
+      s1.style.cssText='position:absolute;bottom:6px;right:8px;font-size:11px;font-weight:800;color:'+p1.color+';line-height:1;';
       s1.textContent=sc1; cell.appendChild(s1);
-      cell.addEventListener('click',openMesEchanges);
+      cell.title=p0.name+' + '+p1.name;
+      (function(d2,pid){cell.addEventListener('click',function(){openModal(d2,pid);});})(dk,p0.id);
     }
     grid.appendChild(cell);
   }
   ga.appendChild(grid);
 }
+
 
 function openGrille(){
   document.getElementById('grille-ov').classList.add('show');
