@@ -1004,20 +1004,26 @@ function renderCalPerso(){
       svg.setAttribute('style','position:absolute;inset:0;width:100%;height:100%;pointer-events:none;');
       svg.setAttribute('preserveAspectRatio','none'); svg.setAttribute('viewBox','0 0 100 100');
       var poly0=document.createElementNS('http://www.w3.org/2000/svg','polygon');
-      poly0.setAttribute('points','0,0 100,0 0,100'); poly0.setAttribute('fill',p0.color+'44');
+      poly0.setAttribute('points','0,0 100,0 0,100'); poly0.setAttribute('fill',p0.color+'33');
       var poly1=document.createElementNS('http://www.w3.org/2000/svg','polygon');
-      poly1.setAttribute('points','100,100 0,100 100,0'); poly1.setAttribute('fill',p1.color+'44');
-      var line=document.createElementNS('http://www.w3.org/2000/svg','line');
-      line.setAttribute('x1','0');line.setAttribute('y1','100');line.setAttribute('x2','100');line.setAttribute('y2','0');
-      line.setAttribute('stroke','rgba(255,255,255,0.2)');line.setAttribute('stroke-width','1.5');
-      svg.appendChild(poly0);svg.appendChild(poly1);svg.appendChild(line);cell.appendChild(svg);
+      poly1.setAttribute('points','100,100 0,100 100,0'); poly1.setAttribute('fill',p1.color+'33');
+      var diag=document.createElementNS('http://www.w3.org/2000/svg','line');
+      diag.setAttribute('x1','0');diag.setAttribute('y1','100');diag.setAttribute('x2','100');diag.setAttribute('y2','0');
+      diag.setAttribute('stroke','rgba(255,255,255,0.18)');diag.setAttribute('stroke-width','1.5');
+      svg.appendChild(poly0);svg.appendChild(poly1);svg.appendChild(diag);cell.appendChild(svg);
       dspan.style.color=p0.color+'cc';
+      var inner=document.createElement('div');
+      inner.style.cssText='position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;';
       var s0=document.createElement('span');
-      s0.style.cssText='position:absolute;top:20px;left:8px;font-size:11px;font-weight:800;color:'+p0.color+';line-height:1;';
-      s0.textContent=sc0; cell.appendChild(s0);
+      s0.style.cssText='font-size:clamp(7px,1.8vw,11px);font-weight:800;color:'+p0.color+';line-height:1.1;text-align:center;max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      s0.textContent=sc0;
+      var sep=document.createElement('div');
+      sep.style.cssText='width:60%;height:1px;background:rgba(255,255,255,0.15);flex-shrink:0;';
       var s1=document.createElement('span');
-      s1.style.cssText='position:absolute;bottom:6px;right:8px;font-size:11px;font-weight:800;color:'+p1.color+';line-height:1;';
-      s1.textContent=sc1; cell.appendChild(s1);
+      s1.style.cssText='font-size:clamp(7px,1.8vw,11px);font-weight:800;color:'+p1.color+';line-height:1.1;text-align:center;max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      s1.textContent=sc1;
+      inner.appendChild(s0);inner.appendChild(sep);inner.appendChild(s1);
+      cell.appendChild(inner);
       cell.title=p0.name+' + '+p1.name;
       if(!isPast){(function(d2,pid){cell.addEventListener('click',function(){openModal(d2,pid);});})(dk,p0.id);}
     }
