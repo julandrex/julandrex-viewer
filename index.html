@@ -203,6 +203,19 @@ button{font-family:inherit;}
 .cu-name{font-size:12px;font-weight:600;color:var(--t1);flex:1;}
 .cu-time{font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace;flex-shrink:0;}
 .cu-today{border-color:var(--acc);background:rgba(59,130,246,.08);}
+
+.cal-solde{background:var(--bg2);border-radius:12px;padding:14px;border:1px solid var(--line);}
+.cs-solde-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
+.cs-solde-title{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;}
+.cs-solde-vals{font-size:12px;color:var(--t2);font-family:'IBM Plex Mono',monospace;}
+.cs-solde-vals b{color:var(--t1);font-size:14px;}
+.cs-bar-bg{height:10px;background:var(--bg3);border-radius:99px;overflow:hidden;margin-bottom:8px;}
+.cs-bar-fg{height:100%;border-radius:99px;transition:width .6s ease;}
+.cs-solde-foot{display:flex;justify-content:space-between;font-size:10px;color:var(--t3);}
+.cs-solde-status{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;}
+.cs-ok{background:rgba(34,197,94,.15);color:var(--ok);}
+.cs-warn{background:rgba(245,158,11,.15);color:var(--warn);}
+.cs-err{background:rgba(239,68,68,.15);color:var(--err);}
 </style>
 </head>
 <body>
@@ -1091,50 +1104,44 @@ function renderCalPerso(){
   statsDiv.appendChild(mkStat(nNuit,'Nuits','#a78bfa'));
   statsDiv.appendChild(mkStat(nWE,'Week-end','var(--warn)'));
   bottom.appendChild(statsDiv);
-  var upcomingDiv=document.createElement('div'); upcomingDiv.className='cal-upcoming';
-  var utitle=document.createElement('div'); utitle.className='cu-title'; utitle.textContent='Prochains shifts';
-  upcomingDiv.appendChild(utitle);
-  var upCount=0;
-  var MO=['Jan','Fév','Mar','Avr','Mai','Jui','Jui','Aoû','Sep','Oct','Nov','Déc'];
-  var DN=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-  for(var fd=0;fd<60&&upCount<5;fd++){
-    var fDate=new Date(); fDate.setDate(fDate.getDate()+fd);
-    var fdk=fDate.toISOString().slice(0,10);
-    var fdayS=shifts[fdk]||{};
-    var fpids=Object.keys(fdayS);
-    for(var fpi=0;fpi<fpids.length&&upCount<5;fpi++){
-      var fdid=fdayS[fpids[fpi]];
-      if(fdid==me.local_id||fdid==me.id){
-        var fpost=null;
-        for(var fpp=0;fpp<posts.length;fpp++){if(posts[fpp].id===fpids[fpi]){fpost=posts[fpp];break;}}
-        if(fpost){
-          var isToday=(fdk===today2);
-          var fsc=fpost.id==='u3-1'?'U3 tôt':fpost.name;
-          var item=document.createElement('div');
-          item.className='cu-item'+(isToday?' cu-today':'')+' cp-shift';
-          var dot=document.createElement('div'); dot.className='cu-dot'; dot.style.background=fpost.color;
-          var datelbl=document.createElement('div'); datelbl.className='cu-date';
-          datelbl.textContent=(isToday?'Auj.':DN[fDate.getDay()]+' '+fDate.getDate()+' '+MO[fDate.getMonth()]);
-          if(isToday) datelbl.style.color='var(--acc)';
-          var namelbl=document.createElement('div'); namelbl.className='cu-name'; namelbl.style.color=fpost.color; namelbl.textContent=fpost.full;
-          var timelbl=document.createElement('div'); timelbl.className='cu-time'; timelbl.textContent=fpost.start+'–'+fpost.end;
-          item.appendChild(dot);item.appendChild(datelbl);item.appendChild(namelbl);item.appendChild(timelbl);
-          (function(dk3,pid3){item.addEventListener('click',function(){openModal(dk3,pid3);});})(fdk,fpost.id);
-          upcomingDiv.appendChild(item);
-          upCount++;
-        }
-      }
-    }
+  var upcomingDiv=document.createElement('div'); upcomingDiv.className='cal-solde';
+  var role2=me.role||'';
+  var annualH=role2.indexOf('Assistant')>=0?1840:role2.indexOf('Généraliste')>=0?0:1760;
+  var monthlyH=annualH>0?Math.round(annualH/12):0;
+  if(annualH===0){
+    var noTarget=document.createElement('div');
+    noTarget.style.cssText='text-align:center;color:var(--t3);font-size:12px;';
+    noTarget.textContent='Pas d\'objectif contractuel (Médecin Généraliste)';
+    upcomingDiv.appendChild(noTarget);
+  } else {
+    var pct=monthlyH>0?Math.min(Math.round(totalH/monthlyH*100),150):0;
+    var diff=Math.round(totalH-monthlyH);
+    var barColor=pct>=95?'var(--ok)':pct>=70?'var(--warn)':'var(--err)';
+    var statusCls=pct>=95?'cs-ok':pct>=70?'cs-warn':'cs-err';
+    var statusTxt=pct>=105?'Surplus':pct>=95?'Objectif atteint':pct>=70?'En cours':'En retard';
+    var hdr=document.createElement('div'); hdr.className='cs-solde-hdr';
+    var ttl=document.createElement('div'); ttl.className='cs-solde-title';
+    ttl.textContent='Solde mensuel';
+    var vals=document.createElement('div'); vals.className='cs-solde-vals';
+    vals.innerHTML='<b>'+Math.round(totalH)+'h</b> / '+monthlyH+'h';
+    hdr.appendChild(ttl); hdr.appendChild(vals);
+    upcomingDiv.appendChild(hdr);
+    var barBg=document.createElement('div'); barBg.className='cs-bar-bg';
+    var barFg=document.createElement('div'); barFg.className='cs-bar-fg';
+    barFg.style.cssText='width:'+Math.min(pct,100)+'%;background:'+barColor+';';
+    barBg.appendChild(barFg); upcomingDiv.appendChild(barBg);
+    var foot=document.createElement('div'); foot.className='cs-solde-foot';
+    var diffTxt=document.createElement('span');
+    diffTxt.textContent=(diff>=0?'+':'')+diff+'h vs objectif';
+    diffTxt.style.color=diff>=0?'var(--ok)':'var(--err)';
+    var statSpan=document.createElement('span'); statSpan.className='cs-solde-status '+statusCls;
+    statSpan.textContent=statusTxt;
+    foot.appendChild(diffTxt); foot.appendChild(statSpan);
+    upcomingDiv.appendChild(foot);
   }
-  if(upCount===0){
-    var noUp=document.createElement('div');
-    noUp.style.cssText='text-align:center;color:var(--t3);font-size:12px;padding:12px;';
-    noUp.textContent='Aucun shift à venir';
-    upcomingDiv.appendChild(noUp);
-  }
-  bottom.appendChild(upcomingDiv);
   ga.appendChild(bottom);
 }
+
 
 
 
