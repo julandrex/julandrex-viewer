@@ -963,7 +963,7 @@ function renderGrid(){
         const doc=docId!=null?doctors.find(x=>x.local_id==docId||x.id==docId):null;
         if(!doc){h+=`<td class="c-empty${isTdCls}" title="Poste non attribué"></td>`;continue;}
         const isMe2=me&&doc.id===me.id;
-        const hasX=pendingX.some(x=>x.proposer_date===dk&&x.proposer_post===p.id&&x.proposer_id===me?.id&&x.status==='pending');
+        const hasX=exchanges.some(x=>x.proposer_date===dk&&x.proposer_post===p.id&&x.proposer_id===me?.id&&x.status==='pending');
         // Short code for display
         const sc=p.id==='u3-1'?'U3 tôt':p.name;
         // Check for double shift: same doctor has another post in same day
