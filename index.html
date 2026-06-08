@@ -959,7 +959,7 @@ function renderGrid(){
         const dk=dkStr(cy,cm,d),dw=new Date(dk+'T12:00:00').getDay(),we=dw===0||dw===6,isTd=dk===today;
         const isTdCls=isTd?' c-today':'';
         if(!isActive(p,dk)){h+=`<td class="c-inactive${isTdCls}"></td>`;continue;}
-        const docId=shifts[dk]?.[p.id];
+        const docId=(planning.shifts||{})[dk]?.[p.id];
         const doc=docId!=null?doctors.find(x=>x.local_id==docId||x.id==docId):null;
         if(!doc){h+=`<td class="c-empty${isTdCls}" title="Poste non attribué"></td>`;continue;}
         const isMe2=me&&doc.id===me.id;
@@ -967,8 +967,8 @@ function renderGrid(){
         // Short code for display
         const sc=p.id==='u3-1'?'U3 tôt':p.name;
         // Check for double shift: same doctor has another post in same day
-        const allDocPosts=Object.entries(shifts[dk]||{}).filter(([pid2,did2])=>did2==docId&&pid2!==p.id);
-        const p2=allDocPosts.length>0?posts.find(x=>x.id===allDocPosts[0][0]):null;
+        const allDocPosts=Object.entries((planning.shifts||{})[dk]||{}).filter(([pid2,did2])=>did2==docId&&pid2!==p.id);
+        const p2=allDocPosts.length>0?planning.posts.find(x=>x.id===allDocPosts[0][0]):null;
         const sc2=p2?(p2.id==='u3-1'?'U3 tôt':p2.name):null;
         if(p2&&sc2){
           // Diagonal split cell
