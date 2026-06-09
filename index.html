@@ -218,7 +218,6 @@ button{font-family:inherit;}
 .cs-err{background:rgba(239,68,68,.15);color:var(--err);}
 
 .cp-day.cp-indispo{cursor:default;}
-.cp-ind-code{font-size:11px;font-weight:700;line-height:1;}
 </style>
 </head>
 <body>
@@ -1030,10 +1029,12 @@ function renderCalPerso(){
     if(dayInd&&!myPosts.length){
       var iColor=dayInd.type==='conge'?'#3b82f6':dayInd.type==='formation'?'#a78bfa':dayInd.type==='maladie'?'#f87171':'#94a3b8';
       var iCode=dayInd.type==='conge'?'Congé':dayInd.type==='formation'?'F':dayInd.type==='maladie'?'CM':'Abs';
-      cell.style.background=iColor+'18';
-      cell.style.border='1px solid '+iColor+'44';
-      dspan.style.color=iColor+'88';
-      var ic=document.createElement('span');ic.className='cp-ind-code';ic.style.color=iColor;ic.textContent=iCode;
+      cell.style.background=iColor+'33';
+      dspan.style.color=iColor+'cc';
+      var ic=document.createElement('span');
+      ic.className='cp-code';
+      ic.style.color=iColor;
+      ic.textContent=iCode;
       cell.appendChild(ic);
     } else {
     cell.className='cp-day'+(we?' cp-we':'')+' '+(isTd?'cp-today':'')+' '+(myPosts.length?'cp-shift':'cp-empty')+(isPast?' cp-past':'');
