@@ -216,6 +216,9 @@ button{font-family:inherit;}
 .cs-ok{background:rgba(34,197,94,.15);color:var(--ok);}
 .cs-warn{background:rgba(245,158,11,.15);color:var(--warn);}
 .cs-err{background:rgba(239,68,68,.15);color:var(--err);}
+
+.cp-day.cp-indispo{cursor:default;}
+.cp-ind-code{font-size:11px;font-weight:700;line-height:1;}
 </style>
 </head>
 <body>
@@ -926,7 +929,7 @@ async function loadAll(){
   (async function(){
     try{
       var res=await Promise.all([
-        sb.from('planning_months').select('shifts,posts').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
+        sb.from('planning_months').select('shifts,posts,indispos').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
         sb.from('doctors').select('id,local_id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
         sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
       ]);
@@ -1016,7 +1019,25 @@ function renderCalPerso(){
     myPosts.sort(function(a,b){var order={jour:0,soir:1,nuit:2,we:3};return (order[a.section]||0)-(order[b.section]||0);});
     var cell=document.createElement('div');
     var isPast=dk<today;
+    var dayInd=null;
+    var inds=(planning&&planning.indispos)||[];
+    for(var ii=0;ii<inds.length;ii++){
+      var ind=inds[ii];
+      if((ind.docId==me.local_id||ind.docId==me.id)&&dk>=ind.start&&dk<=ind.end&&ind.type!=='pref'){
+        dayInd=ind;break;
+      }
+    }
+    if(dayInd&&!myPosts.length){
+      var iColor=dayInd.type==='conge'?'#3b82f6':dayInd.type==='formation'?'#a78bfa':dayInd.type==='maladie'?'#f87171':'#94a3b8';
+      var iCode=dayInd.type==='conge'?'Congé':dayInd.type==='formation'?'F':dayInd.type==='maladie'?'CM':'Abs';
+      cell.style.background=iColor+'18';
+      cell.style.border='1px solid '+iColor+'44';
+      dspan.style.color=iColor+'88';
+      var ic=document.createElement('span');ic.className='cp-ind-code';ic.style.color=iColor;ic.textContent=iCode;
+      cell.appendChild(ic);
+    } else {
     cell.className='cp-day'+(we?' cp-we':'')+' '+(isTd?'cp-today':'')+' '+(myPosts.length?'cp-shift':'cp-empty')+(isPast?' cp-past':'');
+    }
     var dspan=document.createElement('span'); dspan.className='cp-dnum'; dspan.textContent=d;
     cell.appendChild(dspan);
     if(myPosts.length===1){
@@ -1106,6 +1127,7 @@ function renderCalPerso(){
   bottom.appendChild(statsDiv);
   ga.appendChild(bottom);
 }
+
 
 function openGrille(){
   document.getElementById('grille-ov').classList.add('show');
