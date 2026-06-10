@@ -1031,13 +1031,11 @@ function renderCalPerso(){
       var iCode=dayInd.type==='conge'?'Congé':dayInd.type==='formation'?'F':dayInd.type==='maladie'?'CM':'Abs';
       cell.style.background=iColor+'33';
       var iDnum=document.createElement('span');
-      iDnum.className='cp-dnum';
-      iDnum.style.color=iColor+'cc';
+      iDnum.style.cssText='position:absolute;top:5px;left:7px;font-size:10px;font-weight:500;line-height:1;color:'+iColor+'cc;';
       iDnum.textContent=d;
       cell.appendChild(iDnum);
       var ic=document.createElement('span');
-      ic.className='cp-code';
-      ic.style.color=iColor;
+      ic.style.cssText='font-size:13px;font-weight:800;line-height:1;color:'+iColor+';';
       ic.textContent=iCode;
       cell.appendChild(ic);
     } else {
@@ -1132,6 +1130,7 @@ function renderCalPerso(){
   bottom.appendChild(statsDiv);
   ga.appendChild(bottom);
 }
+
 
 
 
