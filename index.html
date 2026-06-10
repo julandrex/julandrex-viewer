@@ -1030,8 +1030,11 @@ function renderCalPerso(){
       var iColor=dayInd.type==='conge'?'#3b82f6':dayInd.type==='formation'?'#a78bfa':dayInd.type==='maladie'?'#f87171':'#94a3b8';
       var iCode=dayInd.type==='conge'?'Congé':dayInd.type==='formation'?'F':dayInd.type==='maladie'?'CM':'Abs';
       cell.style.background=iColor+'33';
-      dspan.style.color=iColor+'cc';
-      cell.appendChild(dspan);
+      var iDnum=document.createElement('span');
+      iDnum.className='cp-dnum';
+      iDnum.style.color=iColor+'cc';
+      iDnum.textContent=d;
+      cell.appendChild(iDnum);
       var ic=document.createElement('span');
       ic.className='cp-code';
       ic.style.color=iColor;
@@ -1129,6 +1132,7 @@ function renderCalPerso(){
   bottom.appendChild(statsDiv);
   ga.appendChild(bottom);
 }
+
 
 
 
