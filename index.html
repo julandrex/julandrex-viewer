@@ -1017,6 +1017,7 @@ function renderCalPerso(){
     }
     myPosts.sort(function(a,b){var order={jour:0,soir:1,nuit:2,we:3};return (order[a.section]||0)-(order[b.section]||0);});
     var cell=document.createElement('div');
+    cell.className='cp-day'+(we?' cp-we':'')+' '+(isTd?'cp-today':'')+' '+(myPosts.length?'cp-shift':'cp-empty')+(isPast?' cp-past':'');
     var isPast=dk<today;
     var dayInd=null;
     var inds=(planning&&planning.indispos)||[];
@@ -1048,10 +1049,11 @@ function renderCalPerso(){
       iC.textContent=iCode;
       cell.appendChild(iC);
 } else {
-    cell.className='cp-day'+(we?' cp-we':'')+' '+(isTd?'cp-today':'')+' '+(myPosts.length?'cp-shift':'cp-empty')+(isPast?' cp-past':'');
     }
     var dspan=document.createElement('span'); dspan.className='cp-dnum'; dspan.textContent=d;
+    if(!dayInd||myPosts.length){
     cell.appendChild(dspan);
+    }
     if(myPosts.length===1){
       var p0=myPosts[0];
       var sc=p0.id==='u3-1'?'U3 tôt':p0.name;
