@@ -218,6 +218,13 @@ button{font-family:inherit;}
 .cs-err{background:rgba(239,68,68,.15);color:var(--err);}
 
 .cp-day.cp-indispo{cursor:default;}
+
+.picker-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:flex;align-items:center;justify-content:center;}
+.picker-box{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:20px;min-width:220px;max-width:90vw;display:flex;flex-direction:column;gap:10px;}
+.picker-title{font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-bottom:4px;}
+.picker-btn{border:none;border-radius:10px;padding:11px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:filter .15s;text-align:left;display:flex;align-items:center;gap:10px;}
+.picker-btn:hover{filter:brightness(1.15);}
+.picker-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -989,6 +996,54 @@ function subscribeRT(){
 // ══════════════════════════════════════════════════════════
 // RENDER GRID
 // ══════════════════════════════════════════════════════════
+function openPickerModal(dk,p0,p1){
+  var ov=document.createElement('div');
+  ov.className='picker-ov';
+  ov.addEventListener('click',function(e){if(e.target===ov)document.body.removeChild(ov);});
+  var box=document.createElement('div');
+  box.className='picker-box';
+  var ttl=document.createElement('div');
+  ttl.className='picker-title';
+  ttl.textContent='Proposer un échange pour';
+  box.appendChild(ttl);
+  function mkBtn(p,label){
+    var btn=document.createElement('button');
+    btn.className='picker-btn';
+    btn.style.background=p.color+'33';
+    btn.style.color=p.color;
+    var dot=document.createElement('span');
+    dot.className='picker-dot';
+    dot.style.background=p.color;
+    var lbl=document.createElement('span');
+    lbl.textContent=label;
+    btn.appendChild(dot);
+    btn.appendChild(lbl);
+    btn.addEventListener('click',function(){
+      document.body.removeChild(ov);
+      openModal(dk,p.id);
+    });
+    return btn;
+  }
+  box.appendChild(mkBtn(p0,p0.full+' · '+p0.start+'–'+p0.end));
+  box.appendChild(mkBtn(p1,p1.full+' · '+p1.start+'–'+p1.end));
+  var btnBoth=document.createElement('button');
+  btnBoth.className='picker-btn';
+  btnBoth.style.background='var(--bg3)';
+  btnBoth.style.color='var(--t1)';
+  btnBoth.style.borderTop='1px solid var(--line)';
+  btnBoth.style.marginTop='2px';
+  btnBoth.style.paddingTop='13px';
+  btnBoth.textContent='🔄 Proposer les deux échanges';
+  btnBoth.addEventListener('click',function(){
+    document.body.removeChild(ov);
+    openModal(dk,p0.id);
+    setTimeout(function(){openModal(dk,p1.id);},300);
+  });
+  box.appendChild(btnBoth);
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+}
+
 function renderCalPerso(){
   if(!planning||!me) return;
   var shifts=planning.shifts||{};
@@ -1062,7 +1117,7 @@ function renderCalPerso(){
       var cspan=document.createElement('span'); cspan.className='cp-code';
       cspan.style.color=p0.color; cspan.textContent=sc; cell.appendChild(cspan);
       cell.title=p0.full+' · '+p0.start+'–'+p0.end;
-      if(!isPast){(function(d2,pid){cell.addEventListener('click',function(){openModal(d2,pid);});})(dk,p0.id);}
+      if(!isPast){(function(d2,q0,q1){cell.addEventListener('click',function(){openPickerModal(d2,q0,q1);});})(dk,p0,p1);}
     } else if(myPosts.length>=2){
       var p0=myPosts[0],p1=myPosts[1];
       var sc0=p0.id==='u3-1'?'U3 tôt':p0.name;
