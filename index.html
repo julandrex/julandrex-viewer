@@ -1037,7 +1037,27 @@ function openPickerModal(dk,p0,p1){
   btnBoth.addEventListener('click',function(){
     document.body.removeChild(ov);
     openModal(dk,p0.id);
-    setTimeout(function(){openModal(dk,p1.id);},300);
+    setTimeout(function(){
+      var ms=document.getElementById('ms');
+      if(ms){
+        var badge=document.createElement('span');
+        badge.style.cssText='margin-left:8px;background:var(--acc);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;vertical-align:middle;';
+        badge.textContent='Échange 1/2';
+        ms.appendChild(badge);
+      }
+    },50);
+    setTimeout(function(){
+      openModal(dk,p1.id);
+      setTimeout(function(){
+        var ms=document.getElementById('ms');
+        if(ms){
+          var badge=document.createElement('span');
+          badge.style.cssText='margin-left:8px;background:var(--acc);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;vertical-align:middle;';
+          badge.textContent='Échange 2/2';
+          ms.appendChild(badge);
+        }
+      },50);
+    },400);
   });
   box.appendChild(btnBoth);
   ov.appendChild(box);
