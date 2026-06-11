@@ -1030,15 +1030,24 @@ function renderCalPerso(){
       var iColor=dayInd.type==='conge'?'#3b82f6':dayInd.type==='formation'?'#a78bfa':dayInd.type==='maladie'?'#f87171':'#94a3b8';
       var iCode=dayInd.type==='conge'?'Congé':dayInd.type==='formation'?'F':dayInd.type==='maladie'?'CM':'Abs';
       cell.style.background=iColor+'33';
-      var iDnum=document.createElement('span');
-      iDnum.style.cssText='position:absolute;top:5px;left:7px;font-size:10px;font-weight:500;line-height:1;color:'+iColor+'cc;';
-      iDnum.textContent=d;
-      cell.appendChild(iDnum);
-      var ic=document.createElement('span');
-      ic.style.cssText='font-size:13px;font-weight:800;line-height:1;color:'+iColor+';';
-      ic.textContent=iCode;
-      cell.appendChild(ic);
-    } else {
+      var iN=document.createElement('span');
+      iN.style.position='absolute';
+      iN.style.top='5px';
+      iN.style.left='7px';
+      iN.style.fontSize='10px';
+      iN.style.fontWeight='500';
+      iN.style.lineHeight='1';
+      iN.style.color=iColor+'cc';
+      iN.textContent=String(d);
+      cell.appendChild(iN);
+      var iC=document.createElement('span');
+      iC.style.fontSize='13px';
+      iC.style.fontWeight='800';
+      iC.style.lineHeight='1';
+      iC.style.color=iColor;
+      iC.textContent=iCode;
+      cell.appendChild(iC);
+} else {
     cell.className='cp-day'+(we?' cp-we':'')+' '+(isTd?'cp-today':'')+' '+(myPosts.length?'cp-shift':'cp-empty')+(isPast?' cp-past':'');
     }
     var dspan=document.createElement('span'); dspan.className='cp-dnum'; dspan.textContent=d;
