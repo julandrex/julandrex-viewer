@@ -1376,7 +1376,7 @@ function renderPanel(){
         <div style="font-size:12px;font-weight:600;">${prop?prop.firstname+' '+prop.lastname:'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
         <span class="xbadge exch">🔄 Échange</span>
       </div>
-      <div class="xinfo">${post?post.full||post.name:r.proposer_post} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
+      <div class="xinfo">${(function(){var m=post?post.full||post.name:r.proposer_post;if(!r.proposer_post2)return m;var p2=(planning.posts||[]).find(function(q){return q.id===r.proposer_post2;});return m+' + '+(p2?p2.full||p2.name:r.proposer_post2);}())} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
       ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
@@ -1479,22 +1479,12 @@ async function submitExchange(){
     const {error}=await sb.from('exchange_requests').insert({
       hospital_id:CFG.hospital,proposer_id:me.id,
       proposer_date:mDate,proposer_post:mPost,
-      type:'exchange',status:'open',
+      type:'exchange',status:'open',proposer_post2:window._siblingPost||null,
       target_doctor_id:targetDocId,
       message:document.getElementById('m-msg').value.trim()||null
     });
     if(error)throw error;
-  if(window._siblingPost){
-    var _sp=window._siblingPost;
-    window._siblingPost=null;
-    await sb.from('exchange_requests').insert({
-      hospital_id:CFG.hospital,proposer_id:me.id,
-      proposer_date:mDate,proposer_post:_sp,
-      type:'exchange',status:'open',
-      target_doctor_id:targetDocId||null,
-      message:document.getElementById('m-msg').value.trim()||null
-    });
-  }
+  window._siblingPost=null;
     closeModal();
     toast(targetDocId?'Demande envoyée au médecin ciblé !':'Demande envoyée à tous les médecins !');
     // Push notification au(x) destinataire(s)
