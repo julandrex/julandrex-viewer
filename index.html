@@ -1388,7 +1388,7 @@ function renderPanel(){
         <div style="font-size:12px;font-weight:600;">${prop?prop.firstname+' '+prop.lastname:'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
         <span class="xbadge exch">🔄 Échange</span>
       </div>
-      <div class="xinfo">${post?post.full||post.name:r.proposer_post} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
+      <div class="xinfo">${(function(){var sib=exchanges.find(function(e){return e.id!==r.id&&e.proposer_id===r.proposer_id&&e.proposer_date===r.proposer_date;});var sp=sib?(planning.posts||[]).find(function(q){return q.id===sib.proposer_post;}):null;var m=post?post.full||post.name:r.proposer_post;return sp?m+' + '+(sp.full||sp.name):m;}())} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
       ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
