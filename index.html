@@ -1048,7 +1048,7 @@ function openPickerModal(dk,p0,p1){
         sep.textContent='—';
         var badge=document.createElement('span');
         badge.style.cssText='background:var(--acc);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap;';
-        badge.textContent='Échange 1/2 • aussi: '+p1.name;
+        badge.textContent=p0.name+' + '+p1.name+' · Échange 1/2';
         ms.appendChild(t1);ms.appendChild(sep);ms.appendChild(badge);
       }
     },50);
@@ -1065,7 +1065,7 @@ function openPickerModal(dk,p0,p1){
           sep.textContent='—';
           var badge=document.createElement('span');
           badge.style.cssText='background:var(--acc);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap;';
-          badge.textContent='Échange 2/2 • aussi: '+p0.name;
+          badge.textContent=p0.name+' + '+p1.name+' · Échange 2/2';
           ms.appendChild(t1);ms.appendChild(sep);ms.appendChild(badge);
         }
       },50);
