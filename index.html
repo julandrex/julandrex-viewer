@@ -1036,24 +1036,12 @@ function openPickerModal(dk,p0,p1){
   btnBoth.textContent='🔄 Proposer les deux échanges';
   btnBoth.addEventListener('click',function(){
     document.body.removeChild(ov);
+    window._siblingPost=p1.id;
     openModal(dk,p0.id);
     setTimeout(function(){
       var ms=document.getElementById('ms');
-      if(ms){
-          var ms=document.getElementById('ms');
-          if(ms) ms.textContent=p0.name+' ('+p0.start+'–'+p0.end+') + '+p1.name+' ('+p1.start+'–'+p1.end+')';
-        }
+      if(ms) ms.textContent=p0.name+' ('+p0.start+'–'+p0.end+') + '+p1.name+' ('+p1.start+'–'+p1.end+')';
     },50);
-    setTimeout(function(){
-      openModal(dk,p1.id);
-      setTimeout(function(){
-        var ms=document.getElementById('ms');
-        if(ms){
-            var ms=document.getElementById('ms');
-            if(ms) ms.textContent=p0.name+' ('+p0.start+'–'+p0.end+') + '+p1.name+' ('+p1.start+'–'+p1.end+')';
-          }
-      },50);
-    },1500);
   });
   box.appendChild(btnBoth);
   ov.appendChild(box);
@@ -1388,7 +1376,7 @@ function renderPanel(){
         <div style="font-size:12px;font-weight:600;">${prop?prop.firstname+' '+prop.lastname:'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
         <span class="xbadge exch">🔄 Échange</span>
       </div>
-      <div class="xinfo">${(function(){var sib=exchanges.find(function(e){return e.id!==r.id&&e.proposer_id===r.proposer_id&&e.proposer_date===r.proposer_date;});var sp=sib?(planning.posts||[]).find(function(q){return q.id===sib.proposer_post;}):null;var m=post?post.full||post.name:r.proposer_post;return sp?m+' + '+(sp.full||sp.name):m;}())} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
+      <div class="xinfo">${post?post.full||post.name:r.proposer_post} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
       ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
@@ -1496,6 +1484,17 @@ async function submitExchange(){
       message:document.getElementById('m-msg').value.trim()||null
     });
     if(error)throw error;
+  if(window._siblingPost){
+    var _sp=window._siblingPost;
+    window._siblingPost=null;
+    await sb.from('exchange_requests').insert({
+      hospital_id:CFG.hospital,proposer_id:me.id,
+      proposer_date:mDate,proposer_post:_sp,
+      type:'exchange',status:'open',
+      target_doctor_id:targetDocId||null,
+      message:document.getElementById('m-msg').value.trim()||null
+    });
+  }
     closeModal();
     toast(targetDocId?'Demande envoyée au médecin ciblé !':'Demande envoyée à tous les médecins !');
     // Push notification au(x) destinataire(s)
