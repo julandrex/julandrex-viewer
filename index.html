@@ -1040,34 +1040,18 @@ function openPickerModal(dk,p0,p1){
     setTimeout(function(){
       var ms=document.getElementById('ms');
       if(ms){
-        ms.innerHTML='';
-        var t1=document.createElement('span');
-        t1.textContent=p0.name+' · '+p0.start+'–'+p0.end;
-        var sep=document.createElement('span');
-        sep.style.cssText='margin:0 6px;opacity:.4;';
-        sep.textContent='—';
-        var badge=document.createElement('span');
-        badge.style.cssText='background:var(--acc);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap;';
-        badge.textContent=p0.name+' + '+p1.name+' · Échange 1/2';
-        ms.appendChild(t1);ms.appendChild(sep);ms.appendChild(badge);
-      }
+          var ms=document.getElementById('ms');
+          if(ms) ms.textContent=p0.name+' ('+p0.start+'–'+p0.end+') + '+p1.name+' ('+p1.start+'–'+p1.end+')';
+        }
     },50);
     setTimeout(function(){
       openModal(dk,p1.id);
       setTimeout(function(){
         var ms=document.getElementById('ms');
         if(ms){
-          ms.innerHTML='';
-          var t1=document.createElement('span');
-          t1.textContent=p1.name+' · '+p1.start+'–'+p1.end;
-          var sep=document.createElement('span');
-          sep.style.cssText='margin:0 6px;opacity:.4;';
-          sep.textContent='—';
-          var badge=document.createElement('span');
-          badge.style.cssText='background:var(--acc);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap;';
-          badge.textContent=p0.name+' + '+p1.name+' · Échange 2/2';
-          ms.appendChild(t1);ms.appendChild(sep);ms.appendChild(badge);
-        }
+            var ms=document.getElementById('ms');
+            if(ms) ms.textContent=p0.name+' ('+p0.start+'–'+p0.end+') + '+p1.name+' ('+p1.start+'–'+p1.end+')';
+          }
       },50);
     },400);
   });
