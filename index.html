@@ -910,10 +910,10 @@ function copyCalUrl(){
   }
 }
 
-function loadQShifts(){
-  var now=new Date();
-  var tYear=now.getFullYear();
-  var tQ=Math.floor(now.getMonth()/3);
+function loadQShifts(pYear,pMo){
+  var tYear=pYear!==undefined?pYear:cy;
+  var tMo=pMo!==undefined?pMo:cm;
+  var tQ=Math.floor(tMo/3);
   var qStart=tQ*3;
   var reqs=[];
   for(var qi=qStart;qi<=qStart+2;qi++){
@@ -921,12 +921,14 @@ function loadQShifts(){
   }
   Promise.all(reqs).then(function(results){
     window._qShifts={};
+    window._qYear=tYear;
+    window._qTri=tQ;
     results.forEach(function(r){
       if(r.data&&r.data.shifts){
         Object.assign(window._qShifts, r.data.shifts);
       }
     });
-    console.log("qShifts loaded, keys="+Object.keys(window._qShifts).length);
+    console.log("qShifts loaded T"+(tQ+1)+" "+tYear+", keys="+Object.keys(window._qShifts).length);
     renderCalPerso();
   }).catch(function(e){console.warn("loadQShifts err",e);});
 }
@@ -974,7 +976,7 @@ async function loadAll(){
       logAccess('view_planning',cy+'-'+(cm+1<10?'0':'')+(cm+1));
       if(!planning){
         document.getElementById('grid-area').innerHTML='<div class="ld"><div>Planning non disponible pour ce mois.</div><div style="color:var(--t3)">Contactez le gestionnaire de planning.</div></div>';
-      }else{renderCalPerso();renderShiftWidget();}
+      }else{renderCalPerso();renderShiftWidget();loadQShifts(cy,cm);}
       renderBadge();
     }catch(e){
       var cached=null;
@@ -985,7 +987,7 @@ async function loadAll(){
         var ageStr=age<60?age+'min':Math.round(age/60)+'h';
         var dt=new Date(cached.ts).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
         document.getElementById('grid-area').innerHTML='<div class="offline-banner">📵 Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
-        if(planning){renderCalPerso();renderShiftWidget();}
+        if(planning){renderCalPerso();renderShiftWidget();loadQShifts(cy,cm);}
       }else{
         var isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
         var msg=isNet?'Impossible de joindre le serveur. Vérifiez votre connexion.':'Erreur serveur : '+e.message;
@@ -1227,17 +1229,9 @@ function renderCalPerso(){
   statsDiv.appendChild(mkStat(nWE,'Week-end','var(--warn)'));
   bottom.appendChild(statsDiv);
   var wh=me.weekly_hours||40;
-  var qYear=Math.floor(cm/3),qStart=qYear*3,qEnd=qStart+2;
-  var qMs=0;
-  for(var qi=qStart;qi<=qEnd;qi++){
-    var qDays=new Date(cy,qi+1,0).getDate();
-    for(var qd=1;qd<=qDays;qd++){
-      var qDk=dkStr(cy,qi,qd);
-      var qDw=new Date(qDk+"T12:00:00").getDay();
-      if(qDw>=1&&qDw<=5)qMs++;
-    }
-  }
-  var contractH=Math.round(wh/5*qMs*10)/10;
+  var contractH=Math.round(wh*11*10)/10;
+  var tQ=Math.floor(cm/3);
+  var qStart=tQ*3,qEnd=qStart+2;
   var qShifts=window._qShifts||planning.shifts||{};
   var qHours=0;
   for(var qi=qStart;qi<=qEnd;qi++){
@@ -1268,7 +1262,7 @@ function renderCalPerso(){
   qHours=Math.round(qHours*10)/10;
   var pct=contractH>0?Math.min(100,Math.round(qHours/contractH*100)):0;
   var qNames=["T1","T2","T3","T4"];
-  var qLabel=qNames[qYear]+" "+cy;
+  var qLabel=qNames[tQ]+" "+cy;
   var barDiv=document.createElement("div"); barDiv.className="cs-bar-wrap";
   var barHdr=document.createElement("div"); barHdr.className="cs-bar-hdr";
   var barLbl=document.createElement("span"); barLbl.className="cs-bar-lbl"; barLbl.textContent=qLabel+" — Heures prestees";
