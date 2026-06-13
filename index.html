@@ -78,7 +78,7 @@ button{font-family:inherit;}
 .pgrid tr.sr td{background:rgba(255,255,255,.025);color:var(--t3);font-size:9px;font-weight:700;letter-spacing:.5px;padding:3px 8px;text-align:left;border-top:1px solid rgba(255,255,255,.1);height:18px;}
 .c-inactive{background:var(--bg)!important;}
 .c-we{background:rgba(255,255,255,.018);}
-.c-filled{font-size:10px;font-weight:600;}
+.c-filled{font-size:10px;font-weight:600;overflow:hidden;}
 .c-mine{background:rgba(59,130,246,.1)!important;border:1.5px solid var(--acc)!important;cursor:pointer;}
 .c-mine:hover{background:rgba(59,130,246,.2)!important;}
 .c-today{border-top:2px solid var(--acc)!important;}
@@ -1651,10 +1651,10 @@ function ini(doc,arr){
   return base;
 }
 
-function getLabel(doc,arr){
-  const r=doc.role||'';
-  if(r.includes('Assistant')||r.includes('Généraliste'))return doc.lastname.substring(0,6).toUpperCase();
-  return ini(doc,arr);
+function getLabel(doc){
+  const n=doc.lastname.toUpperCase();
+  const fs=n.length<=5?10:n.length<=7?9:n.length<=9?8:7;
+  return '<span style="font-size:'+fs+'px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:100%;">'+n+'</span>';
 }
 
 function shortRole(r){
