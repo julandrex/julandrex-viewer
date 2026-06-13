@@ -910,6 +910,26 @@ function copyCalUrl(){
   }
 }
 
+function loadQShifts(){
+  var now=new Date();
+  var tYear=now.getFullYear();
+  var tQ=Math.floor(now.getMonth()/3);
+  var qStart=tQ*3;
+  var reqs=[];
+  for(var qi=qStart;qi<=qStart+2;qi++){
+    reqs.push(sb.from("planning_months").select("shifts,year,month").eq("hospital_id",CFG.hospital).eq("year",tYear).eq("month",qi).maybeSingle());
+  }
+  Promise.all(reqs).then(function(results){
+    window._qShifts={};
+    results.forEach(function(r){
+      if(r.data&&r.data.shifts){
+        Object.assign(window._qShifts, r.data.shifts);
+      }
+    });
+    console.log("qShifts loaded, keys="+Object.keys(window._qShifts).length);
+    renderCalPerso();
+  }).catch(function(e){console.warn("loadQShifts err",e);});
+}
 function showMain(){
   document.getElementById('scr-login').style.display='none';
   document.getElementById('scr-main').style.display='flex';
@@ -927,6 +947,7 @@ function showMain(){
   document.getElementById('tb-role').textContent='';
   updateMonthLbl();
   loadAll();
+  loadQShifts();
   subscribeRT();
   initSession();
   logAccess('login','');
@@ -1206,20 +1227,23 @@ function renderCalPerso(){
   statsDiv.appendChild(mkStat(nWE,'Week-end','var(--warn)'));
   bottom.appendChild(statsDiv);
   var wh=me.weekly_hours||40;
-  var contractH=Math.round(wh*11*10)/10;
-  var todayD=new Date();
-  var tYear=todayD.getFullYear();
-  var tMo=todayD.getMonth();
-  var tQ=Math.floor(tMo/3);
-  var qStart=tQ*3,qEnd=qStart+2;
-  var qNames=["T1","T2","T3","T4"];
-  var qLabel=qNames[tQ]+" "+tYear;
-  var qShifts=planning.shifts||{};
+  var qYear=Math.floor(cm/3),qStart=qYear*3,qEnd=qStart+2;
+  var qMs=0;
+  for(var qi=qStart;qi<=qEnd;qi++){
+    var qDays=new Date(cy,qi+1,0).getDate();
+    for(var qd=1;qd<=qDays;qd++){
+      var qDk=dkStr(cy,qi,qd);
+      var qDw=new Date(qDk+"T12:00:00").getDay();
+      if(qDw>=1&&qDw<=5)qMs++;
+    }
+  }
+  var contractH=Math.round(wh/5*qMs*10)/10;
+  var qShifts=window._qShifts||planning.shifts||{};
   var qHours=0;
   for(var qi=qStart;qi<=qEnd;qi++){
-    var qDays2=new Date(tYear,qi+1,0).getDate();
+    var qDays2=new Date(cy,qi+1,0).getDate();
     for(var qd2=1;qd2<=qDays2;qd2++){
-      var qDk2=dkStr(tYear,qi,qd2);
+      var qDk2=dkStr(cy,qi,qd2);
       var qDayS=qShifts[qDk2]||{};
       Object.keys(qDayS).forEach(function(pid){
         var did=qDayS[pid];
@@ -1243,6 +1267,8 @@ function renderCalPerso(){
   }
   qHours=Math.round(qHours*10)/10;
   var pct=contractH>0?Math.min(100,Math.round(qHours/contractH*100)):0;
+  var qNames=["T1","T2","T3","T4"];
+  var qLabel=qNames[qYear]+" "+cy;
   var barDiv=document.createElement("div"); barDiv.className="cs-bar-wrap";
   var barHdr=document.createElement("div"); barHdr.className="cs-bar-hdr";
   var barLbl=document.createElement("span"); barLbl.className="cs-bar-lbl"; barLbl.textContent=qLabel+" — Heures prestees";
