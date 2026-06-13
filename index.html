@@ -190,10 +190,17 @@ button{font-family:inherit;}
 @media(min-width:901px){.cp-sc{font-size:12px;}}
 
 .cal-bottom{padding:8px 12px 20px;}
-.cal-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.cal-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;}
 .cs-card{background:var(--bg2);border-radius:14px;padding:18px 8px;text-align:center;border:1px solid var(--line);}
 .cs-val{font-size:28px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;margin-bottom:6px;}
 .cs-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;line-height:1.2;}
+.cs-bar-wrap{background:var(--bg2);border-radius:10px;padding:12px 16px;margin-top:0;}
+.cs-bar-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.cs-bar-lbl{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;}
+.cs-bar-pct{font-size:13px;font-weight:700;color:var(--t1);}
+.cs-bar-track{position:relative;background:#1e3a5f;border-radius:20px;height:22px;overflow:hidden;}
+.cs-bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#c9983a,#f0c060);transition:width .6s ease;}
+.cs-bar-pct-lbl{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:800;color:#0d2240;}
 .cal-upcoming{display:flex;flex-direction:column;gap:6px;}
 .cu-title{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;padding:0 2px 2px;border-bottom:1px solid var(--line);margin-bottom:2px;}
 .cu-item{display:flex;align-items:center;gap:10px;background:var(--bg2);border-radius:10px;padding:9px 12px;border:1px solid var(--line);cursor:pointer;transition:background .15s;}
@@ -477,7 +484,7 @@ async function init(){
 // ══════════════════════════════════════════════════════════
 async function loadDoctors(){
   try{
-    const {data,error}=await sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin_hash,pin_set').eq('hospital_id',CFG.hospital).eq('active',true).order('role').order('lastname');
+    const {data,error}=await sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin_hash,pin_set,weekly_hours').eq('hospital_id',CFG.hospital).eq('active',true).order('role').order('lastname');
     if(error)throw error;
     doctors=data||[];
     renderLoginDocs();
@@ -1198,6 +1205,60 @@ function renderCalPerso(){
   statsDiv.appendChild(mkStat(nNuit,'Nuits','#a78bfa'));
   statsDiv.appendChild(mkStat(nWE,'Week-end','var(--warn)'));
   bottom.appendChild(statsDiv);
+  var wh=me.weekly_hours||40;
+  var qYear=Math.floor(cm/3),qStart=qYear*3,qEnd=qStart+2;
+  var qMs=0;
+  for(var qi=qStart;qi<=qEnd;qi++){
+    var qDays=new Date(cy,qi+1,0).getDate();
+    for(var qd=1;qd<=qDays;qd++){
+      var qDk=dkStr(cy,qi,qd);
+      var qDw=new Date(qDk+"T12:00:00").getDay();
+      if(qDw>=1&&qDw<=5)qMs++;
+    }
+  }
+  var contractH=Math.round(wh/5*qMs*10)/10;
+  var qShifts=planning.shifts||{};
+  var qHours=0;
+  for(var qi=qStart;qi<=qEnd;qi++){
+    var qDays2=new Date(cy,qi+1,0).getDate();
+    for(var qd2=1;qd2<=qDays2;qd2++){
+      var qDk2=dkStr(cy,qi,qd2);
+      var qDayS=qShifts[qDk2]||{};
+      Object.keys(qDayS).forEach(function(pid){
+        var did=qDayS[pid];
+        if(did==me.local_id||did==me.id){
+          for(var pp=0;pp<posts.length;pp++){
+            if(posts[pp].id===pid){
+              var p=posts[pp];
+              if(p.start&&p.end){
+                var sh=parseInt(p.start.split(":")[0]),sm=parseInt(p.start.split(":")[1]);
+                var eh=parseInt(p.end.split(":")[0]),em2=parseInt(p.end.split(":")[1]);
+                var dur=(eh*60+em2-sh*60-sm);
+                if(dur<0)dur+=24*60;
+                qHours+=dur/60;
+              }
+              break;
+            }
+          }
+        }
+      });
+    }
+  }
+  qHours=Math.round(qHours*10)/10;
+  var pct=contractH>0?Math.min(100,Math.round(qHours/contractH*100)):0;
+  var qNames=["T1","T2","T3","T4"];
+  var qLabel=qNames[qYear]+" "+cy;
+  var barDiv=document.createElement("div"); barDiv.className="cs-bar-wrap";
+  var barHdr=document.createElement("div"); barHdr.className="cs-bar-hdr";
+  var barLbl=document.createElement("span"); barLbl.className="cs-bar-lbl"; barLbl.textContent=qLabel+" — Heures prestees";
+  var barPct=document.createElement("span"); barPct.className="cs-bar-pct"; barPct.textContent=qHours+"h / "+contractH+"h";
+  barHdr.appendChild(barLbl); barHdr.appendChild(barPct); barDiv.appendChild(barHdr);
+  var barTrack=document.createElement("div"); barTrack.className="cs-bar-track";
+  var barFill=document.createElement("div"); barFill.className="cs-bar-fill";
+  barFill.style.width=pct+"%";
+  var barPctLbl=document.createElement("div"); barPctLbl.className="cs-bar-pct-lbl"; barPctLbl.textContent=pct+"%";
+  barTrack.appendChild(barFill); barTrack.appendChild(barPctLbl); barDiv.appendChild(barTrack);
+  bottom.appendChild(barDiv);
   ga.appendChild(bottom);
 }
 
