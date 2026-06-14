@@ -78,7 +78,7 @@ button{font-family:inherit;}
 .pgrid tr.sr td{background:rgba(255,255,255,.025);color:var(--t3);font-size:9px;font-weight:700;letter-spacing:.5px;padding:3px 8px;text-align:left;border-top:1px solid rgba(255,255,255,.1);height:18px;}
 .c-inactive{background:var(--bg)!important;}
 .c-we{background:rgba(255,255,255,.018);}
-.c-filled{font-size:10px;font-weight:600;overflow:hidden;}
+.c-filled{font-size:10px;font-weight:600;}
 .c-mine{background:rgba(59,130,246,.1)!important;border:1.5px solid var(--acc)!important;cursor:pointer;}
 .c-mine:hover{background:rgba(59,130,246,.2)!important;}
 .c-today{border-top:2px solid var(--acc)!important;}
@@ -190,7 +190,7 @@ button{font-family:inherit;}
 @media(min-width:901px){.cp-sc{font-size:12px;}}
 
 .cal-bottom{padding:8px 12px 20px;}
-.cal-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;}
+.cal-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:8px;}
 .cs-card{background:var(--bg2);border-radius:14px;padding:18px 8px;text-align:center;border:1px solid var(--line);}
 .cs-val{font-size:28px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;margin-bottom:6px;}
 .cs-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;line-height:1.2;}
@@ -496,7 +496,7 @@ async function loadDoctors(){
 function renderLoginDocs(){
   const g=document.getElementById('doc-grid');
   if(!doctors.length){g.innerHTML='<div class="ld">Aucun médecin trouvé. Le planning n\'a pas encore été publié.</div>';return;}
-  g.innerHTML=[...doctors].sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname)).map(d=>`
+  g.innerHTML=doctors.map(d=>`
     <div class="doc-card" id="dc-${d.id}" onclick="selectDoc(${d.id})">
       <div class="doc-av" style="background:${d.color}33;color:${d.color};">${ini(d,doctors)}</div>
       <div><div class="doc-nm">${d.lastname}</div><div class="doc-rl">${shortRole(d.role)}</div></div>
@@ -839,7 +839,7 @@ async function submitDesiderata(){
   });
   if(error){alert('Erreur : '+error.message);return;}
   closeDesiderata();
-  toast('✅ Desiderata envoyés au gestionnaire !');
+  toast('✅ Desiderata envoyés au gestionnaire !'); loadMyDesids();
 }
 
 async function openMesDemandes(){
@@ -910,6 +910,15 @@ function copyCalUrl(){
   }
 }
 
+function loadMyDesids(){
+  if(!me)return;
+  sb.from("desiderata_requests").select("*").eq("hospital_id",CFG.hospital).eq("doctor_id",me.id)
+    .then(function(r){
+      window._myDesids=r.data||[];
+      renderCalPerso();
+    }).catch(function(e){console.warn("loadMyDesids err",e);});
+}
+
 function loadQShifts(pYear,pMo){
   var tYear=pYear!==undefined?pYear:cy;
   var tMo=pMo!==undefined?pMo:cm;
@@ -950,6 +959,7 @@ function showMain(){
   updateMonthLbl();
   loadAll();
   loadQShifts();
+  loadMyDesids();
   subscribeRT();
   initSession();
   logAccess('login','');
@@ -1016,8 +1026,6 @@ function subscribeRT(){
           if(ev==='INSERT'&&n.proposer_id!==me.id) toast('📬 Nouvelle demande d\'échange !');
           if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('✅ Votre échange a été accepté !');
           if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('✅ Échange confirmé !');
-        if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='confirmed') toast('✅ Votre échange a été validé par le gestionnaire !');
-        if(ev==='UPDATE'&&(n.proposer_id===me.id||n.acceptor_id===me.id)&&n.status==='open'&&o&&o.status==='accepted') toast('❌ Votre échange a été refusé — la demande est à nouveau ouverte.');
         });
     })
     .subscribe((status)=>{
@@ -1230,6 +1238,42 @@ function renderCalPerso(){
   statsDiv.appendChild(mkStat(nNuit,'Nuits','#a78bfa'));
   statsDiv.appendChild(mkStat(nWE,'Week-end','var(--warn)'));
   bottom.appendChild(statsDiv);
+  var cgEnt=me.role==="Médecin Généraliste"?0:(me.role&&me.role.indexOf("Assistant")>-1?30:40);
+  if(cgEnt>0){
+    function cgWd(start,end){
+      var days=0,cur=new Date(start+"T12:00:00"),eDate=new Date(end+"T12:00:00");
+      while(cur<=eDate){var dw=cur.getDay();if(dw>=1&&dw<=5)days++;cur.setDate(cur.getDate()+1);}
+      return days;
+    }
+    var cgInds=(planning&&planning.indispos)||[];
+    var cgUsed=0;
+    cgInds.forEach(function(ind){
+      if((ind.docId==me.local_id||ind.docId==me.id)&&ind.type==="conge"){
+        cgUsed+=cgWd(ind.start,ind.end);
+      }
+    });
+    var cgPending=0;
+    if(window._myDesids){
+      window._myDesids.forEach(function(req){
+        if(req.type==="c"&&req.status==="pending"){
+          cgPending+=cgWd(req.date_start,req.date_end);
+        }
+      });
+    }
+    var cgDispo=cgEnt-cgUsed-cgPending;
+    var cgCard=document.createElement("div"); cgCard.className="cs-card cs-conge-card";
+    var cgTop=document.createElement("div"); cgTop.style.cssText="display:flex;align-items:baseline;gap:4px;justify-content:center;";
+    var cgVal=document.createElement("div"); cgVal.className="cs-val"; cgVal.style.color="#f59e0b"; cgVal.textContent=cgDispo;
+    var cgSuf=document.createElement("span"); cgSuf.style.cssText="font-size:11px;color:var(--t3);"; cgSuf.textContent="/"+cgEnt+"j";
+    cgTop.appendChild(cgVal); cgTop.appendChild(cgSuf); cgCard.appendChild(cgTop);
+    var cgLbl=document.createElement("div"); cgLbl.className="cs-lbl"; cgLbl.textContent="Congés dispo";
+    cgCard.appendChild(cgLbl);
+    if(cgPending>0){
+      var cgPend=document.createElement("div"); cgPend.style.cssText="font-size:9px;color:#94a3b8;margin-top:2px;"; cgPend.textContent="("+cgPending+"j en attente)";
+      cgCard.appendChild(cgPend);
+    }
+    statsDiv.appendChild(cgCard);
+  }
   var wh=me.weekly_hours||40;
   var contractH=Math.round(wh*11*10)/10;
   var tQ=Math.floor(cm/3);
@@ -1443,13 +1487,6 @@ function renderPanel(){
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
-    const isOpenToAll=r.target_doctor_id==null;
-    const isTargeted2=isOpenToAll||(r.target_doctor_id==me.id);
-    const showMe=isMe2||isMeAcc||isTargeted2;
-    if(!showMe) return '';
-    if(r.status==='confirmed'&&!isMe2&&!isMeAcc) return '';
-    if(r.status==='accepted'&&!isMe2&&!isMeAcc&&isTargeted2)
-      acts='<span style="color:#f0a500;font-style:italic;font-size:13px">⏳ En attente de validation du gestionnaire</span>';
     if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
     if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">✓ Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
@@ -1660,10 +1697,10 @@ function ini(doc,arr){
   return base;
 }
 
-function getLabel(doc){
-  const n=doc.lastname.toUpperCase();
-  const fs=n.length<=5?10:n.length<=7?9:n.length<=9?8:7;
-  return '<span style="font-size:'+fs+'px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:100%;">'+n+'</span>';
+function getLabel(doc,arr){
+  const r=doc.role||'';
+  if(r.includes('Assistant')||r.includes('Généraliste'))return doc.lastname.substring(0,6).toUpperCase();
+  return ini(doc,arr);
 }
 
 function shortRole(r){
