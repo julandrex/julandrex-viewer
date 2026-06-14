@@ -1016,6 +1016,8 @@ function subscribeRT(){
           if(ev==='INSERT'&&n.proposer_id!==me.id) toast('📬 Nouvelle demande d\'échange !');
           if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('✅ Votre échange a été accepté !');
           if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('✅ Échange confirmé !');
+        if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='confirmed') toast('✅ Votre échange a été validé par le gestionnaire !');
+        if(ev==='UPDATE'&&(n.proposer_id===me.id||n.acceptor_id===me.id)&&n.status==='open'&&o&&o.status==='accepted') toast('❌ Votre échange a été refusé — la demande est à nouveau ouverte.');
         });
     })
     .subscribe((status)=>{
