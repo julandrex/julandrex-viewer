@@ -1488,7 +1488,8 @@ function logAccess(action,detail){
 // ══════════════════════════════════════════════════════════
 function renderBadge(){
   const open=exchanges.filter(r=>r.status==='open').length;
-  const act=exchanges.filter(r=>(r.status==='accepted'&&r.proposer_id===me.id)||(r.status==='open'&&r.proposer_id!==me.id)).length;
+  const pendJ1=exchanges.filter(r=>r.status==='pending_j1'&&(r.proposer_id===me.id||r.acceptor_id===me.id)&&!(r.proposer_id===me.id?r.j1_proposer_ok:r.j1_acceptor_ok)).length;
+  const act=exchanges.filter(r=>(r.status==='accepted'&&r.proposer_id===me.id)||(r.status==='open'&&r.proposer_id!==me.id)).length+pendJ1;
   const pill=document.getElementById('exch-pill');
   if(open>0){
     pill.textContent=act>0?`${act} action(s)`:`${open} échange(s)`;
@@ -1506,7 +1507,8 @@ function togglePanel(){
 function renderPanel(){
   const l=document.getElementById('exch-list');
   if(!exchanges.length){l.innerHTML='<div class="ld">Aucune demande en cours</div>';return;}
-  l.innerHTML=exchanges.map(r=>{
+  const myExchanges=exchanges.filter(r=>r.status!=='pending_j1'||(r.proposer_id===me.id||r.acceptor_id===me.id));
+  l.innerHTML=myExchanges.map(r=>{
     const prop=doctors.find(d=>d.id===r.proposer_id);
     const acc=r.acceptor_id?doctors.find(d=>d.id===r.acceptor_id):null;
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
