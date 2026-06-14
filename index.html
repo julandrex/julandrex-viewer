@@ -1441,7 +1441,8 @@ function renderPanel(){
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
-    const isTargeted2=(r.target_ids||[]).includes(me.id);
+    const isOpenToAll=r.target_doctor_id==null;
+    const isTargeted2=isOpenToAll||(r.target_doctor_id==me.id);
     const showMe=isMe2||isMeAcc||isTargeted2;
     if(!showMe) return '';
     if(r.status==='confirmed'&&!isMe2&&!isMeAcc) return '';
