@@ -1441,6 +1441,12 @@ function renderPanel(){
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
+    const isTargeted=(r.target_ids||[]).includes(me.id);
+    const ACTIVE=['open','accepted','pending_acceptee','pending_gestionnaire'];
+    if(!isMe2&&!isTargeted) return null;
+    if(!ACTIVE.includes(r.status)) return null;
+    if((r.status==='pending_acceptee'||r.status==='pending_gestionnaire')&&!isMe2&&isTargeted)
+      acts='<span style="color:#f0a500;font-style:italic;font-size:13px">⏳ Accepté par un collègue — en attente du gestionnaire</span>';
     if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
     if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">✓ Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
