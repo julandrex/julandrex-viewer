@@ -1491,10 +1491,10 @@ function renderBadge(){
   const pendJ1=exchanges.filter(r=>r.status==='pending_j1'&&(r.proposer_id===me.id||r.acceptor_id===me.id)&&!(r.proposer_id===me.id?r.j1_proposer_ok:r.j1_acceptor_ok)).length;
   const act=exchanges.filter(r=>(r.status==='accepted'&&r.proposer_id===me.id)||(r.status==='open'&&r.proposer_id!==me.id)).length+pendJ1;
   const pill=document.getElementById('exch-pill');
-  if(open>0){
-    pill.textContent=act>0?`${act} action(s)`:`${open} échange(s)`;
+  if(open>0||pendJ1>0){
+    pill.textContent=act>0?`${act} action(s)`:pendJ1>0?`${pendJ1} J+1`:` ${open} échange(s)`;
     pill.classList.add('show');
-    pill.classList.toggle('urgent',act>0);
+    pill.classList.toggle('urgent',act>0||pendJ1>0);
   }else{pill.classList.remove('show');}
 }
 
