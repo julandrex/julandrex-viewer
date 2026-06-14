@@ -486,7 +486,7 @@ async function loadDoctors(){
   try{
     const {data,error}=await sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin_hash,pin_set,weekly_hours').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname');
     if(error)throw error;
-    doctors=(data||[]).sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname));
+    doctors=data||[];
     renderLoginDocs();
   }catch(e){
     document.getElementById('doc-grid').innerHTML=`<div class="ld" style="color:var(--err);">Connexion impossible : ${e.message}</div>`;
@@ -996,7 +996,7 @@ async function loadAll(){
       ]);
       var pr=res[0],dr=res[1],xr=res[2];
       if(pr.error)throw pr.error;
-      doctors=dr.data||[];exchanges=xr.data||[];planning=pr.data||null;
+      doctors=(dr.data||[]).sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname));exchanges=xr.data||[];planning=pr.data||null;
       if(planning&&doctors.length){try{localStorage.setItem(CK,JSON.stringify({planning:planning,doctors:doctors,ts:Date.now()}));}catch(ce){}}
       logAccess('view_planning',cy+'-'+(cm+1<10?'0':'')+(cm+1));
       if(!planning){
@@ -1600,7 +1600,7 @@ function openModal(dk,pid){
   setTarget('all');
   // Remplir le sélecteur de médecins (hors soi-même)
   const sel=document.getElementById('m-target-doc');
-  sel.innerHTML=doctors.filter(d=>d.id!==me.id).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
+  sel.innerHTML=[...doctors].filter(d=>d.id!==me.id).sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname)).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
   document.getElementById('modal-bg').classList.add('show');
 }
 
