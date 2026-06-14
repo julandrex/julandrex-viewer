@@ -1039,6 +1039,7 @@ function subscribeRT(){
           const n=payload.new||{};
           if(ev==='INSERT'&&n.proposer_id!==me.id) toast('📬 Nouvelle demande d\'échange !');
           if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('✅ Votre échange a été accepté !');
+          if(ev==='UPDATE'&&n.status==='pending_j1'&&(n.proposer_id===me.id||n.acceptor_id===me.id)) toast('Un switch J+1 a été proposé par le gestionnaire !');
           if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('✅ Échange confirmé !');
         });
     })
@@ -1514,6 +1515,12 @@ function renderPanel(){
     if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
     if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">✓ Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
+    if(r.status==='pending_j1'){
+      const isProp=r.proposer_id===me.id;
+      const alreadyOk=isProp?r.j1_proposer_ok:r.j1_acceptor_ok;
+      if(!alreadyOk) acts='<button class="xbtn confirm" onclick="confirmJ1(\''+r.id+'\','+isProp+')" style="background:#3b82f6;color:#fff;border:none;border-radius:7px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;">J\'accepte le switch J+1</button><button class="xbtn cancel" onclick="refuseJ1(\''+r.id+'\','+isProp+')" style="margin-left:6px;background:transparent;border:1px solid var(--err);color:var(--err);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer;">Je refuse</button>';
+      else acts='<span style="color:var(--ok);font-size:12px;">Vous avez validé le switch J+1 - en attente de l\'autre médecin</span>';
+    }
     let stLbl='';
     if(r.status==='accepted'&&!isMe2&&!isMeAcc)stLbl='<span class="xstatus accepted">En attente de confirmation</span>';
     if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">✓ Confirmé</span>';
@@ -1529,6 +1536,22 @@ function renderPanel(){
   }).join('');
 }
 
+async function confirmJ1(id,isProp){
+  try{
+    var upd=isProp?{j1_proposer_ok:true}:{j1_acceptor_ok:true};
+    var {error}=await sb.from('exchange_requests').update(upd).eq('id',id);
+    if(error)throw error;
+    toast('Switch J+1 validé !');
+  }catch(e){toast('Erreur : '+e.message);}
+}
+async function refuseJ1(id,isProp){
+  if(!confirm('Refuser le switch J+1 ? L’échange J0 sera remis en attente.')) return;
+  try{
+    var {error}=await sb.from('exchange_requests').update({status:'accepted',j1_date:null,j1_proposer_post:null,j1_acceptor_posts:null,j1_proposer_ok:false,j1_acceptor_ok:false,acceptor_id:null}).eq('id',id);
+    if(error)throw error;
+    toast('Switch J+1 refusé — échange J0 remis à l’état ouvert.');
+  }catch(e){toast('Erreur : '+e.message);}
+}
 async function acceptX(id){
   try{
     // Récupérer les infos de la demande avant update
