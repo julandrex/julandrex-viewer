@@ -1546,12 +1546,6 @@ function renderPanel(){
         acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">✅ Vous avez validé le switch J0+J1 — en attente de '+othName+'</div>';
       }
     }
-    if(r.status==='pending_j1'){
-      const isProp=r.proposer_id===me.id;
-      const alreadyOk=isProp?r.j1_proposer_ok:r.j1_acceptor_ok;
-      if(!alreadyOk) acts='<button class="xbtn confirm" onclick="confirmJ1(\''+r.id+'\','+isProp+')" style="background:#3b82f6;color:#fff;border:none;border-radius:7px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;">J\'accepte le switch J+1</button><button class="xbtn cancel" onclick="refuseJ1(\''+r.id+'\','+isProp+')" style="margin-left:6px;background:transparent;border:1px solid var(--err);color:var(--err);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer;">Je refuse</button>';
-      else acts='<span style="color:var(--ok);font-size:12px;">Vous avez validé le switch J+1 - en attente de l\'autre médecin</span>';
-    }
     let stLbl='';
     if(r.status==='accepted'&&!isMe2&&!isMeAcc)stLbl='<span class="xstatus accepted">En attente de confirmation</span>';
     if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">✓ Confirmé</span>';
