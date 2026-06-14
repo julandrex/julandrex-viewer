@@ -926,18 +926,27 @@ function loadQShifts(pYear,pMo){
   var qStart=tQ*3;
   var reqs=[];
   for(var qi=qStart;qi<=qStart+2;qi++){
-    reqs.push(sb.from("planning_months").select("shifts,year,month").eq("hospital_id",CFG.hospital).eq("year",tYear).eq("month",qi).maybeSingle());
+    reqs.push(sb.from("planning_months").select("shifts,indispos,year,month").eq("hospital_id",CFG.hospital).eq("year",tYear).eq("month",qi).maybeSingle());
   }
-  Promise.all(reqs).then(function(results){
+  var extraReqs=[];
+  for(var qj=0;qj<=11;qj++){
+    if(qj<qStart||qj>qStart+2){
+      extraReqs.push(sb.from("planning_months").select("indispos,year,month").eq("hospital_id",CFG.hospital).eq("year",tYear).eq("month",qj).maybeSingle());
+    }
+  }
+  Promise.all(reqs.concat(extraReqs)).then(function(results){
     window._qShifts={};
     window._qYear=tYear;
     window._qTri=tQ;
+    window._allIndispos=[];
     results.forEach(function(r){
-      if(r.data&&r.data.shifts){
-        Object.assign(window._qShifts, r.data.shifts);
+      if(!r.data)return;
+      if(r.data.shifts) Object.assign(window._qShifts, r.data.shifts);
+      if(r.data.indispos&&r.data.indispos.length){
+        window._allIndispos=window._allIndispos.concat(r.data.indispos);
       }
     });
-    console.log("qShifts loaded T"+(tQ+1)+" "+tYear+", keys="+Object.keys(window._qShifts).length);
+    console.log("qShifts T"+(tQ+1)+" "+tYear+" keys="+Object.keys(window._qShifts).length+", indispos="+window._allIndispos.length);
     renderCalPerso();
   }).catch(function(e){console.warn("loadQShifts err",e);});
 }
@@ -1245,7 +1254,7 @@ function renderCalPerso(){
       while(cur<=eDate){var dw=cur.getDay();if(dw>=1&&dw<=5)days++;cur.setDate(cur.getDate()+1);}
       return days;
     }
-    var cgInds=(planning&&planning.indispos)||[];
+    var cgInds=window._allIndispos||((planning&&planning.indispos)||[]);
     var cgUsed=0;
     cgInds.forEach(function(ind){
       if((ind.docId==me.local_id||ind.docId==me.id)&&ind.type==="conge"){
