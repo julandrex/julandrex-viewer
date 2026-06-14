@@ -1255,9 +1255,35 @@ function renderCalPerso(){
   bottom.appendChild(statsDiv);
   var cgEnt=me.role==="Médecin Généraliste"?0:(me.role&&me.role.indexOf("Assistant")>-1?30:40);
   if(cgEnt>0){
+    function cgEaster(y){
+      var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4;
+      var f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
+      var i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7;
+      var m=Math.floor((a+11*h+22*l)/451);
+      var mo=Math.floor((h+l-7*m+114)/31),dy=(h+l-7*m+114)%31+1;
+      return new Date(y,mo-1,dy);
+    }
+    function cgHolidays(y){
+      var e=cgEaster(y);
+      function add(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r.toISOString().slice(0,10);}
+      var fixed=[y+"-01-01",y+"-05-01",y+"-07-21",y+"-08-15",y+"-11-01",y+"-11-11",y+"-12-25"];
+      var mobile=[add(e,1),add(e,39),add(e,49),add(e,50)];
+      var all={};
+      fixed.concat(mobile).forEach(function(dk){all[dk]=1;});
+      return all;
+    }
     function cgWd(start,end){
       var days=0,cur=new Date(start+"T12:00:00"),eDate=new Date(end+"T12:00:00");
-      while(cur<=eDate){var dw=cur.getDay();if(dw>=1&&dw<=5)days++;cur.setDate(cur.getDate()+1);}
+      var holidays=cgHolidays(cur.getFullYear());
+      if(cur.getFullYear()!==eDate.getFullYear()){
+        var h2=cgHolidays(eDate.getFullYear());
+        Object.assign(holidays,h2);
+      }
+      while(cur<=eDate){
+        var dw=cur.getDay(),dk=cur.toISOString().slice(0,10);
+        if(dw>=1&&dw<=5&&!holidays[dk])days++;
+        cur.setDate(cur.getDate()+1);
+      }
       return days;
     }
     var cgInds=window._allIndispos||((planning&&planning.indispos)||[]);
