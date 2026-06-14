@@ -1523,15 +1523,27 @@ function renderPanel(){
       const othName=isProp?(acc?acc.firstname+' '+acc.lastname:'accepteur'):(prop?prop.firstname+' '+prop.lastname:'demandeur');
       const j1PostProp=r.j1_proposer_post?((planning&&planning.posts||[]).find(function(p){return p.id===r.j1_proposer_post;})||{full:r.j1_proposer_post}).full||r.j1_proposer_post:'(aucun)';
       const j1PostsAcc=(r.j1_acceptor_posts||[]).map(function(pid){return ((planning&&planning.posts||[]).find(function(p){return p.id===pid;})||{full:pid}).full||pid;}).join(' + ')||'(aucun)';
+      const postJ0=(planning&&planning.posts||[]).find(function(p){return p.id===r.proposer_post;});
+      const postJ0Name=postJ0?postJ0.full||postJ0.name:r.proposer_post||'?';
+      const propName2=prop?prop.firstname+' '+prop.lastname:'Demandeur';
+      const accName2=acc?acc.firstname+' '+acc.lastname:'Accepteur';
       if(!alreadyOk){
-        acts='<div style="font-size:11px;color:#60a5fa;font-weight:700;margin-bottom:4px;">Switch J+1 le '+r.j1_date+'</div>'
-          +'<div style="font-size:11px;color:var(--t2);margin-bottom:8px;">'
-          +(isProp?'Vous recevrez : '+j1PostProp+'<br>'+othName+' recevra : '+j1PostsAcc:'Vous recevrez : '+j1PostsAcc+'<br>'+othName+' recevra : '+j1PostProp)
+        acts='<div style="background:rgba(59,130,246,.08);border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:10px;font-size:11px;line-height:1.9;">'
+          +'<div style="font-weight:700;color:#60a5fa;margin-bottom:6px;text-transform:uppercase;font-size:10px;letter-spacing:.5px;">Proposition de switch J0 + J+1</div>'
+          +'<b>J0 — '+r.proposer_date+'</b><br>'
+          +'→ '+propName2+' échange son <b>'+postJ0Name+'</b> contre les postes de '+accName2+'<br>'
+          +'<b>J+1 — '+r.j1_date+'</b><br>'
+          +(isProp
+            ?'→ Vous recevrez : <b>'+(j1PostProp||'(aucun)')+'</b><br>'
+             +'→ '+othName+' recevra : <b>'+(j1PostsAcc||'(aucun)')+'</b>'
+            :'→ Vous recevrez : <b>'+(j1PostsAcc||'(aucun)')+'</b><br>'
+             +'→ '+othName+' recevra : <b>'+(j1PostProp||'(aucun)')+'</b>'
+          )
           +'</div>'
-          +'<button class="xbtn confirm" onclick="confirmJ1(\''+r.id+'\','+isProp+')" style="background:#3b82f6;color:#fff;border:none;">J\'accepte le switch J+1</button>'
-          +' <button class="xbtn cancel" onclick="refuseJ1(\''+r.id+'\','+isProp+')">Je refuse</button>';
+          +'<button class="xbtn confirm" onclick="confirmJ1(\''+r.id+'\','+isProp+')" style="background:#3b82f6;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">J\'accepte le switch J0+J1</button>'
+          +' <button class="xbtn cancel" onclick="refuseJ1(\''+r.id+'\','+isProp+')" style="background:transparent;border:1px solid var(--err);color:var(--err);border-radius:7px;padding:8px 14px;font-size:12px;cursor:pointer;margin-left:6px;">Je refuse</button>';
       } else {
-        acts='<span style="color:var(--ok);font-size:11px;">Vous avez accepté — en attente de '+othName+'</span>';
+        acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">✅ Vous avez validé le switch J0+J1 — en attente de '+othName+'</div>';
       }
     }
     if(r.status==='pending_j1'){
