@@ -946,6 +946,12 @@ function loadQShifts(pYear,pMo){
         window._allIndispos=window._allIndispos.concat(r.data.indispos);
       }
     });
+    var _seen={};
+    window._allIndispos=window._allIndispos.filter(function(ind){
+      var key=ind.docId+"|"+ind.type+"|"+ind.start+"|"+ind.end;
+      if(_seen[key])return false;
+      _seen[key]=true;return true;
+    });
     console.log("qShifts T"+(tQ+1)+" "+tYear+" keys="+Object.keys(window._qShifts).length+", indispos="+window._allIndispos.length);
     renderCalPerso();
   }).catch(function(e){console.warn("loadQShifts err",e);});
