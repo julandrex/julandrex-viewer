@@ -1546,7 +1546,7 @@ function renderPanel(){
       } else {
         acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">✅ Vous avez validé le switch J0+J1 — en attente de '+othName+'</div>';
       }
-
+    }
     if(r.status==='pending_switch'){
       const isPropSw=r.proposer_id===me.id;
       const alreadyOkSw=isPropSw?r.switch_proposer_ok:r.switch_acceptor_ok;
@@ -1566,7 +1566,8 @@ function renderPanel(){
       } else {
         acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">\u2714 Vous avez valid\u00e9 le switch \u2014 en attente de '+othNameSw+'</div>';
       }
-    }    let stLbl='';
+    }
+    let stLbl='';
     if(r.status==='accepted'&&!isMe2&&!isMeAcc)stLbl='<span class="xstatus accepted">En attente de confirmation</span>';
     if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">✓ Confirmé</span>';
     return `<div class="xcard">
