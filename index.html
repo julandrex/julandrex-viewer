@@ -239,14 +239,14 @@ button{font-family:inherit;}
 <!-- LOGIN -->
 <div id="scr-login">
   <div class="logo">ð Julandrex</div>
-  <div class="logo-sub">Planning des urgences â CHR Citadelle</div>
+  <div class="logo-sub">Planning des urgences — CHR Citadelle</div>
   <div class="login-box">
-    <div class="step-title">SÃ©lectionnez votre nom</div>
+    <div class="step-title">Sélectionnez votre nom</div>
     <div class="doc-grid" id="doc-grid"><div class="ld"><div class="sp"></div>Chargement...</div></div>
     <div class="pin-area" id="pin-area">
       <div class="pin-lbl" id="pin-lbl">Entrez votre code PIN</div>
       <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="â¢â¢â¢â¢â¢â¢" autocomplete="off">
-      <div class="pin-err" id="pin-err">Code PIN incorrect â rÃ©essayez</div>
+      <div class="pin-err" id="pin-err">Code PIN incorrect — réessayez</div>
       <button class="pin-btn" onclick="doLogin()">Se connecter</button>
     </div>
   </div>
@@ -270,7 +270,7 @@ button{font-family:inherit;}
       <div id="tb-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg1);border:1px solid var(--b);border-radius:12px;padding:6px;z-index:200;min-width:195px;box-shadow:0 8px 28px rgba(0,0,0,.45);">
         <button id="cal-btn" onclick="copyCalUrl();closeTbMenu()" class="tb-dd-item" style="display:none;">ð Mon calendrier</button>
         <button id="demandes-btn" onclick="openMesDemandes();closeTbMenu()" class="tb-dd-item" style="display:none;">ð Mes demandes</button>
-        <button id="echanges-btn" onclick="openMesEchanges();closeTbMenu()" class="tb-dd-item" style="display:none;">ð Mes Ã©changes</button>
+        <button id="echanges-btn" onclick="openMesEchanges();closeTbMenu()" class="tb-dd-item" style="display:none;">ð Mes échanges</button>
         <button id="desid-btn" onclick="openDesiderata();closeTbMenu()" class="tb-dd-item" style="display:none;">+ Desiderata</button>
         <button id="notif-btn" onclick="toggleNotifications()" class="tb-dd-item" style="display:none;align-items:center;gap:7px;">
           <span id="notif-pill" style="display:inline-flex;align-items:center;width:34px;height:18px;border-radius:9px;background:#4b5563;padding:0 2px;transition:background .25s;flex-shrink:0;position:relative;">
@@ -278,18 +278,18 @@ button{font-family:inherit;}
           </span>
           <span id="notif-lbl">Notif.</span>
         </button>
-<button id="rappel24-btn" onclick="toggleRappel24()"><span class="r24-bar" id="rappel24-bar"></span>Â Rappel 24h</button>
+<button id="rappel24-btn" onclick="toggleRappel24()"><span class="r24-bar" id="rappel24-bar"></span> Rappel 24h</button>
         <div style="border-top:1px solid var(--b);margin:5px 0;"></div>
 <button onclick="showChangePin()" style="display:block;width:100%;text-align:left;padding:8px 16px;background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;">&#x1F510; Changer mon PIN</button>
-        <button onclick="logout();closeTbMenu()" class="tb-dd-item" style="color:#f87171;">â DÃ©connexion</button>
+        <button onclick="logout();closeTbMenu()" class="tb-dd-item" style="color:#f87171;">→ Déconnexion</button>
       </div>
     </div>
   </div>
   <div class="month-bar">
     <button class="mnav" onclick="prevMonth()">â¹</button>
-    <span class="mlbl" id="mlbl">â</span>
+    <span class="mlbl" id="mlbl">—</span>
     <button class="mnav" onclick="nextMonth()">âº</button>
-    <span class="exch-pill" id="exch-pill" onclick="togglePanel()">0 Ã©change</span>
+    <span class="exch-pill" id="exch-pill" onclick="togglePanel()">0 échange</span>
   </div>
   <div id="shift-widget"></div>
   <div id="grid-area"><div class="ld"><div class="sp"></div>Chargement du planning...</div></div>
@@ -298,17 +298,17 @@ button{font-family:inherit;}
 <!-- SESSION OVERLAY -->
 <div id="session-overlay">
   <div class="sess-box">
-    <div class="sess-title">&#x23F1; Session expirÃ©e</div>
+    <div class="sess-title">&#x23F1; Session expirée</div>
     <div class="sess-sub">Entrez votre PIN pour reprendre</div>
     <input class="sess-pin" id="sess-pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="â¢â¢â¢â¢â¢â¢" oninput="onSessPinInput(this.value)">
     <div id="sess-pin-err" class="pin-lockout"></div>
-    <button class="sess-btn" onclick="onSessPinSubmit()">DÃ©verrouiller</button>
+    <button class="sess-btn" onclick="onSessPinSubmit()">Déverrouiller</button>
   </div>
 </div>
 <!-- EXCHANGE PANEL -->
 <div id="exch-panel">
   <div class="ep-hdr">
-    <div class="ep-title">Demandes d'Ã©change</div>
+    <div class="ep-title">Demandes d'échange</div>
     <button class="ep-close" onclick="togglePanel()">â</button>
   </div>
   <div id="exch-list"></div>
@@ -366,16 +366,16 @@ button{font-family:inherit;}
           <div id="desid-sel-info" style="margin-top:7px;font-size:10px;color:#64748b;min-height:13px;text-align:center;font-style:italic;"></div>
         </div>
         <div style="background:#152d50;border-radius:9px;padding:12px;">
-          <div id="desid-type-hint" style="font-size:10px;color:#475569;margin-bottom:8px;text-align:center;font-style:italic;">SÃ©lectionnez une pÃ©riode</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;"><button id="desid-btn-c" onclick="desidPickType('c')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">âï¸ CongÃ©</button>
-          <button id="desid-btn-r" onclick="desidPickType('r')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">ð Repos souhaitÃ©</button>
+          <div id="desid-type-hint" style="font-size:10px;color:#475569;margin-bottom:8px;text-align:center;font-style:italic;">Sélectionnez une période</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;"><button id="desid-btn-c" onclick="desidPickType('c')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">âï¸ Congé</button>
+          <button id="desid-btn-r" onclick="desidPickType('r')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">ð Repos souhaité</button>
           <button id="desid-btn-f" onclick="desidPickType('f')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">ð Formation</button>
           <button id="desid-btn-ip" onclick="desidPickType('ip')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">ð« Indispo poste</button>
           <button id="desid-btn-p" onclick="desidClickPoste()" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">ð Poste particulier</button>
-          </div><div id="desid-warn-poste" style="display:none;background:#1e1a0a;border:1px solid #7a5a10;border-radius:6px;padding:6px 8px;font-size:10px;color:#d4a030;margin-bottom:6px;line-height:1.5;">ð Un poste ne peut Ãªtre demandÃ© que pour <strong>un seul jour</strong>.</div>
+          </div><div id="desid-warn-poste" style="display:none;background:#1e1a0a;border:1px solid #7a5a10;border-radius:6px;padding:6px 8px;font-size:10px;color:#d4a030;margin-bottom:6px;line-height:1.5;">ð Un poste ne peut Ãªtre demandé que pour <strong>un seul jour</strong>.</div>
           <input id="desid-f-input" placeholder="Nom de la formation..." style="display:none;width:100%;margin-bottom:6px;background:#0d2240;border:1px solid #2a4a72;border-radius:6px;color:#e2e8f0;font-size:11px;padding:5px 7px;box-sizing:border-box;" oninput="desidUpdAdd()">
           <div id="desid-ip-section" style="display:none;">
-          <div style="background:#1e0a0a;border:1px solid #7a1010;border-radius:6px;padding:6px 8px;font-size:10px;color:#e05050;margin-bottom:6px;line-height:1.5;">ð« Indispo poste : sÃ©lectionnez un <strong>seul jour</strong> dans le calendrier, puis choisissez le poste. Soumise Ã  validation.</div>
+          <div style="background:#1e0a0a;border:1px solid #7a1010;border-radius:6px;padding:6px 8px;font-size:10px;color:#e05050;margin-bottom:6px;line-height:1.5;">ð« Indispo poste : sélectionnez un <strong>seul jour</strong> dans le calendrier, puis choisissez le poste. Soumise à validation.</div>
           <select id="desid-ip-post-sel" style="width:100%;margin-bottom:6px;background:#0d2240;border:1px solid #2a4a72;border-radius:6px;color:#e2e8f0;font-size:11px;padding:5px 7px;box-sizing:border-box;" onchange="desidUpdAdd()"><option value="">-- Choisir un poste --</option></select>
         </div>
     <select id="desid-p-select" style="display:none;width:100%;margin-bottom:6px;background:#0d2240;border:1px solid #2a4a72;border-radius:6px;color:#e2e8f0;font-size:11px;padding:4px 6px;" onchange="desidUpdAdd()"><option value="">-- Choisir --</option></select>
@@ -383,7 +383,7 @@ button{font-family:inherit;}
         </div>
       </div>
       <div style="margin-top:12px;border-top:0.5px solid #1e3a5f;padding-top:10px;">
-        <div id="desid-req-empty" style="font-size:10px;color:#334155;text-align:center;padding:4px;">Aucune demande ajoutÃ©e</div>
+        <div id="desid-req-empty" style="font-size:10px;color:#334155;text-align:center;padding:4px;">Aucune demande ajoutée</div>
         <div id="desid-req-items" style="display:flex;flex-wrap:wrap;"></div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;">
@@ -407,22 +407,22 @@ button{font-family:inherit;}
 <!-- PROPOSE MODAL -->
 <div id="modal-bg" onclick="if(event.target===this)closeModal()">
   <div id="modal">
-    <div class="modal-t" id="mt">Proposer un Ã©change</div>
+    <div class="modal-t" id="mt">Proposer un échange</div>
     <div class="modal-s" id="ms"></div>
     <div class="mfield">
       <span class="mlbl">Destinataire</span>
       <div class="mradio-g">
-        <div class="mradio on" id="r-all" onclick="setTarget('all')">ð¥ Tous les mÃ©decins</div>
-        <div class="mradio" id="r-specific" onclick="setTarget('specific')">ð¤ MÃ©decin en particulier</div>
+        <div class="mradio on" id="r-all" onclick="setTarget('all')">ð¥ Tous les médecins</div>
+        <div class="mradio" id="r-specific" onclick="setTarget('specific')">ð¤ Médecin en particulier</div>
       </div>
     </div>
     <div class="mfield" id="m-target-wrap" style="display:none;">
-      <span class="mlbl">Choisir le mÃ©decin</span>
+      <span class="mlbl">Choisir le médecin</span>
       <select id="m-target-doc" class="mtxt" style="padding:8px;font-size:13px;"></select>
     </div>
     <div class="mfield">
       <span class="mlbl">Message (optionnel)</span>
-      <textarea class="mtxt" id="m-msg" placeholder="PrÃ©cisez votre demande..."></textarea>
+      <textarea class="mtxt" id="m-msg" placeholder="Précisez votre demande..."></textarea>
     </div>
     <div class="macts">
       <button class="mcancel" onclick="closeModal()">Annuler</button>
@@ -435,7 +435,7 @@ button{font-family:inherit;}
 
 <script>
 // ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// CONFIG â Remplacer par vos valeurs depuis supabase.com
+// CONFIG — Remplacer par vos valeurs depuis supabase.com
 // ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const CFG = {
   url: 'https://zzqbcjtrtisexyokezaq.supabase.co',
@@ -457,8 +457,8 @@ var SESS_TIMEOUT=25*60*1000;
 var PIN_MAX_ATTEMPTS=5;
 var _pinAttempts=0, _pinLockedUntil=0;
 
-const MO=['Janvier','FÃ©vrier','Mars','Avril','Mai','Juin',
-          'Juillet','AoÃ»t','Septembre','Octobre','Novembre','DÃ©cembre'];
+const MO=['Janvier','Février','Mars','Avril','Mai','Juin',
+          'Juillet','AoÃ»t','Septembre','Octobre','Novembre','Décembre'];
 const DS=['Di','Lu','Ma','Me','Je','Ve','Sa'];
 const SEC_ORDER=['jour','soir','nuit','we'];
 const SEC_LBL={jour:'JOURNÃE SEMAINE',soir:'SOIRÃE',nuit:'GARDES NUIT SEM.',we:'WEEK-END'};
@@ -470,7 +470,7 @@ async function init(){
   if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW:',e));}
 
   if(CFG.url==='VOTRE_SUPABASE_URL'){
-    document.getElementById('doc-grid').innerHTML='<div class="ld" style="color:var(--err);">â  Configurez les clÃ©s Supabase dans le fichier viewer (variables CFG).</div>';
+    document.getElementById('doc-grid').innerHTML='<div class="ld" style="color:var(--err);">â  Configurez les clés Supabase dans le fichier viewer (variables CFG).</div>';
     return;
   }
   sb=supabase.createClient(CFG.url,CFG.key);
@@ -495,13 +495,13 @@ async function loadDoctors(){
 
 function renderLoginDocs(){
   const g=document.getElementById('doc-grid');
-  if(!doctors.length){g.innerHTML='<div class="ld">Aucun mÃ©decin trouvÃ©. Le planning n\'a pas encore Ã©tÃ© publiÃ©.</div>';return;}
+  if(!doctors.length){g.innerHTML='<div class="ld">Aucun médecin trouvé. Le planning n\'a pas encore été publié.</div>';return;}
   g.innerHTML=doctors.map(d=>`
     <div class="doc-card" id="dc-${d.id}" onclick="selectDoc(${d.id})">
       <div class="doc-av" style="background:${d.color}33;color:${d.color};">${ini(d,doctors)}</div>
       <div><div class="doc-nm">${d.lastname}</div><div class="doc-rl">${shortRole(d.role)}</div></div>
     </div>`).join('');
-  // PrÃ©-sÃ©lection via paramÃ¨tre URL ?doc=ID (lien email)
+  // Pré-sélection via paramètre URL ?doc=ID (lien email)
   const _urlDoc = new URLSearchParams(window.location.search).get('doc');
   if(_urlDoc){
     const _preId = parseInt(_urlDoc);
@@ -539,7 +539,7 @@ function doLogin(){
     var errEl=document.getElementById('pin-err');
     if(_pinAttempts>=PIN_MAX_ATTEMPTS){
       _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
-      errEl.textContent='5 tentatives Ã©chouÃ©es. BloquÃ© 30s.';
+      errEl.textContent='5 tentatives échouées. Bloqué 30s.';
     }else{
       errEl.textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
     }
@@ -573,12 +573,12 @@ function logout(){
   document.getElementById('echanges-btn').style.display='none';
 }
 
-const DCAL_MO=['Janvier','FÃ©vrier','Mars','Avril','Mai','Juin','Juillet','AoÃ»t','Septembre','Octobre','Novembre','DÃ©cembre'];
+const DCAL_MO=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','AoÃ»t','Septembre','Octobre','Novembre','Décembre'];
 // Desiderata state
 var _desidReqs=[], _desidD1=null, _desidD2=null, _desidType=null;
 var _desidCalY=new Date().getFullYear(), _desidCalM=new Date().getMonth();
 var _desidRid=0;
-var _DESID_MNS=['jan.','fÃ©v.','mars','avr.','mai','juin','juil.','aoÃ»t','sep.','oct.','nov.','dÃ©c.'];
+var _DESID_MNS=['jan.','fév.','mars','avr.','mai','juin','juil.','aoÃ»t','sep.','oct.','nov.','déc.'];
 
 async function openDesiderata(){
   if(!me)return;
@@ -658,18 +658,18 @@ function desidClickDay(yr,mo,dn){
   var nd=new Date(yr,mo,dn);
   if(!_desidD1||_desidD2){_desidD1=nd;_desidD2=null;_desidType=null;desidResetType();}
   else{_desidD2=nd;}
-  // Pour indispo poste : un seul jour suffit â forcer D2=D1
+  // Pour indispo poste : un seul jour suffit → forcer D2=D1
   if(window._desidCurType==='ip') _desidD2=new Date(_desidD1);
   desidUpdPanel();desidRenderCal();
 }
 
 function desidUpdSelInfo(){
   var el=document.getElementById('desid-sel-info');if(!el)return;
-  if(!_desidD1){el.textContent='Cliquez pour dÃ©buter une pÃ©riode.';return;}
+  if(!_desidD1){el.textContent='Cliquez pour débuter une période.';return;}
   if(!_desidD2){el.textContent='Cliquez sur le dernier jour.';return;}
   var lo=_desidD1.getTime()<_desidD2.getTime()?_desidD1:_desidD2;
   var hi=_desidD1.getTime()<_desidD2.getTime()?_desidD2:_desidD1;
-  el.textContent=lo.getTime()===hi.getTime()?desidFmtDate(lo):desidFmtDate(lo)+' â '+desidFmtDate(hi);
+  el.textContent=lo.getTime()===hi.getTime()?desidFmtDate(lo):desidFmtDate(lo)+' → '+desidFmtDate(hi);
 }
 
 function desidIsMulti(){return _desidD1&&_desidD2&&_desidD1.getTime()!==_desidD2.getTime();}
@@ -677,7 +677,7 @@ function desidIsMulti(){return _desidD1&&_desidD2&&_desidD1.getTime()!==_desidD2
 function desidUpdPanel(){
   var ok=!!(_desidD1&&_desidD2);
   var hint=document.getElementById('desid-type-hint');
-  if(hint)hint.textContent=ok?'Type de demande :':(_desidD1?'Cliquez sur le dernier jour':'SÃ©lectionnez une pÃ©riode');
+  if(hint)hint.textContent=ok?'Type de demande :':(_desidD1?'Cliquez sur le dernier jour':'Sélectionnez une période');
   ['c','r','f','ip'].forEach(function(x){var el=document.getElementById('desid-btn-'+x);if(el)el.disabled=!ok;});
   var bp=document.getElementById('desid-btn-p');
   if(bp){
@@ -698,10 +698,10 @@ function desidClickPoste(){
 
 function desidPickType(t){
   window._desidCurType=t;
-  // GÃ©rer la section ip
+  // Gérer la section ip
   document.getElementById('desid-ip-section').style.display=(t==='ip')?'block':'none';
   if(t==='ip'){
-    // Peupler le sÃ©lecteur de postes via desidGetPosts (mÃªme source que poste particulier)
+    // Peupler le sélecteur de postes via desidGetPosts (mÃªme source que poste particulier)
     const postSel=document.getElementById('desid-ip-post-sel');
     if(postSel&&postSel.options.length<=1){
       const postNames=desidGetPosts();
@@ -739,15 +739,15 @@ function desidGetPosts(){
   var names=[],seen={};
   src.filter(function(p){return p.section!=='we';}).forEach(function(p){
     if(p.name==='U3'){
-      if(!seen['U3-1']){names.push('U3-1 (tÃ´t)');seen['U3-1']=true;}
-      else if(!seen['U3-2']){names.push('U3-2 Ã  5');seen['U3-2']=true;}
+      if(!seen['U3-1']){names.push('U3-1 (tôt)');seen['U3-1']=true;}
+      else if(!seen['U3-2']){names.push('U3-2 à 5');seen['U3-2']=true;}
     }else if(!seen[p.name]){names.push(p.name);seen[p.name]=true;}
   });
   return names;
 }
 
 function desidUpdAdd(){
-  // Cas ip : vÃ©rifier date + poste sÃ©lectionnÃ©s
+  // Cas ip : vérifier date + poste sélectionnés
   if(window._desidCurType==='ip'){
     const pn=document.getElementById('desid-ip-post-sel')&&document.getElementById('desid-ip-post-sel').value;
     const btn=document.getElementById('desid-add-btn');
@@ -780,7 +780,7 @@ function desidResetType(){
 
 function desidAddRequest(){
   if(window._desidCurType==='ip'){
-    if(!_desidD1){alert('SÃ©lectionnez un jour dans le calendrier.');return;}
+    if(!_desidD1){alert('Sélectionnez un jour dans le calendrier.');return;}
     const pn=document.getElementById('desid-ip-post-sel').value;
     if(!pn){alert('Choisissez un poste.');return;}
     const _ipd=_desidD1;
@@ -808,13 +808,13 @@ function desidRenderReqs(){
   if(!el||!em)return;
   el.innerHTML='';em.style.display=_desidReqs.length?'none':'block';
   var TCOLS={c:'#3b82f6',r:'#8b5cf6',f:'#10b981',p:'#f59e0b'};
-  var TLABS={c:'CongÃ©',r:'Repos',f:'Formation',p:'Poste',ip:'Indispo poste'};
+  var TLABS={c:'Congé',r:'Repos',f:'Formation',p:'Poste',ip:'Indispo poste'};
   _desidReqs.forEach(function(r){
     var lo=r.date_start.split('-'),hi=r.date_end.split('-');
     var loS=parseInt(lo[2])+' '+_DESID_MNS[parseInt(lo[1])-1];
     var hiS=parseInt(hi[2])+' '+_DESID_MNS[parseInt(hi[1])-1];
-    var ds=r.date_start===r.date_end?loS:loS+' â '+hiS;
-    var label=TLABS[r.type]+(r.detail?' â '+r.detail:'');
+    var ds=r.date_start===r.date_end?loS:loS+' → '+hiS;
+    var label=TLABS[r.type]+(r.detail?' — '+r.detail:'');
     var d=document.createElement('div');
     d.style.cssText='display:inline-flex;align-items:center;gap:5px;background:#152d50;border-radius:6px;padding:4px 8px;font-size:11px;margin:3px;border:0.5px solid #2a4a72;';
     d.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:'+TCOLS[r.type]+';flex-shrink:0;display:inline-block;"></span><span style="font-weight:600;color:#e2e8f0;">'+label+'</span><span style="color:#64748b;margin-left:3px;">'+ds+'</span><span onclick="desidRemoveReq('+r.id+')" style="cursor:pointer;color:#475569;margin-left:4px;">â</span>';
@@ -839,7 +839,7 @@ async function submitDesiderata(){
   });
   if(error){alert('Erreur : '+error.message);return;}
   closeDesiderata();
-  toast('â Desiderata envoyÃ©s au gestionnaire !'); loadMyDesids();
+  toast('â Desiderata envoyés au gestionnaire !'); loadMyDesids();
 }
 
 async function openMesDemandes(){
@@ -862,13 +862,13 @@ async function openMesDemandes(){
     const fmtDt=s=>new Date(s).toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'});
     const stBadge=st=>{
       if(st==='pending') return '<span style="background:#fbbf2433;color:#fbbf24;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">â³ En attente</span>';
-      if(st==='validated'||st==='accepted') return '<span style="background:#22c55e33;color:#22c55e;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">â ValidÃ©e</span>';
-      if(st==='refused'||st==='rejected') return '<span style="background:#ef444433;color:#ef4444;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">â RefusÃ©e</span>';
+      if(st==='validated'||st==='accepted') return '<span style="background:#22c55e33;color:#22c55e;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">â Validée</span>';
+      if(st==='refused'||st==='rejected') return '<span style="background:#ef444433;color:#ef4444;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">✗ Refusée</span>';
       return `<span style="background:var(--bg3);color:var(--t3);font-size:11px;border-radius:6px;padding:2px 8px;">${st}</span>`;
     };
     const Q=['T1','T2','T3','T4'];
     list.innerHTML=data.map(r=>{
-      const cgs=(r.conges||[]).map(c=>`ð ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' â '+fmtD(c.end)}`).join('<br>');
+      const cgs=(r.conges||[]).map(c=>`ð ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}`).join('<br>');
       const inds=(r.indispos||[]).map(i=>`ð« ${fmtD(i.date||i.start)}`).join('<br>');
       const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">ð¬ ${r.remarques}</div>`:'';
       return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:10px;border-left:3px solid ${r.status==='pending'?'#fbbf24':r.status==='validated'||r.status==='accepted'?'#22c55e':'#ef4444'};">
@@ -876,7 +876,7 @@ async function openMesDemandes(){
           <span style="font-size:13px;font-weight:700;">${Q[(r.quarter||1)-1]} ${r.year}</span>
           ${stBadge(r.status)}
         </div>
-        <div style="font-size:12px;color:var(--t2);line-height:1.8;">${[cgs,inds].filter(Boolean).join('<br>')||'<i>Aucun dÃ©tail</i>'}</div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.8;">${[cgs,inds].filter(Boolean).join('<br>')||'<i>Aucun détail</i>'}</div>
         ${rem}
         <div style="font-size:10px;color:var(--t3);margin-top:6px;">Soumis le ${fmtDt(r.submitted_at||r.created_at||r.updated_at)}</div>
       </div>`;
@@ -896,13 +896,13 @@ function copyCalUrl(){
   const url=base+'?doc='+me.id+'&pin='+(me.pin||'')+'&h='+CFG.hospital;
   const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
   if(isIOS){
-    // Sur iOS : ouvrir l'URL dÃ©clenche l'ajout au calendrier natif
+    // Sur iOS : ouvrir l'URL déclenche l'ajout au calendrier natif
     window.location.href=url;
   } else {
     navigator.clipboard.writeText(url).then(()=>{
       const btn=document.getElementById('cal-btn');
       const prev=btn.textContent;
-      btn.textContent='â URL copiÃ©e !';
+      btn.textContent='â URL copiée !';
       setTimeout(()=>btn.textContent=prev,2500);
     }).catch(()=>{
       prompt('Copiez cette URL et abonnez-vous dans votre calendrier :',url);
@@ -1011,12 +1011,12 @@ async function loadAll(){
         var age=Math.round((Date.now()-cached.ts)/60000);
         var ageStr=age<60?age+'min':Math.round(age/60)+'h';
         var dt=new Date(cached.ts).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-        document.getElementById('grid-area').innerHTML='<div class="offline-banner">ðµ Mode hors-ligne â donnÃ©es du '+dt+' (il y a '+ageStr+')</div>';
+        document.getElementById('grid-area').innerHTML='<div class="offline-banner">ðµ Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
         if(planning){renderCalPerso();renderShiftWidget();loadQShifts(cy,cm);}
       }else{
         var isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
-        var msg=isNet?'Impossible de joindre le serveur. VÃ©rifiez votre connexion.':'Erreur serveurÂ : '+e.message;
-        document.getElementById('grid-area').innerHTML='<div class="err-banner"><div>â ï¸ '+msg+'</div><button class="err-retry" onclick="loadAll()">â» RÃ©essayer</button></div>';
+        var msg=isNet?'Impossible de joindre le serveur. Vérifiez votre connexion.':'Erreur serveur : '+e.message;
+        document.getElementById('grid-area').innerHTML='<div class="err-banner"><div>â ï¸ '+msg+'</div><button class="err-retry" onclick="loadAll()">â» Réessayer</button></div>';
       }
       renderBadge();
     }
@@ -1037,10 +1037,10 @@ function subscribeRT(){
           if(document.getElementById('exch-panel').classList.contains('show'))renderPanel();
           const ev=payload.eventType;
           const n=payload.new||{};
-          if(ev==='INSERT'&&n.proposer_id!==me.id) toast('ð¬ Nouvelle demande d\'Ã©change !');
-          if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('â Votre Ã©change a Ã©tÃ© acceptÃ© !');
-          if(ev==='UPDATE'&&n.status==='pending_j1'&&(n.proposer_id===me.id||n.acceptor_id===me.id)) toast('Un switch J+1 a Ã©tÃ© proposÃ© par le gestionnaire !');
-          if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('â Ãchange confirmÃ© !');
+          if(ev==='INSERT'&&n.proposer_id!==me.id) toast('ð¬ Nouvelle demande d\'échange !');
+          if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('â Votre échange a été accepté !');
+          if(ev==='UPDATE'&&n.status==='pending_j1'&&(n.proposer_id===me.id||n.acceptor_id===me.id)) toast('Un switch J+1 a été proposé par le gestionnaire !');
+          if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('â Ãchange confirmé !');
         });
     })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'planning_months'},payload=>{
@@ -1065,7 +1065,7 @@ function openPickerModal(dk,p0,p1){
   box.className='picker-box';
   var ttl=document.createElement('div');
   ttl.className='picker-title';
-  ttl.textContent='Proposer un Ã©change pour';
+  ttl.textContent='Proposer un échange pour';
   box.appendChild(ttl);
   function mkBtn(p,label){
     var btn=document.createElement('button');
@@ -1085,8 +1085,8 @@ function openPickerModal(dk,p0,p1){
     });
     return btn;
   }
-  box.appendChild(mkBtn(p0,p0.full+' Â· '+p0.start+'â'+p0.end));
-  box.appendChild(mkBtn(p1,p1.full+' Â· '+p1.start+'â'+p1.end));
+  box.appendChild(mkBtn(p0,p0.full+' · '+p0.start+'â'+p0.end));
+  box.appendChild(mkBtn(p1,p1.full+' · '+p1.start+'â'+p1.end));
   var btnBoth=document.createElement('button');
   btnBoth.className='picker-btn';
   btnBoth.style.background='var(--bg3)';
@@ -1094,7 +1094,7 @@ function openPickerModal(dk,p0,p1){
   btnBoth.style.borderTop='1px solid var(--line)';
   btnBoth.style.marginTop='2px';
   btnBoth.style.paddingTop='13px';
-  btnBoth.textContent='ð Proposer les deux Ã©changes';
+  btnBoth.textContent='ð Proposer les deux échanges';
   btnBoth.addEventListener('click',function(){
     document.body.removeChild(ov);
     window._siblingPost=p1.id;
@@ -1149,7 +1149,7 @@ function renderCalPerso(){
     }
     if(dayInd&&!myPosts.length){
       var iColor=dayInd.type==='conge'?'#3b82f6':dayInd.type==='formation'?'#a78bfa':dayInd.type==='maladie'?'#f87171':'#94a3b8';
-      var iCode=dayInd.type==='conge'?'CongÃ©':dayInd.type==='formation'?'F':dayInd.type==='maladie'?'CM':'Abs';
+      var iCode=dayInd.type==='conge'?'Congé':dayInd.type==='formation'?'F':dayInd.type==='maladie'?'CM':'Abs';
       cell.style.background=iColor+'33';
       var iN=document.createElement('span');
       iN.style.position='absolute';
@@ -1176,17 +1176,17 @@ function renderCalPerso(){
     }
     if(myPosts.length===1){
       var p0=myPosts[0];
-      var sc=p0.id==='u3-1'?'U3 tÃ´t':p0.name;
+      var sc=p0.id==='u3-1'?'U3 tôt':p0.name;
       cell.style.background=p0.color+'33';
       dspan.style.color=p0.color+'cc';
       var cspan=document.createElement('span'); cspan.className='cp-code';
       cspan.style.color=p0.color; cspan.textContent=sc; cell.appendChild(cspan);
-      cell.title=p0.full+' Â· '+p0.start+'â'+p0.end;
+      cell.title=p0.full+' · '+p0.start+'â'+p0.end;
       if(!isPast){(function(d2,pid){cell.addEventListener('click',function(){openModal(d2,pid);});})(dk,p0.id);}
     } else if(myPosts.length>=2){
       var p0=myPosts[0],p1=myPosts[1];
-      var sc0=p0.id==='u3-1'?'U3 tÃ´t':p0.name;
-      var sc1=p1.id==='u3-1'?'U3 tÃ´t':p1.name;
+      var sc0=p0.id==='u3-1'?'U3 tôt':p0.name;
+      var sc1=p1.id==='u3-1'?'U3 tôt':p1.name;
       cell.style.cssText+=';overflow:hidden;position:relative;background:transparent;';
       dspan.style.display='none';
       var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -1259,7 +1259,7 @@ function renderCalPerso(){
   statsDiv.appendChild(mkStat(nNuit,'Nuits','#a78bfa'));
   statsDiv.appendChild(mkStat(nWE,'Week-end','var(--warn)'));
   bottom.appendChild(statsDiv);
-  var cgEnt=me.role==="MÃ©decin GÃ©nÃ©raliste"?0:(me.role&&me.role.indexOf("Assistant")>-1?30:40);
+  var cgEnt=me.role==="Médecin Généraliste"?0:(me.role&&me.role.indexOf("Assistant")>-1?30:40);
   if(cgEnt>0){
     function cgEaster(y){var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),dy=(h+l-7*m+114)%31+1;return new Date(y+'-'+(mo<10?'0':'')+mo+'-'+(dy<10?'0':'')+dy+'T12:00:00');}
     function cgHolidays(y){var e=cgEaster(y);function add(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r.toISOString().slice(0,10);}var fixed=[y+"-01-01",y+"-05-01",y+"-07-21",y+"-08-15",y+"-11-01",y+"-11-11",y+"-12-25"];var mobile=[add(e,1),add(e,39),add(e,49),add(e,50)];var all={};fixed.concat(mobile).forEach(function(dk){all[dk]=1;});return all;}
@@ -1291,7 +1291,7 @@ function renderCalPerso(){
     var cgVal=document.createElement("div"); cgVal.className="cs-val"; cgVal.style.color="#f59e0b"; cgVal.textContent=cgDispo;
     var cgSuf=document.createElement("span"); cgSuf.style.cssText="font-size:11px;color:var(--t3);"; cgSuf.textContent="/"+cgEnt+"j";
     cgTop.appendChild(cgVal); cgTop.appendChild(cgSuf); cgCard.appendChild(cgTop);
-    var cgLbl=document.createElement("div"); cgLbl.className="cs-lbl"; cgLbl.textContent="CongÃ©s dispo";
+    var cgLbl=document.createElement("div"); cgLbl.className="cs-lbl"; cgLbl.textContent="Congés dispo";
     cgCard.appendChild(cgLbl);
     if(cgPending>0){
       var cgPend=document.createElement("div"); cgPend.style.cssText="font-size:9px;color:#94a3b8;margin-top:2px;"; cgPend.textContent="("+cgPending+"j en attente)";
@@ -1336,7 +1336,7 @@ function renderCalPerso(){
   var qLabel=qNames[tQ]+" "+cy;
   var barDiv=document.createElement("div"); barDiv.className="cs-bar-wrap";
   var barHdr=document.createElement("div"); barHdr.className="cs-bar-hdr";
-  var barLbl=document.createElement("span"); barLbl.className="cs-bar-lbl"; barLbl.textContent=qLabel+" â Heures prestees";
+  var barLbl=document.createElement("span"); barLbl.className="cs-bar-lbl"; barLbl.textContent=qLabel+" — Heures prestees";
   var barPct=document.createElement("span"); barPct.className="cs-bar-pct"; barPct.textContent=qHours+"h / "+contractH+"h";
   barHdr.appendChild(barLbl); barHdr.appendChild(barPct); barDiv.appendChild(barHdr);
   var barTrack=document.createElement("div"); barTrack.className="cs-bar-track";
@@ -1431,7 +1431,7 @@ function renderShiftWidget(){
   if(todayS.length){
     var p=todayS[0].p;
     el.className='shift-widget shift-today';
-    el.innerHTML='<span style="font-size:20px">ð´</span><div><strong>Shift aujourd\'huiÂ !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' Â· '+p.start+'â'+p.end+'</span></div>';
+    el.innerHTML='<span style="font-size:20px">ð´</span><div><strong>Shift aujourd\'hui !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' · '+p.start+'â'+p.end+'</span></div>';
   }else if(nextS){
     var dt=new Date(nextS.dk+'T12:00:00');
     var diff=Math.round((dt.getTime()-new Date().setHours(0,0,0,0))/86400000);
@@ -1439,7 +1439,7 @@ function renderShiftWidget(){
     var dlbl=DS2[dt.getDay()]+' '+dt.getDate()+' '+MO[dt.getMonth()].toLowerCase().slice(0,3)+'.';
     var pp=nextS.p;
     el.className='shift-widget shift-next';
-    el.innerHTML='<span style="font-size:20px">ð</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' â '+(pp.full||pp.name)+' Â· <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
+    el.innerHTML='<span style="font-size:20px">ð</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' — '+(pp.full||pp.name)+' · <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
   }else{el.className='';el.innerHTML='';}
 }
 
@@ -1468,7 +1468,7 @@ function onSessPinSubmit(){
     _pinAttempts++;
     if(_pinAttempts>=PIN_MAX_ATTEMPTS){
       _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
-      document.getElementById('sess-pin-err').textContent='5 tentatives Ã©chouÃ©es. BloquÃ© 30s.';
+      document.getElementById('sess-pin-err').textContent='5 tentatives échouées. Bloqué 30s.';
       logAccess('pin_lockout','');
     }else{
       document.getElementById('sess-pin-err').textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
@@ -1492,8 +1492,8 @@ function renderBadge(){
   const pendSw=exchanges.filter(r=>r.status==='pending_switch'&&(r.proposer_id===me.id||r.acceptor_id===me.id)&&!(r.proposer_id===me.id?r.switch_proposer_ok:r.switch_acceptor_ok)).length;
   const act=exchanges.filter(r=>(r.status==='accepted'&&r.proposer_id===me.id)||(r.status==='open'&&r.proposer_id!==me.id)).length+pendJ1+pendSw;
   const pill=document.getElementById('exch-pill');
-  if(open>0||pendJ1>0){
-    pill.textContent=act>0?`${act} action(s)`:pendJ1>0?`${pendJ1} J+1`:` ${open} Ã©change(s)`;
+  if(open>0||pendJ1>0||pendSw>0){
+    pill.textContent=act>0?`${act} action(s)`:pendSw>0?`${pendSw} switch`:pendJ1>0?`${pendJ1} J+1`:`${open} échange(s)`;
     pill.classList.add('show');
     pill.classList.toggle('urgent',act>0||pendJ1>0);
   }else{pill.classList.remove('show');}
@@ -1531,20 +1531,20 @@ function renderPanel(){
       if(!alreadyOk){
         acts='<div style="background:rgba(59,130,246,.08);border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:10px;font-size:11px;line-height:1.9;">'
           +'<div style="font-weight:700;color:#60a5fa;margin-bottom:6px;text-transform:uppercase;font-size:10px;letter-spacing:.5px;">Proposition de switch J0 + J+1</div>'
-          +'<b>J0 â '+r.proposer_date+'</b><br>'
-          +'â '+propName2+' Ã©change son <b>'+postJ0Name+'</b> contre les postes de '+accName2+'<br>'
-          +'<b>J+1 â '+r.j1_date+'</b><br>'
+          +'<b>J0 — '+r.proposer_date+'</b><br>'
+          +'→ '+propName2+' échange son <b>'+postJ0Name+'</b> contre les postes de '+accName2+'<br>'
+          +'<b>J+1 — '+r.j1_date+'</b><br>'
           +(isProp
-            ?'â Vous recevrez : <b>'+(j1PostProp||'(aucun)')+'</b><br>'
-             +'â '+othName+' recevra : <b>'+(j1PostsAcc||'(aucun)')+'</b>'
-            :'â Vous recevrez : <b>'+(j1PostsAcc||'(aucun)')+'</b><br>'
-             +'â '+othName+' recevra : <b>'+(j1PostProp||'(aucun)')+'</b>'
+            ?'→ Vous recevrez : <b>'+(j1PostProp||'(aucun)')+'</b><br>'
+             +'→ '+othName+' recevra : <b>'+(j1PostsAcc||'(aucun)')+'</b>'
+            :'→ Vous recevrez : <b>'+(j1PostsAcc||'(aucun)')+'</b><br>'
+             +'→ '+othName+' recevra : <b>'+(j1PostProp||'(aucun)')+'</b>'
           )
           +'</div>'
           +'<button class="xbtn confirm" onclick="confirmJ1(\''+r.id+'\','+isProp+')" style="background:#3b82f6;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">J\'accepte le switch J0+J1</button>'
           +' <button class="xbtn cancel" onclick="refuseJ1(\''+r.id+'\','+isProp+')" style="background:transparent;border:1px solid var(--err);color:var(--err);border-radius:7px;padding:8px 14px;font-size:12px;cursor:pointer;margin-left:6px;">Je refuse</button>';
       } else {
-        acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">â Vous avez validÃ© le switch J0+J1 â en attente de '+othName+'</div>';
+        acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">â Vous avez validé le switch J0+J1 — en attente de '+othName+'</div>';
       }
     }
     if(r.status==='pending_switch'){
@@ -1568,13 +1568,13 @@ function renderPanel(){
       }
     }    let stLbl='';
     if(r.status==='accepted'&&!isMe2&&!isMeAcc)stLbl='<span class="xstatus accepted">En attente de confirmation</span>';
-    if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">â ConfirmÃ©</span>';
+    if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">â Confirmé</span>';
     return `<div class="xcard">
       <div class="xcard-hdr">
         <div style="font-size:12px;font-weight:600;">${prop?prop.firstname+' '+prop.lastname:'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
         <span class="xbadge exch">ð Ãchange</span>
       </div>
-      <div class="xinfo">${(function(){var m=post?post.full||post.name:r.proposer_post;if(!r.proposer_post2)return m;var p2=(planning.posts||[]).find(function(q){return q.id===r.proposer_post2;});return m+' + '+(p2?p2.full||p2.name:r.proposer_post2);}())} Â· ${fmtDate(r.proposer_date)}${acc?`<br>AcceptÃ© par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
+      <div class="xinfo">${(function(){var m=post?post.full||post.name:r.proposer_post;if(!r.proposer_post2)return m;var p2=(planning.posts||[]).find(function(q){return q.id===r.proposer_post2;});return m+' + '+(p2?p2.full||p2.name:r.proposer_post2);}())} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
       ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
@@ -1593,15 +1593,15 @@ async function confirmJ1(id,isProp){
     var upd=isProp?{j1_proposer_ok:true}:{j1_acceptor_ok:true};
     var {error}=await sb.from('exchange_requests').update(upd).eq('id',id);
     if(error)throw error;
-    toast('Switch J+1 validÃ© !');
+    toast('Switch J+1 validé !');
   }catch(e){toast('Erreur : '+e.message);}
 }
 async function refuseJ1(id,isProp){
-  if(!confirm('Refuser le switch J+1 ? LâÃ©change J0 sera remis en attente.')) return;
+  if(!confirm('Refuser le switch J+1 ? Lâéchange J0 sera remis en attente.')) return;
   try{
     var {error}=await sb.from('exchange_requests').update({status:'accepted',j1_date:null,j1_proposer_post:null,j1_acceptor_posts:null,j1_proposer_ok:false,j1_acceptor_ok:false,acceptor_id:null}).eq('id',id);
     if(error)throw error;
-    toast('Switch J+1 refusÃ© â Ã©change J0 remis Ã  lâÃ©tat ouvert.');
+    toast('Switch J+1 refusé — échange J0 remis à lâétat ouvert.');
   }catch(e){toast('Erreur : '+e.message);}
 }
 async function confirmSwitch(id,isProp){
@@ -1652,11 +1652,11 @@ async function refuseSwitch(id,isProp){
 }
 async function acceptX(id){
   try{
-    // RÃ©cupÃ©rer les infos de la demande avant update
+    // Récupérer les infos de la demande avant update
     const {data:xr}=await sb.from('exchange_requests').select('proposer_id,proposer_date,proposer_post').eq('id',id).maybeSingle();
     const {error}=await sb.from('exchange_requests').update({status:'accepted',acceptor_id:me.id,accepted_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
-    toast('Demande acceptÃ©e â en attente de confirmation.');
+    toast('Demande acceptée — en attente de confirmation.');
     // Push au proposeur
     try {
       if(xr) {
@@ -1667,8 +1667,8 @@ async function acceptX(id){
           body:JSON.stringify({
             hospital: CFG.hospital,
             doctor_ids: [String(xr.proposer_id)],
-            title: 'â Demande acceptÃ©e',
-            message: me.firstname+' '+me.lastname+' a acceptÃ© votre demande dâÃ©change â '+_postName,
+            title: 'â Demande acceptée',
+            message: me.firstname+' '+me.lastname+' a accepté votre demande dâéchange — '+_postName,
             url: 'https://julandrex.github.io/julandrex-viewer/'
           })
         }).catch(()=>{});
@@ -1677,7 +1677,7 @@ async function acceptX(id){
     // Notifier le gestionnaire
     if(CFG.gest_email && xr){
       const post=planning?.posts?.find(p=>p.id===xr.proposer_post);
-      // RÃ©cupÃ©rer le nom du proposant
+      // Récupérer le nom du proposant
       const {data:proposer}=await sb.from('doctors').select('firstname,lastname').eq('id',xr.proposer_id).maybeSingle();
       fetch(CFG.url+'/functions/v1/send-notification',{
         method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
@@ -1702,7 +1702,7 @@ async function confirmX(id){
   try{
     const {error}=await sb.from('exchange_requests').update({status:'confirmed',confirmed_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
-    toast('â Ãchange confirmÃ© !');
+    toast('â Ãchange confirmé !');
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
@@ -1710,7 +1710,7 @@ async function cancelX(id){
   try{
     const {error}=await sb.from('exchange_requests').update({status:'cancelled',cancelled_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
-    toast('Demande annulÃ©e.');
+    toast('Demande annulée.');
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
@@ -1720,12 +1720,12 @@ async function cancelX(id){
 function openModal(dk,pid){
   mDate=dk;mPost=pid;
   const post=planning?.posts?.find(p=>p.id===pid);
-  document.getElementById('ms').textContent=(post?post.full||post.name:pid)+' Â· '+fmtDate(dk);
+  document.getElementById('ms').textContent=(post?post.full||post.name:pid)+' · '+fmtDate(dk);
   document.getElementById('m-msg').value='';
   setTarget('all');
-  // Remplir le sÃ©lecteur de mÃ©decins (hors soi-mÃªme)
+  // Remplir le sélecteur de médecins (hors soi-mÃªme)
   const sel=document.getElementById('m-target-doc');
-  sel.innerHTML=[...doctors].filter(d=>d.id!==me.id).sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname)).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} â ${shortRole(d.role)}</option>`).join('');
+  sel.innerHTML=[...doctors].filter(d=>d.id!==me.id).sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname)).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
   document.getElementById('modal-bg').classList.add('show');
 }
 
@@ -1753,14 +1753,14 @@ async function submitExchange(){
     if(error)throw error;
   window._siblingPost=null;
     closeModal();
-    toast(targetDocId?'Demande envoyÃ©e au mÃ©decin ciblÃ© !':'Demande envoyÃ©e Ã  tous les mÃ©decins !');
+    toast(targetDocId?'Demande envoyée au médecin ciblé !':'Demande envoyée à tous les médecins !');
     // Push notification au(x) destinataire(s)
     try {
       const _postName = planning?.posts?.find(p=>p.id===mPost)?.full || mPost;
       const _pushPayload = {
         hospital: CFG.hospital,
-        title: 'ð Demande dâÃ©change',
-        message: me.firstname+' '+me.lastname+' vous propose un Ã©change â '+_postName,
+        title: 'ð Demande dâéchange',
+        message: me.firstname+' '+me.lastname+' vous propose un échange — '+_postName,
         url: 'https://julandrex.github.io/julandrex-viewer/'
       };
       if(targetDocId) {
@@ -1772,7 +1772,7 @@ async function submitExchange(){
         body:JSON.stringify(_pushPayload)
       }).catch(()=>{});
     } catch(e){}
-    // Notifier le(s) destinataire(s) de l'Ã©change
+    // Notifier le(s) destinataire(s) de l'échange
     const post=planning?.posts?.find(p=>p.id===mPost);
     const _notifData={
       type:'exchange_requested',
@@ -1784,11 +1784,11 @@ async function submitExchange(){
       body:JSON.stringify({..._notifData,to_email:email,to_name:name,doctor_id:docId})
     }).catch(()=>{});
     if(targetDocId){
-      // Ãchange ciblÃ© â notifier uniquement ce mÃ©decin
+      // Ãchange ciblé → notifier uniquement ce médecin
       sb.from('doctors').select('id,email,firstname,lastname').eq('id',targetDocId).maybeSingle()
         .then(({data:d})=>{ if(d?.email) _sendNotif(d.email,d.firstname+' '+d.lastname,d.id); });
     } else {
-      // Ãchange ouvert Ã  tous â notifier tous les mÃ©decins actifs avec un email
+      // Ãchange ouvert à tous → notifier tous les médecins actifs avec un email
       sb.from('doctors').select('id,email,firstname,lastname').eq('active',true).eq('hospital_id',CFG.hospital).not('email','is',null)
         .then(({data:docs})=>{ (docs||[]).filter(d=>d.email&&d.id!==me.id).forEach(d=>_sendNotif(d.email,d.firstname+' '+d.lastname,d.id)); });
     }
@@ -1811,9 +1811,9 @@ function fmtDate(dk){const d=new Date(dk+'T12:00:00');return DS[d.getDay()]+' '+
 
 function isFerie(dk){
   const d=new Date(dk+'T12:00:00'),y=d.getFullYear(),m=d.getMonth()+1,j=d.getDate();
-  // Jours fÃ©riÃ©s fixes
+  // Jours fériés fixes
   if((m===1&&j===1)||(m===5&&j===1)||(m===7&&j===21)||(m===8&&j===15)||(m===11&&j===1)||(m===11&&j===11)||(m===12&&j===25))return true;
-  // PÃ¢ques (algorithme de Meeus)
+  // Pâques (algorithme de Meeus)
   const a=y%19,b=Math.floor(y/100),c=y%100,d2=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d2-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m2=Math.floor((a+11*h+22*l)/451),month=Math.floor((h+l-7*m2+114)/31),day=(h+l-7*m2+114)%31+1;
   const paques=new Date(y,month-1,day);
   const lundi=new Date(paques);lundi.setDate(paques.getDate()+1);
@@ -1844,13 +1844,13 @@ function ini(doc,arr){
 
 function getLabel(doc,arr){
   const r=doc.role||'';
-  if(r.includes('Assistant')||r.includes('GÃ©nÃ©raliste'))return doc.lastname.substring(0,6).toUpperCase();
+  if(r.includes('Assistant')||r.includes('Généraliste'))return doc.lastname.substring(0,6).toUpperCase();
   return ini(doc,arr);
 }
 
 function shortRole(r){
   if(!r)return'';
-  const m={'PH Urgences':'PH Urg.','PH SMUR':'PH SMUR','CCA':'CCA','Assistant SMUR ok':'Ass. SMUR','Assistant Urgences':'Assistant','MÃ©decin GÃ©nÃ©raliste':'GÃ©nÃ©raliste'};
+  const m={'PH Urgences':'PH Urg.','PH SMUR':'PH SMUR','CCA':'CCA','Assistant SMUR ok':'Ass. SMUR','Assistant Urgences':'Assistant','Médecin Généraliste':'Généraliste'};
   return m[r]||r.substring(0,14);
 }
 
@@ -1875,7 +1875,7 @@ async function openMesEchanges(){
       .order('created_at',{ascending:false});
     if(error) throw error;
     if(!data||!data.length){
-      list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">Aucune demande d\'Ã©change en cours.</div>';
+      list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">Aucune demande d\'échange en cours.</div>';
       return;
     }
     const fmtD=dk=>{const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
@@ -1887,18 +1887,18 @@ async function openMesEchanges(){
       // Badge statut
       let badge='',color='';
       if(r.status==='open'){
-        badge='â³ En attente de rÃ©ponse';color='#f59e0b';
+        badge='â³ En attente de réponse';color='#f59e0b';
       } else if(r.status==='accepted'){
-        badge='â AcceptÃ©e par '+(accName||'un mÃ©decin');color='#22c55e';
+        badge='â Acceptée par '+(accName||'un médecin');color='#22c55e';
       } else if(r.status==='confirmed'){
-        badge='â ValidÃ©e par le gestionnaire';color='#22c55e';
+        badge='✔ Validée par le gestionnaire';color='#22c55e';
       } else if(r.status==='cancelled'){
-        badge='â AnnulÃ©e par le gestionnaire';color='#ef4444';
+        badge='✗ Annulée par le gestionnaire';color='#ef4444';
       }
       const borderColor=r.status==='open'?'#f59e0b':r.status==='cancelled'?'#ef4444':'#22c55e';
       return `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid ${borderColor};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:13px;font-weight:700;">ð ${fmtD(r.proposer_date)} â ${postName}</span>
+          <span style="font-size:13px;font-weight:700;">ð ${fmtD(r.proposer_date)} — ${postName}</span>
           <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:6px;background:${borderColor}22;color:${color};">${badge}</span>
         </div>
         ${r.message?`<div style="font-size:11px;color:var(--t3);font-style:italic;margin-bottom:6px;">"${r.message}"</div>`:''}
@@ -1975,11 +1975,11 @@ function updateNotifBtn(state) {
   if (state === 'subscribed') {
     pill.style.background = '#22c55e';
     dot.style.transform   = 'translateX(16px)';
-    btn.title = 'Notifications activÃ©es â cliquer pour dÃ©sactiver';
+    btn.title = 'Notifications activées — cliquer pour désactiver';
   } else if (state === 'denied') {
     pill.style.background = '#ef4444';
     dot.style.transform   = 'translateX(0)';
-    btn.title = 'Notifications bloquÃ©es â modifiez les paramÃ¨tres navigateur';
+    btn.title = 'Notifications bloquées — modifiez les paramètres navigateur';
   } else {
     pill.style.background = '#4b5563';
     dot.style.transform   = 'translateX(0)';
@@ -2005,7 +2005,7 @@ async function toggleRappel24(){
       if(perm !== 'granted'){ updateRappel24Btn(); return; }
     }
     if(Notification.permission === 'denied'){
-      alert('Notifications bloquÃ©es par votre navigateur. Autorisez-les dans les paramÃ¨tres du site.');
+      alert('Notifications bloquées par votre navigateur. Autorisez-les dans les paramètres du site.');
       return;
     }
     localStorage.setItem(r24Key(), '1');
@@ -2037,8 +2037,8 @@ async function checkRappel24(){
       const postName = post ? (post.name || pid) : pid;
       const postTime = post ? (post.start || '') : '';
       const dayStr = tomorrow.split('-').reverse().join('/');
-      new Notification('â° Rappel shift â Julandrex', {
-        body: 'Demain '+dayStr+'Â : '+postName+(postTime?' ('+postTime+')':''),
+      new Notification('â° Rappel shift — Julandrex', {
+        body: 'Demain '+dayStr+' : '+postName+(postTime?' ('+postTime+')':''),
         icon: '/julandrex-viewer/icon-192.png',
         tag: 'r24_'+tomorrow+'_'+pid
       });
@@ -2049,7 +2049,7 @@ async function checkRappel24(){
 
 async function toggleNotifications() {
   if (Notification.permission === 'denied') {
-    toast('Notifications bloquÃ©es. Modifiez les paramÃ¨tres de votre navigateur.', 4000);
+    toast('Notifications bloquées. Modifiez les paramètres de votre navigateur.', 4000);
     return;
   }
   const reg = await navigator.serviceWorker.getRegistration();
@@ -2065,7 +2065,7 @@ async function toggleNotifications() {
 async function subscribeToPush(reg) {
   try {
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { updateNotifBtn('denied'); toast('Permission refusÃ©e', 3000); return; }
+    if (perm !== 'granted') { updateNotifBtn('denied'); toast('Permission refusée', 3000); return; }
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
@@ -2082,7 +2082,7 @@ async function subscribeToPush(reg) {
     }, { onConflict: 'endpoint' });
     if (upsertErr) console.error('push_subscriptions upsert error:', upsertErr);
     updateNotifBtn('subscribed');
-    toast('ð Notifications activÃ©es !', 3000);
+    toast('ð Notifications activées !', 3000);
   } catch(e) {
     console.error('subscribeToPush error:', e);
     toast('Erreur activation notifications: ' + e.message, 4000);
@@ -2094,10 +2094,10 @@ async function unsubscribeFromPush(sub, reg) {
     await sub.unsubscribe();
     await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
     updateNotifBtn('unsubscribed');
-    toast('ð Notifications dÃ©sactivÃ©es', 3000);
+    toast('ð Notifications désactivées', 3000);
   } catch(e) {
     console.error('unsubscribeFromPush error:', e);
-    toast('Erreur dÃ©sactivation: ' + e.message, 4000);
+    toast('Erreur désactivation: ' + e.message, 4000);
   }
 }
 // ========== FIN PUSH NOTIFICATIONS ==========
@@ -2137,7 +2137,7 @@ async function renderMonPlanning() {
   statsEl.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:8px;text-align:center">Chargementâ¦</div>';
   listEl.innerHTML = '';
 
-  // Charger le planning du mois si diffÃ©rent du mois courant
+  // Charger le planning du mois si différent du mois courant
   let pl = planning;
   if (mpY !== cy || mpM !== cm) {
     const { data: mpData } = await sb.from('planning_months')
@@ -2147,14 +2147,14 @@ async function renderMonPlanning() {
 
   if (!pl) {
     statsEl.innerHTML = '';
-    listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Planning non publiÃ© pour ce mois.</div>';
+    listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Planning non publié pour ce mois.</div>';
     return;
   }
 
   const { shifts, posts } = pl;
   const d2 = new Date(mpY, mpM + 1, 0).getDate();
   const today = new Date().toISOString().slice(0, 10);
-  const DN = ['âÂ Dim', 'âÂ Lun', 'âÂ Mar', 'âÂ Mer', 'âÂ Jeu', 'âÂ Ven', 'âÂ Sam'];
+  const DN = ['â Dim', '→ Lun', '→ Mar', '→ Mer', '→ Jeu', '→ Ven', '→ Sam'];
   const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
   // Collecter mes gardes
@@ -2201,7 +2201,7 @@ async function renderMonPlanning() {
     const canExchange = !isPast;
     const clickAttr = canExchange
       ? `onclick="closeMonPlanning();openModal('${dk}','${post.id}')"`
-      : `onclick="showToast('Les gardes passÃ©es ne peuvent pas Ãªtre Ã©changÃ©es', 2500)"`;
+      : `onclick="showToast('Les gardes passées ne peuvent pas Ãªtre échangées', 2500)"`;
     return `<div ${clickAttr} style="
       display:flex;align-items:center;gap:12px;
       background:var(--bg2);border-radius:10px;padding:12px 14px;
@@ -2246,10 +2246,10 @@ document.addEventListener('click', function(e) {
 // ===== FIN TOPBAR DROPDOWN MENU =====
 
 function rejectX(id){
-  if(!confirm('Refuser cette demande dâÃ©change ?'))return;
+  if(!confirm('Refuser cette demande dâéchange ?'))return;
   sb.from('exchange_requests').update({status:'cancelled'}).eq('id',id).then(({error})=>{
     if(error){toast('Erreur: '+error.message,3000);return;}
-    toast('â Demande refusÃ©e',2500);
+    toast('â Demande refusée',2500);
     openMesEchanges();
   });
 }
@@ -2259,7 +2259,7 @@ function rejectX(id){
 <div id="mesechanges-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMesEchanges()">
   <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-size:15px;font-weight:700;">ð Mes demandes d'Ã©change</div>
+      <div style="font-size:15px;font-weight:700;">ð Mes demandes d'échange</div>
       <button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">â</button>
     </div>
     <div id="mesechanges-list"></div>
@@ -2281,7 +2281,7 @@ function rejectX(id){
     <div id="mp-list"></div>
   </div>
 </div>
-<div id="pso" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;"><div id="pso-icon" style="font-size:28px;margin-bottom:6px">&#x1F510;</div><h2 id="pso-title" style="color:#e2e8f0;font-size:18px;margin:0 0 6px">CrÃ©ez votre PIN</h2><p id="pso-desc" style="color:#94a3b8;font-size:13px;margin:0 0 18px">Choisissez un code PIN permanent (min. 6 chiffres).</p><div id="pso-cur-wrap" style="display:none;margin-bottom:10px;"><input id="pso-cur" type="password" inputmode="numeric" placeholder="PIN actuel" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;box-sizing:border-box;"></div><input id="npi" type="password" inputmode="numeric" placeholder="Nouveau PIN (6-8 chiffres)" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;"><input id="cpi" type="password" inputmode="numeric" placeholder="Confirmer nouveau PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:14px;box-sizing:border-box;"><div id="pse" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:10px;"></div><button onclick="doConfirmPin()" style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">Valider mon PIN</button><button id="pso-cancel-btn" onclick="doCancelPin()" style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">Retour</button></div></div><div id="pso-msg" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px">â ï¸</div><p id="pso-msg-text" style="color:#e2e8f0;font-size:15px;margin:0 0 20px"></p><button onclick="document.getElementById('pso-msg').style.display='none'" style="padding:10px 24px;background:#1e3a5f;color:#e2e8f0;border:none;border-radius:8px;font-size:14px;cursor:pointer;">OK</button></div></div><script>window._pinHash=null;window._pinSetupForce=false;document.addEventListener("DOMContentLoaded",function(){  var pi=document.getElementById("pin-inp");  if(pi)pi.addEventListener("input",function(){    if(pi.value)crypto.subtle.digest("SHA-256",new TextEncoder().encode(pi.value)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");});    else window._pinHash=null;  });});function showPinMsg(msg){  document.getElementById("pso-msg-text").textContent=msg;  document.getElementById("pso-msg").style.display="flex";}function showPinSetup(forced){  window._pinSetupForce=!!forced;  var o=document.getElementById("pso");  if(!o)return;  if(forced){    document.getElementById("pso-title").textContent="CrÃ©ez votre PIN permanent";    document.getElementById("pso-desc").textContent="Pour sÃ©curiser votre accÃ¨s, choisissez un PIN personnel (6â8 chiffres). Il remplacera le PIN temporaire.";    document.getElementById("pso-cur-wrap").style.display="none";    document.getElementById("pso-cancel-btn").style.display="none";  } else {    document.getElementById("pso-title").textContent="Changer mon PIN";    document.getElementById("pso-desc").textContent="Entrez votre PIN actuel puis choisissez un nouveau PIN (6â8 chiffres).";    document.getElementById("pso-cur-wrap").style.display="block";    document.getElementById("pso-cancel-btn").style.display="inline-block";  }  document.getElementById("pse").textContent="";  document.getElementById("npi").value="";  document.getElementById("cpi").value="";  if(!forced){var c=document.getElementById("pso-cur");if(c)c.value="";}  o.style.display="flex";  setTimeout(function(){var i=document.getElementById(forced?"npi":"pso-cur");if(i)i.focus();},100);}function showChangePin(){showPinSetup(false);}function doCancelPin(){var o=document.getElementById("pso");if(o)o.style.display="none";}function doConfirmPin(){  var np=document.getElementById("npi").value.trim();  var cp=document.getElementById("cpi").value.trim();  var err=document.getElementById("pse");  err.textContent="";  if(!/^\d{6,8}$/.test(np)){err.textContent="PIN invalide : 6 Ã  8 chiffres numÃ©riques requis.";return;}  if(np!==cp){err.textContent="Les deux PINs ne correspondent pas.";return;}  if(!window._pinSetupForce){    var cur=document.getElementById("pso-cur").value.trim();    if(!cur){err.textContent="Entrez votre PIN actuel.";return;}    crypto.subtle.digest("SHA-256",new TextEncoder().encode(cur)).then(function(b){      var h=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");      if(h!==window._loginDoc.pin_hash){err.textContent="PIN actuel incorrect.";return;}      doSavePin(np,err);    });    return;  }  doSavePin(np,err);}function doSavePin(){
+<div id="pso" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;"><div id="pso-icon" style="font-size:28px;margin-bottom:6px">&#x1F510;</div><h2 id="pso-title" style="color:#e2e8f0;font-size:18px;margin:0 0 6px">Créez votre PIN</h2><p id="pso-desc" style="color:#94a3b8;font-size:13px;margin:0 0 18px">Choisissez un code PIN permanent (min. 6 chiffres).</p><div id="pso-cur-wrap" style="display:none;margin-bottom:10px;"><input id="pso-cur" type="password" inputmode="numeric" placeholder="PIN actuel" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;box-sizing:border-box;"></div><input id="npi" type="password" inputmode="numeric" placeholder="Nouveau PIN (6-8 chiffres)" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;"><input id="cpi" type="password" inputmode="numeric" placeholder="Confirmer nouveau PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:14px;box-sizing:border-box;"><div id="pse" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:10px;"></div><button onclick="doConfirmPin()" style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">Valider mon PIN</button><button id="pso-cancel-btn" onclick="doCancelPin()" style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">Retour</button></div></div><div id="pso-msg" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px">â ï¸</div><p id="pso-msg-text" style="color:#e2e8f0;font-size:15px;margin:0 0 20px"></p><button onclick="document.getElementById('pso-msg').style.display='none'" style="padding:10px 24px;background:#1e3a5f;color:#e2e8f0;border:none;border-radius:8px;font-size:14px;cursor:pointer;">OK</button></div></div><script>window._pinHash=null;window._pinSetupForce=false;document.addEventListener("DOMContentLoaded",function(){  var pi=document.getElementById("pin-inp");  if(pi)pi.addEventListener("input",function(){    if(pi.value)crypto.subtle.digest("SHA-256",new TextEncoder().encode(pi.value)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");});    else window._pinHash=null;  });});function showPinMsg(msg){  document.getElementById("pso-msg-text").textContent=msg;  document.getElementById("pso-msg").style.display="flex";}function showPinSetup(forced){  window._pinSetupForce=!!forced;  var o=document.getElementById("pso");  if(!o)return;  if(forced){    document.getElementById("pso-title").textContent="Créez votre PIN permanent";    document.getElementById("pso-desc").textContent="Pour sécuriser votre accès, choisissez un PIN personnel (6â8 chiffres). Il remplacera le PIN temporaire.";    document.getElementById("pso-cur-wrap").style.display="none";    document.getElementById("pso-cancel-btn").style.display="none";  } else {    document.getElementById("pso-title").textContent="Changer mon PIN";    document.getElementById("pso-desc").textContent="Entrez votre PIN actuel puis choisissez un nouveau PIN (6â8 chiffres).";    document.getElementById("pso-cur-wrap").style.display="block";    document.getElementById("pso-cancel-btn").style.display="inline-block";  }  document.getElementById("pse").textContent="";  document.getElementById("npi").value="";  document.getElementById("cpi").value="";  if(!forced){var c=document.getElementById("pso-cur");if(c)c.value="";}  o.style.display="flex";  setTimeout(function(){var i=document.getElementById(forced?"npi":"pso-cur");if(i)i.focus();},100);}function showChangePin(){showPinSetup(false);}function doCancelPin(){var o=document.getElementById("pso");if(o)o.style.display="none";}function doConfirmPin(){  var np=document.getElementById("npi").value.trim();  var cp=document.getElementById("cpi").value.trim();  var err=document.getElementById("pse");  err.textContent="";  if(!/^\d{6,8}$/.test(np)){err.textContent="PIN invalide : 6 à 8 chiffres numériques requis.";return;}  if(np!==cp){err.textContent="Les deux PINs ne correspondent pas.";return;}  if(!window._pinSetupForce){    var cur=document.getElementById("pso-cur").value.trim();    if(!cur){err.textContent="Entrez votre PIN actuel.";return;}    crypto.subtle.digest("SHA-256",new TextEncoder().encode(cur)).then(function(b){      var h=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");      if(h!==window._loginDoc.pin_hash){err.textContent="PIN actuel incorrect.";return;}      doSavePin(np,err);    });    return;  }  doSavePin(np,err);}function doSavePin(){
   var np=document.getElementById('npi').value.trim();
   var err=document.getElementById('pso-msg');
   err.style.color='var(--t3)';
@@ -2297,12 +2297,12 @@ function rejectX(id){
       err.textContent='Erreur: '+d.error;
     } else {
       err.style.color='var(--ok)';
-      err.textContent='PIN enregistrÃ© ! Reconnexion...';
+      err.textContent='PIN enregistré ! Reconnexion...';
       setTimeout(function(){location.reload();},1200);
     }
   }).catch(function(e){
     err.style.color='var(--err)';
-    err.textContent='Erreur rÃ©seau: '+e.message;
+    err.textContent='Erreur réseau: '+e.message;
   });
 }
 </script><div class="grille-ov" id="grille-ov"><div class="grille-wrap"><div class="grille-tb"><span style="font-size:13px;font-weight:600;flex:1;">Planning complet</span><button class="grille-close" onclick="closeGrille()">â Fermer</button></div><div class="grille-bd" id="grille-bd"></div></div></div>
