@@ -1607,35 +1607,11 @@ async function refuseJ1(id,isProp){
 async function confirmSwitch(id,isProp){
   try{
     var upd=isProp?{switch_proposer_ok:true}:{switch_acceptor_ok:true};
-    var {error:e1,data:rows}=await sb.from('exchange_requests').update(upd).eq('id',id).select('*');
-    if(e1)throw e1;
-    var r=rows&&rows[0];
-    if(!r){var {data:r2}=await sb.from('exchange_requests').select('*').eq('id',id).single();r=r2;}
-    if(r&&r.switch_proposer_ok&&r.switch_acceptor_ok){
-      var dk=r.proposer_date;
-      var yr=parseInt(dk.slice(0,4)),mo=parseInt(dk.slice(5,7))-1;
-      var {data:docRows}=await sb.from('doctors').select('id,local_id').in('id',[r.proposer_id,r.acceptor_id]).eq('hospital_id',CFG.hospital);
-      var propDoc=(docRows||[]).find(function(d){return d.id===r.proposer_id;});
-      var accDoc=(docRows||[]).find(function(d){return d.id===r.acceptor_id;});
-      var propLid=propDoc?propDoc.local_id:null;
-      var accLid=accDoc?accDoc.local_id:null;
-      if(propLid===null||accLid===null){toast('Erreur : local_id introuvable.',true);return;}
-      var {data:pm}=await sb.from('planning_months').select('shifts').eq('hospital_id',CFG.hospital).eq('year',yr).eq('month',mo).maybeSingle();
-      var shifts=pm?JSON.parse(JSON.stringify(pm.shifts||{})):{};
-      var dayShifts=shifts[dk]||{};
-      var swPropPosts=r.switch_proposer_post?r.switch_proposer_post.split(',').filter(Boolean):[];
-      var swAccPosts=r.switch_acceptor_posts||[];
-      swPropPosts.forEach(function(pid){dayShifts[pid]=propLid;});
-      swAccPosts.forEach(function(pid){dayShifts[pid]=accLid;});
-      shifts[dk]=dayShifts;
-      await sb.from('planning_months').update({shifts:shifts}).eq('hospital_id',CFG.hospital).eq('year',yr).eq('month',mo);
-      await sb.from('exchange_requests').update({status:'confirmed',confirmed_at:new Date().toISOString()}).eq('id',id);
-      toast('\u2714 Switch appliqu\u00e9 automatiquement !');
-    } else {
-      toast('Switch valid\u00e9 \u2014 en attente de l\'autre m\u00e9decin.');
-    }
+    var {error}=await sb.from('exchange_requests').update(upd).eq('id',id);
+    if(error)throw error;
+    toast('Switch validé — le gestionnaire recevra une notification.');
     loadQShifts();
-  }catch(e){toast('Erreur : '+e.message,true);}
+  }catch(e){toast('Erreur : '+e.message,true);}
 }
 async function refuseSwitch(id,isProp){
   if(!confirm('Refuser le switch ?')) return;
