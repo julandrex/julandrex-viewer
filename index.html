@@ -1561,13 +1561,12 @@ function renderPanel(){
             :'\u279c Vous recevrez : <b>'+swPostsAcc+'</b><br>\u279c '+othNameSw+' recevra : <b>'+swPostProp+'</b>'
           )
           +'</div>'
-          +'<button class="xbtn confirm" onclick="confirmSwitch(\'+r.id+\','+isPropSw+')" style="background:#f97316;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">J\'accepte le switch</button>'
-          +' <button class="xbtn cancel" onclick="refuseSwitch(\'+r.id+\','+isPropSw+')" style="background:transparent;border:1px solid var(--err);color:var(--err);border-radius:7px;padding:8px 14px;font-size:12px;cursor:pointer;margin-left:6px;">Je refuse</button>';
+          +'<button class="xbtn confirm" onclick="confirmSwitch(\''+r.id+'\','+isPropSw+')" style="background:#f97316;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">J\'accepte le switch</button>'
+          +' <button class="xbtn cancel" onclick="refuseSwitch(\''+r.id+'\','+isPropSw+')" style="background:transparent;border:1px solid var(--err);color:var(--err);border-radius:7px;padding:8px 14px;font-size:12px;cursor:pointer;margin-left:6px;">Je refuse</button>';
       } else {
         acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">\u2714 Vous avez valid\u00e9 le switch \u2014 en attente de '+othNameSw+'</div>';
       }
-    }
-    let stLbl='';
+    }    let stLbl='';
     if(r.status==='accepted'&&!isMe2&&!isMeAcc)stLbl='<span class="xstatus accepted">En attente de confirmation</span>';
     if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">✓ Confirmé</span>';
     return `<div class="xcard">
