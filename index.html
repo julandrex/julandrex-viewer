@@ -1843,7 +1843,7 @@ async function openMesEchanges(){
   list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">⏳ Chargement...</div>';
   try{
     const {data,error}=await sb.from('exchange_requests')
-      .select('*').eq('hospital_id',CFG.hospital).eq('proposer_id',me.id)
+      .select('*').eq('hospital_id',CFG.hospital).eq('proposer_id',me.id).eq('hidden_by_proposer',false)
       .order('created_at',{ascending:false});
     if(error) throw error;
     if(!data||!data.length){
@@ -1882,10 +1882,10 @@ async function openMesEchanges(){
   }
 }
 async function clearMesEchanges(){
-  if(!confirm('Supprimer les échanges annulés et validés de votre liste ? Les demandes en cours restent inchangées.')) return;
+  if(!confirm('Masquer les échanges annulés et validés de votre liste ? Les demandes en cours restent inchangées.')) return;
   try{
     var {error}=await sb.from('exchange_requests')
-      .delete()
+      .update({hidden_by_proposer:true})
       .eq('hospital_id',CFG.hospital)
       .eq('proposer_id',me.id)
       .in('status',['cancelled','archived','confirmed']);
