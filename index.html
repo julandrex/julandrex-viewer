@@ -238,7 +238,7 @@ button{font-family:inherit;}
 
 <!-- LOGIN -->
 <div id="scr-login">
-  <div class="logo">ð Julandrex</div>
+  <div class="logo">📋 Julandrex</div>
   <div class="logo-sub">Planning des urgences — CHR Citadelle</div>
   <div class="login-box">
     <div class="step-title">Sélectionnez votre nom</div>
@@ -264,13 +264,13 @@ button{font-family:inherit;}
         <div class="tb-role" id="tb-role"></div>
       </div>
     </div>
-    <button class="logout-btn" id="mon-planning-btn" onclick="openMonPlanning()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">ð Mon planning</button><button id="grille-btn" onclick="openGrille()" title="Vue planning complet" style="width:34px;height:34px;border-radius:8px;border:1px solid var(--line2);background:none;color:var(--t2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background='var(--bg3)';this.style.color='var(--t1)'" onmouseout="this.style.background='none';this.style.color='var(--t2)'">&#x229E;</button>
+    <button class="logout-btn" id="mon-planning-btn" onclick="openMonPlanning()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">📅 Mon planning</button><button id="grille-btn" onclick="openGrille()" title="Vue planning complet" style="width:34px;height:34px;border-radius:8px;border:1px solid var(--line2);background:none;color:var(--t2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background='var(--bg3)';this.style.color='var(--t1)'" onmouseout="this.style.background='none';this.style.color='var(--t2)'">&#x229E;</button>
     <div id="tb-menu-wrap" style="position:relative;display:none;">
       <button id="tb-menu-btn" onclick="toggleTbMenu()" style="background:var(--bg2);border:1px solid var(--b);color:var(--t1);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:15px;line-height:1;" title="Menu">â°</button>
       <div id="tb-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg1);border:1px solid var(--b);border-radius:12px;padding:6px;z-index:200;min-width:195px;box-shadow:0 8px 28px rgba(0,0,0,.45);">
-        <button id="cal-btn" onclick="copyCalUrl();closeTbMenu()" class="tb-dd-item" style="display:none;">ð Mon calendrier</button>
-        <button id="demandes-btn" onclick="openMesDemandes();closeTbMenu()" class="tb-dd-item" style="display:none;">ð Mes demandes</button>
-        <button id="echanges-btn" onclick="openMesEchanges();closeTbMenu()" class="tb-dd-item" style="display:none;">ð Mes échanges</button>
+        <button id="cal-btn" onclick="copyCalUrl();closeTbMenu()" class="tb-dd-item" style="display:none;">📅 Mon calendrier</button>
+        <button id="demandes-btn" onclick="openMesDemandes();closeTbMenu()" class="tb-dd-item" style="display:none;">📋 Mes demandes</button>
+        <button id="echanges-btn" onclick="openMesEchanges();closeTbMenu()" class="tb-dd-item" style="display:none;">🔄 Mes échanges</button>
         <button id="desid-btn" onclick="openDesiderata();closeTbMenu()" class="tb-dd-item" style="display:none;">+ Desiderata</button>
         <button id="notif-btn" onclick="toggleNotifications()" class="tb-dd-item" style="display:none;align-items:center;gap:7px;">
           <span id="notif-pill" style="display:inline-flex;align-items:center;width:34px;height:18px;border-radius:9px;background:#4b5563;padding:0 2px;transition:background .25s;flex-shrink:0;position:relative;">
@@ -348,7 +348,7 @@ button{font-family:inherit;}
   <div style="max-width:560px;margin:24px auto;padding:12px;box-sizing:border-box;">
     <div style="background:#0d2240;border-radius:14px;padding:18px;color:#e2e8f0;font-size:13px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <span style="color:#c9983a;font-size:16px;font-weight:700;">ð Desiderata</span>
+        <span style="color:#c9983a;font-size:16px;font-weight:700;">📋 Desiderata</span>
         <div style="display:flex;align-items:center;gap:8px;">
           <span id="desid-deadline-info" style="font-size:11px;color:#94a3b8;background:#152d50;padding:3px 10px;border-radius:5px;"></span>
           <button onclick="closeDesiderata()" style="background:#1e3a5f;border:none;color:#94a3b8;width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:16px;line-height:1;">â</button>
@@ -368,14 +368,14 @@ button{font-family:inherit;}
         <div style="background:#152d50;border-radius:9px;padding:12px;">
           <div id="desid-type-hint" style="font-size:10px;color:#475569;margin-bottom:8px;text-align:center;font-style:italic;">Sélectionnez une période</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;"><button id="desid-btn-c" onclick="desidPickType('c')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">âï¸ Congé</button>
-          <button id="desid-btn-r" onclick="desidPickType('r')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">ð Repos souhaité</button>
-          <button id="desid-btn-f" onclick="desidPickType('f')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">ð Formation</button>
-          <button id="desid-btn-ip" onclick="desidPickType('ip')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">ð« Indispo poste</button>
-          <button id="desid-btn-p" onclick="desidClickPoste()" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">ð Poste particulier</button>
-          </div><div id="desid-warn-poste" style="display:none;background:#1e1a0a;border:1px solid #7a5a10;border-radius:6px;padding:6px 8px;font-size:10px;color:#d4a030;margin-bottom:6px;line-height:1.5;">ð Un poste ne peut Ãªtre demandé que pour <strong>un seul jour</strong>.</div>
+          <button id="desid-btn-r" onclick="desidPickType('r')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">🌙 Repos souhaité</button>
+          <button id="desid-btn-f" onclick="desidPickType('f')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">🎓 Formation</button>
+          <button id="desid-btn-ip" onclick="desidPickType('ip')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">🚫 Indispo poste</button>
+          <button id="desid-btn-p" onclick="desidClickPoste()" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">📌 Poste particulier</button>
+          </div><div id="desid-warn-poste" style="display:none;background:#1e1a0a;border:1px solid #7a5a10;border-radius:6px;padding:6px 8px;font-size:10px;color:#d4a030;margin-bottom:6px;line-height:1.5;">🔒 Un poste ne peut Ãªtre demandé que pour <strong>un seul jour</strong>.</div>
           <input id="desid-f-input" placeholder="Nom de la formation..." style="display:none;width:100%;margin-bottom:6px;background:#0d2240;border:1px solid #2a4a72;border-radius:6px;color:#e2e8f0;font-size:11px;padding:5px 7px;box-sizing:border-box;" oninput="desidUpdAdd()">
           <div id="desid-ip-section" style="display:none;">
-          <div style="background:#1e0a0a;border:1px solid #7a1010;border-radius:6px;padding:6px 8px;font-size:10px;color:#e05050;margin-bottom:6px;line-height:1.5;">ð« Indispo poste : sélectionnez un <strong>seul jour</strong> dans le calendrier, puis choisissez le poste. Soumise à validation.</div>
+          <div style="background:#1e0a0a;border:1px solid #7a1010;border-radius:6px;padding:6px 8px;font-size:10px;color:#e05050;margin-bottom:6px;line-height:1.5;">🚫 Indispo poste : sélectionnez un <strong>seul jour</strong> dans le calendrier, puis choisissez le poste. Soumise à validation.</div>
           <select id="desid-ip-post-sel" style="width:100%;margin-bottom:6px;background:#0d2240;border:1px solid #2a4a72;border-radius:6px;color:#e2e8f0;font-size:11px;padding:5px 7px;box-sizing:border-box;" onchange="desidUpdAdd()"><option value="">-- Choisir un poste --</option></select>
         </div>
     <select id="desid-p-select" style="display:none;width:100%;margin-bottom:6px;background:#0d2240;border:1px solid #2a4a72;border-radius:6px;color:#e2e8f0;font-size:11px;padding:4px 6px;" onchange="desidUpdAdd()"><option value="">-- Choisir --</option></select>
@@ -388,7 +388,7 @@ button{font-family:inherit;}
       </div>
       <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;">
         <button onclick="closeDesiderata()" style="background:transparent;border:1px solid #2d3d54;color:#94a3b8;border-radius:10px;padding:11px 22px;cursor:pointer;font-size:13px;">Annuler</button>
-        <button onclick="submitDesiderata()" style="background:#c9983a;color:#000;border:none;border-radius:10px;padding:11px 22px;font-weight:700;cursor:pointer;font-size:13px;">ð¤ Envoyer</button>
+        <button onclick="submitDesiderata()" style="background:#c9983a;color:#000;border:none;border-radius:10px;padding:11px 22px;font-weight:700;cursor:pointer;font-size:13px;">🤝 Envoyer</button>
       </div>
     </div>
   </div>
@@ -397,7 +397,7 @@ button{font-family:inherit;}
 <div id="demandes-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMesDemandes()">
   <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-size:15px;font-weight:700;">ð Mes demandes de desiderata</div>
+      <div style="font-size:15px;font-weight:700;">📋 Mes demandes de desiderata</div>
       <button onclick="closeMesDemandes()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">â</button>
     </div>
     <div id="demandes-list"></div>
@@ -412,8 +412,8 @@ button{font-family:inherit;}
     <div class="mfield">
       <span class="mlbl">Destinataire</span>
       <div class="mradio-g">
-        <div class="mradio on" id="r-all" onclick="setTarget('all')">ð¥ Tous les médecins</div>
-        <div class="mradio" id="r-specific" onclick="setTarget('specific')">ð¤ Médecin en particulier</div>
+        <div class="mradio on" id="r-all" onclick="setTarget('all')">👥 Tous les médecins</div>
+        <div class="mradio" id="r-specific" onclick="setTarget('specific')">👤 Médecin en particulier</div>
       </div>
     </div>
     <div class="mfield" id="m-target-wrap" style="display:none;">
@@ -785,7 +785,7 @@ function desidAddRequest(){
     if(!pn){alert('Choisissez un poste.');return;}
     const _ipd=_desidD1;
     const dk=_ipd.getFullYear()+'-'+String(_ipd.getMonth()+1).padStart(2,'0')+'-'+String(_ipd.getDate()).padStart(2,'0');
-    const label='ð« '+pn+' le '+_desidD1.toLocaleDateString('fr-BE',{day:'2-digit',month:'short'});
+    const label='🚫 '+pn+' le '+_desidD1.toLocaleDateString('fr-BE',{day:'2-digit',month:'short'});
     _desidReqs.push({type:'ip',date_start:dk,date_end:dk,detail:pn,label:label});
     desidRenderReqs();
     return;
@@ -868,9 +868,9 @@ async function openMesDemandes(){
     };
     const Q=['T1','T2','T3','T4'];
     list.innerHTML=data.map(r=>{
-      const cgs=(r.conges||[]).map(c=>`ð ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}`).join('<br>');
-      const inds=(r.indispos||[]).map(i=>`ð« ${fmtD(i.date||i.start)}`).join('<br>');
-      const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">ð¬ ${r.remarques}</div>`:'';
+      const cgs=(r.conges||[]).map(c=>`🏖 ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}`).join('<br>');
+      const inds=(r.indispos||[]).map(i=>`🚫 ${fmtD(i.date||i.start)}`).join('<br>');
+      const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">💬 ${r.remarques}</div>`:'';
       return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:10px;border-left:3px solid ${r.status==='pending'?'#fbbf24':r.status==='validated'||r.status==='accepted'?'#22c55e':'#ef4444'};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <span style="font-size:13px;font-weight:700;">${Q[(r.quarter||1)-1]} ${r.year}</span>
@@ -902,7 +902,7 @@ function copyCalUrl(){
     navigator.clipboard.writeText(url).then(()=>{
       const btn=document.getElementById('cal-btn');
       const prev=btn.textContent;
-      btn.textContent='â URL copiée !';
+      btn.textContent='✓ URL copiée !';
       setTimeout(()=>btn.textContent=prev,2500);
     }).catch(()=>{
       prompt('Copiez cette URL et abonnez-vous dans votre calendrier :',url);
@@ -1011,7 +1011,7 @@ async function loadAll(){
         var age=Math.round((Date.now()-cached.ts)/60000);
         var ageStr=age<60?age+'min':Math.round(age/60)+'h';
         var dt=new Date(cached.ts).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-        document.getElementById('grid-area').innerHTML='<div class="offline-banner">ðµ Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
+        document.getElementById('grid-area').innerHTML='<div class="offline-banner">📵 Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
         if(planning){renderCalPerso();renderShiftWidget();loadQShifts(cy,cm);}
       }else{
         var isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
@@ -1037,7 +1037,7 @@ function subscribeRT(){
           if(document.getElementById('exch-panel').classList.contains('show'))renderPanel();
           const ev=payload.eventType;
           const n=payload.new||{};
-          if(ev==='INSERT'&&n.proposer_id!==me.id) toast('ð¬ Nouvelle demande d\'échange !');
+          if(ev==='INSERT'&&n.proposer_id!==me.id) toast('📬 Nouvelle demande d\'échange !');
           if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('â Votre échange a été accepté !');
           if(ev==='UPDATE'&&n.status==='pending_j1'&&(n.proposer_id===me.id||n.acceptor_id===me.id)) toast('Un switch J+1 a été proposé par le gestionnaire !');
           if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('â Ãchange confirmé !');
@@ -1094,7 +1094,7 @@ function openPickerModal(dk,p0,p1){
   btnBoth.style.borderTop='1px solid var(--line)';
   btnBoth.style.marginTop='2px';
   btnBoth.style.paddingTop='13px';
-  btnBoth.textContent='ð Proposer les deux échanges';
+  btnBoth.textContent='🔄 Proposer les deux échanges';
   btnBoth.addEventListener('click',function(){
     document.body.removeChild(ov);
     window._siblingPost=p1.id;
@@ -1431,7 +1431,7 @@ function renderShiftWidget(){
   if(todayS.length){
     var p=todayS[0].p;
     el.className='shift-widget shift-today';
-    el.innerHTML='<span style="font-size:20px">ð´</span><div><strong>Shift aujourd\'hui !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' · '+p.start+'â'+p.end+'</span></div>';
+    el.innerHTML='<span style="font-size:20px">🔴</span><div><strong>Shift aujourd\'hui !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' · '+p.start+'â'+p.end+'</span></div>';
   }else if(nextS){
     var dt=new Date(nextS.dk+'T12:00:00');
     var diff=Math.round((dt.getTime()-new Date().setHours(0,0,0,0))/86400000);
@@ -1439,7 +1439,7 @@ function renderShiftWidget(){
     var dlbl=DS2[dt.getDay()]+' '+dt.getDate()+' '+MO[dt.getMonth()].toLowerCase().slice(0,3)+'.';
     var pp=nextS.p;
     el.className='shift-widget shift-next';
-    el.innerHTML='<span style="font-size:20px">ð</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' — '+(pp.full||pp.name)+' · <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
+    el.innerHTML='<span style="font-size:20px">📅</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' — '+(pp.full||pp.name)+' · <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
   }else{el.className='';el.innerHTML='';}
 }
 
@@ -1515,9 +1515,9 @@ function renderPanel(){
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
-    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">â Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">â Refuser</button>`;
+    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">â Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
-    if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">â Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
+    if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">✓ Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
     if(r.status==='pending_j1'){
       const isProp=r.proposer_id===me.id;
       const alreadyOk=isProp?r.j1_proposer_ok:r.j1_acceptor_ok;
@@ -1568,11 +1568,11 @@ function renderPanel(){
       }
     }    let stLbl='';
     if(r.status==='accepted'&&!isMe2&&!isMeAcc)stLbl='<span class="xstatus accepted">En attente de confirmation</span>';
-    if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">â Confirmé</span>';
+    if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">✓ Confirmé</span>';
     return `<div class="xcard">
       <div class="xcard-hdr">
         <div style="font-size:12px;font-weight:600;">${prop?prop.firstname+' '+prop.lastname:'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
-        <span class="xbadge exch">ð Ãchange</span>
+        <span class="xbadge exch">🔄 Ãchange</span>
       </div>
       <div class="xinfo">${(function(){var m=post?post.full||post.name:r.proposer_post;if(!r.proposer_post2)return m;var p2=(planning.posts||[]).find(function(q){return q.id===r.proposer_post2;});return m+' + '+(p2?p2.full||p2.name:r.proposer_post2);}())} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
       ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
@@ -1643,7 +1643,7 @@ async function acceptX(id){
           body:JSON.stringify({
             hospital: CFG.hospital,
             doctor_ids: [String(xr.proposer_id)],
-            title: 'â Demande acceptée',
+            title: '✓ Demande acceptée',
             message: me.firstname+' '+me.lastname+' a accepté votre demande dâéchange — '+_postName,
             url: 'https://julandrex.github.io/julandrex-viewer/'
           })
@@ -1678,7 +1678,7 @@ async function confirmX(id){
   try{
     const {error}=await sb.from('exchange_requests').update({status:'confirmed',confirmed_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
-    toast('â Ãchange confirmé !');
+    toast('✓ Ãchange confirmé !');
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
@@ -1735,7 +1735,7 @@ async function submitExchange(){
       const _postName = planning?.posts?.find(p=>p.id===mPost)?.full || mPost;
       const _pushPayload = {
         hospital: CFG.hospital,
-        title: 'ð Demande dâéchange',
+        title: '🔄 Demande dâéchange',
         message: me.firstname+' '+me.lastname+' vous propose un échange — '+_postName,
         url: 'https://julandrex.github.io/julandrex-viewer/'
       };
@@ -1874,7 +1874,7 @@ async function openMesEchanges(){
       const borderColor=r.status==='open'?'#f59e0b':r.status==='cancelled'?'#ef4444':'#22c55e';
       return `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid ${borderColor};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:13px;font-weight:700;">ð ${fmtD(r.proposer_date)} — ${postName}</span>
+          <span style="font-size:13px;font-weight:700;">📅 ${fmtD(r.proposer_date)} — ${postName}</span>
           <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:6px;background:${borderColor}22;color:${color};">${badge}</span>
         </div>
         ${r.message?`<div style="font-size:11px;color:var(--t3);font-style:italic;margin-bottom:6px;">"${r.message}"</div>`:''}
@@ -2013,7 +2013,7 @@ async function checkRappel24(){
       const postName = post ? (post.name || pid) : pid;
       const postTime = post ? (post.start || '') : '';
       const dayStr = tomorrow.split('-').reverse().join('/');
-      new Notification('â° Rappel shift — Julandrex', {
+      new Notification('⏰ Rappel shift — Julandrex', {
         body: 'Demain '+dayStr+' : '+postName+(postTime?' ('+postTime+')':''),
         icon: '/julandrex-viewer/icon-192.png',
         tag: 'r24_'+tomorrow+'_'+pid
@@ -2058,7 +2058,7 @@ async function subscribeToPush(reg) {
     }, { onConflict: 'endpoint' });
     if (upsertErr) console.error('push_subscriptions upsert error:', upsertErr);
     updateNotifBtn('subscribed');
-    toast('ð Notifications activées !', 3000);
+    toast('🔔 Notifications activées !', 3000);
   } catch(e) {
     console.error('subscribeToPush error:', e);
     toast('Erreur activation notifications: ' + e.message, 4000);
@@ -2070,7 +2070,7 @@ async function unsubscribeFromPush(sub, reg) {
     await sub.unsubscribe();
     await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
     updateNotifBtn('unsubscribed');
-    toast('ð Notifications désactivées', 3000);
+    toast('🔕 Notifications désactivées', 3000);
   } catch(e) {
     console.error('unsubscribeFromPush error:', e);
     toast('Erreur désactivation: ' + e.message, 4000);
@@ -2197,7 +2197,7 @@ async function renderMonPlanning() {
         </div>
         <div style="font-size:11px;color:var(--t3);margin-top:3px">${post.start}â${post.end}</div>
       </div>
-      <div style="font-size:16px;color:${canExchange ? 'var(--acc)' : 'var(--t3)'};">${canExchange ? 'ð' : 'ð'}</div>
+      <div style="font-size:16px;color:${canExchange ? 'var(--acc)' : 'var(--t3)'};">${canExchange ? '🔄' : '🔒'}</div>
     </div>`;
   }).join('');
 }
@@ -2235,7 +2235,7 @@ function rejectX(id){
 <div id="mesechanges-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMesEchanges()">
   <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-size:15px;font-weight:700;">ð Mes demandes d'échange</div>
+      <div style="font-size:15px;font-weight:700;">🔄 Mes demandes d'échange</div>
       <button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">â</button>
     </div>
     <div id="mesechanges-list"></div>
