@@ -1508,7 +1508,7 @@ function togglePanel(){
 function renderPanel(){
   const l=document.getElementById('exch-list');
   if(!exchanges.length){l.innerHTML='<div class="ld">Aucune demande en cours</div>';return;}
-  const myExchanges=exchanges.filter(r=>(r.status!=='pending_j1'&&r.status!=='pending_switch')||(r.proposer_id===me.id||r.acceptor_id===me.id));
+  const myExchanges=exchanges.filter(r=>!['confirmed','archived','cancelled'].includes(r.status)&&((r.status!=='pending_j1'&&r.status!=='pending_switch')||(r.proposer_id===me.id||r.acceptor_id===me.id)));
   l.innerHTML=myExchanges.map(r=>{
     const prop=doctors.find(d=>d.id===r.proposer_id);
     const acc=r.acceptor_id?doctors.find(d=>d.id===r.acceptor_id):null;
