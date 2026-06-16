@@ -1881,6 +1881,20 @@ async function openMesEchanges(){
     list.innerHTML=`<div style="color:var(--err);padding:10px;">Erreur : ${e.message}</div>`;
   }
 }
+async function clearMesEchanges(){
+  if(!confirm('Supprimer les échanges annulés et validés de votre liste ? Les demandes en cours restent inchangées.')) return;
+  try{
+    var {error}=await sb.from('exchange_requests')
+      .delete()
+      .eq('hospital_id',CFG.hospital)
+      .eq('proposer_id',me.id)
+      .in('status',['cancelled','archived','confirmed']);
+    if(error) throw error;
+    toast('🗑 Liste nettoyée.');
+    openMesEchanges();
+  }catch(e){ toast('Erreur : '+e.message,true); }
+}
+
 function closeMesEchanges(){
   document.getElementById('mesechanges-bg').style.display='none';
 }
@@ -2232,7 +2246,7 @@ function rejectX(id){
   <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-size:15px;font-weight:700;">🔄 Mes demandes d'échange</div>
-      <button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
+      <button onclick="clearMesEchanges()" title="Supprimer les échanges terminés" style="background:none;border:1px solid var(--t3);color:var(--t3);font-size:11px;padding:3px 8px;border-radius:5px;cursor:pointer;margin-right:8px;">🗑 Vider</button><button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
     </div>
     <div id="mesechanges-list"></div>
   </div>
