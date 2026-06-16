@@ -1508,7 +1508,7 @@ function togglePanel(){
 function renderPanel(){
   const l=document.getElementById('exch-list');
   if(!exchanges.length){l.innerHTML='<div class="ld">Aucune demande en cours</div>';return;}
-  const myExchanges=exchanges.filter(r=>{if(['confirmed','archived'].includes(r.status))return false;if(r.status==='cancelled'){return r.acceptor_id===me.id&&r.cancel_reason;}return(r.status!=='pending_j1'&&r.status!=='pending_switch')||(r.proposer_id===me.id||r.acceptor_id===me.id);});
+  const myExchanges=exchanges.filter(r=>{if(['confirmed','archived'].includes(r.status))return false;if(r.status==='cancelled')return false;if(r.status==='open'&&r.cancel_reason&&r.acceptor_id===me.id)return true;return(r.status!=='pending_j1'&&r.status!=='pending_switch')||(r.proposer_id===me.id||r.acceptor_id===me.id);});
   l.innerHTML=myExchanges.map(r=>{
     const prop=doctors.find(d=>d.id===r.proposer_id);
     const acc=r.acceptor_id?doctors.find(d=>d.id===r.acceptor_id):null;
@@ -1567,7 +1567,7 @@ function renderPanel(){
       } else {
         acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">✔ Vous avez validé le switch — en attente de '+othNameSw+'</div>';
       }
-    }    if(r.status==='cancelled'&&r.cancel_reason&&r.acceptor_id===me.id){acts='<div style="background:rgba(239,68,68,.08);border-left:3px solid var(--err);border-radius:0 8px 8px 0;padding:10px 12px;font-size:11px;"><div style="font-weight:700;color:var(--err);margin-bottom:4px;">✗ Refusé par le gestionnaire</div>'+r.cancel_reason+'</div>';}
+    }    if(r.status==='open'&&r.cancel_reason&&r.acceptor_id===me.id){acts='<div style="background:rgba(239,68,68,.08);border-left:3px solid var(--err);border-radius:0 8px 8px 0;padding:10px 12px;font-size:11px;"><div style="font-weight:700;color:var(--err);margin-bottom:4px;">✗ Refusé par le gestionnaire</div>'+r.cancel_reason+'</div>';}
     let stLbl='';
     if(r.status==='accepted'&&!isMe2&&!isMeAcc)stLbl='<span class="xstatus accepted">En attente de confirmation</span>';
     if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">✓ Confirmé</span>';
