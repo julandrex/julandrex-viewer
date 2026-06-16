@@ -20,7 +20,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--t1);font-size:13px;min-height:100vh;}
 button{font-family:inherit;}
 
-/* ââ LOGIN âââââââââââââââââââââââââââââââââââ */
+/* ── LOGIN ─────────────────────────────────── */
 #scr-login{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px 16px 60px;}
 .logo{font-size:26px;font-weight:800;color:var(--acc);letter-spacing:-1px;}
 .logo-sub{font-size:12px;color:var(--t3);margin-bottom:32px;margin-top:2px;}
@@ -42,7 +42,7 @@ button{font-family:inherit;}
 .pin-btn{background:var(--acc);color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s;}
 .pin-btn:hover{opacity:.88;}
 
-/* ââ MAIN âââââââââââââââââââââââââââââââââââââ */
+/* ── MAIN ───────────────────────────────────── */
 #scr-main{display:none;flex-direction:column;height:100dvh;height:100vh;}
 .topbar{background:var(--bg1);border-bottom:1px solid var(--b);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .tb-logo{font-size:14px;font-weight:800;color:var(--acc);}
@@ -64,7 +64,7 @@ button{font-family:inherit;}
 
 #grid-area{flex:1;overflow:auto;}
 
-/* ââ PLANNING GRID ââââââââââââââââââââââââââââ */
+/* ── PLANNING GRID ──────────────────────────── */
 .pgrid{border-collapse:collapse;min-width:100%;font-size:11px;}
 .pgrid th{background:var(--bg2);border:1px solid var(--b);padding:4px 1px;text-align:center;font-weight:600;font-size:9px;color:var(--t2);white-space:nowrap;position:sticky;top:0;z-index:2;min-width:34px;}
 .pgrid th.we{color:var(--warn);}
@@ -85,7 +85,7 @@ button{font-family:inherit;}
 .c-exch{position:relative;}
 .c-exch::after{content:'';position:absolute;top:2px;right:2px;width:5px;height:5px;border-radius:50%;background:var(--warn);}
 
-/* ââ EXCHANGE PANEL âââââââââââââââââââââââââââ */
+/* ── EXCHANGE PANEL ─────────────────────────── */
 #exch-panel{display:none;position:fixed;bottom:0;left:0;right:0;max-height:65vh;background:var(--bg1);border-top:1px solid var(--b);border-radius:18px 18px 0 0;padding:16px;overflow-y:auto;z-index:10;box-shadow:0 -8px 32px rgba(0,0,0,.4);}
 #exch-panel.show{display:block;}
 .ep-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
@@ -108,7 +108,7 @@ button{font-family:inherit;}
 .xstatus.accepted{background:rgba(245,158,11,.15);color:var(--warn);}
 .xstatus.confirmed{background:rgba(34,197,94,.15);color:var(--ok);}
 
-/* ââ MODAL ââââââââââââââââââââââââââââââââââââ */
+/* ── MODAL ──────────────────────────────────── */
 #modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:20;align-items:flex-end;justify-content:center;}
 #modal-bg.show{display:flex;}
 #modal{background:var(--bg1);border-radius:18px 18px 0 0;padding:22px 20px 32px;width:100%;max-width:520px;}
@@ -126,11 +126,11 @@ button{font-family:inherit;}
 .msubmit{flex:2;background:var(--acc2);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .14s;}
 .msubmit:hover{opacity:.9;}
 
-/* ââ TOAST ââââââââââââââââââââââââââââââââââââ */
+/* ── TOAST ──────────────────────────────────── */
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--bg3);border:1px solid var(--b);border-radius:10px;padding:10px 18px;font-size:13px;opacity:0;transition:all .28s;z-index:30;white-space:nowrap;pointer-events:none;}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-/* ââ LOADING / EMPTY ââââââââââââââââââââââââââ */
+/* ── LOADING / EMPTY ────────────────────────── */
 .ld{display:flex;align-items:center;justify-content:center;padding:48px 20px;color:var(--t3);gap:10px;flex-direction:column;font-size:12px;}
 .sp{width:18px;height:18px;border:2px solid var(--b);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -138,15 +138,15 @@ button{font-family:inherit;}
 .tb-dd-item{display:block;width:100%;text-align:left;background:none;border:none;color:var(--t1);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;}
 .tb-dd-item:hover{background:var(--bg2);}
 
-/* ââ OFFLINE / ERROR BANNERS âââ */
+/* ── OFFLINE / ERROR BANNERS ─── */
 .offline-banner{display:flex;align-items:center;gap:10px;background:rgba(230,126,34,.1);border:1px solid #e67e22;border-radius:10px;padding:10px 14px;margin:8px 8px 0;font-size:13px;color:#e67e22;}
 .err-banner{background:rgba(239,68,68,.08);border:1px solid var(--err);border-radius:10px;padding:12px 14px;margin:8px 8px 0;font-size:13px;color:var(--err);display:flex;flex-direction:column;gap:10px;}
 .err-retry{background:var(--err);color:#fff;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600;align-self:flex-start;}
-/* ââ SHIFT WIDGET âââ */
+/* ── SHIFT WIDGET ─── */
 .shift-widget{margin:8px 8px 0;border-radius:10px;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:12px;}
 .shift-today{background:rgba(231,76,60,.13);border:1px solid #e74c3c;}
 .shift-next{background:var(--bg2);border:1px solid var(--b);}
-/* ââ SESSION OVERLAY âââ */
+/* ── SESSION OVERLAY ─── */
 #session-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
 #session-overlay.show{display:flex;}
 .sess-box{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:28px 32px;text-align:center;max-width:320px;}
@@ -156,7 +156,7 @@ button{font-family:inherit;}
 .sess-btn{width:100%;background:var(--acc);color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;}
 .pin-lockout{color:var(--err);font-size:12px;text-align:center;margin-top:4px;}
 
-/* ââ RAPPEL 24H ââ */
+/* ── RAPPEL 24H ── */
 #rappel24-btn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:none;color:var(--t1);padding:10px 14px;cursor:pointer;font-size:13px;border-radius:6px;transition:background .15s;}
 #rappel24-btn:hover{background:var(--bg3);}
 .r24-bar{display:inline-block;width:28px;height:14px;border-radius:7px;background:var(--err,#e53e3e);flex-shrink:0;transition:background .2s;position:relative;vertical-align:middle;}
@@ -245,7 +245,7 @@ button{font-family:inherit;}
     <div class="doc-grid" id="doc-grid"><div class="ld"><div class="sp"></div>Chargement...</div></div>
     <div class="pin-area" id="pin-area">
       <div class="pin-lbl" id="pin-lbl">Entrez votre code PIN</div>
-      <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="â¢â¢â¢â¢â¢â¢" autocomplete="off">
+      <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
       <div class="pin-err" id="pin-err">Code PIN incorrect — réessayez</div>
       <button class="pin-btn" onclick="doLogin()">Se connecter</button>
     </div>
@@ -266,7 +266,7 @@ button{font-family:inherit;}
     </div>
     <button class="logout-btn" id="mon-planning-btn" onclick="openMonPlanning()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">📅 Mon planning</button><button id="grille-btn" onclick="openGrille()" title="Vue planning complet" style="width:34px;height:34px;border-radius:8px;border:1px solid var(--line2);background:none;color:var(--t2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background='var(--bg3)';this.style.color='var(--t1)'" onmouseout="this.style.background='none';this.style.color='var(--t2)'">&#x229E;</button>
     <div id="tb-menu-wrap" style="position:relative;display:none;">
-      <button id="tb-menu-btn" onclick="toggleTbMenu()" style="background:var(--bg2);border:1px solid var(--b);color:var(--t1);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:15px;line-height:1;" title="Menu">â°</button>
+      <button id="tb-menu-btn" onclick="toggleTbMenu()" style="background:var(--bg2);border:1px solid var(--b);color:var(--t1);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:15px;line-height:1;" title="Menu">☰</button>
       <div id="tb-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg1);border:1px solid var(--b);border-radius:12px;padding:6px;z-index:200;min-width:195px;box-shadow:0 8px 28px rgba(0,0,0,.45);">
         <button id="cal-btn" onclick="copyCalUrl();closeTbMenu()" class="tb-dd-item" style="display:none;">📅 Mon calendrier</button>
         <button id="demandes-btn" onclick="openMesDemandes();closeTbMenu()" class="tb-dd-item" style="display:none;">📋 Mes demandes</button>
@@ -286,9 +286,9 @@ button{font-family:inherit;}
     </div>
   </div>
   <div class="month-bar">
-    <button class="mnav" onclick="prevMonth()">â¹</button>
+    <button class="mnav" onclick="prevMonth()">‹</button>
     <span class="mlbl" id="mlbl">—</span>
-    <button class="mnav" onclick="nextMonth()">âº</button>
+    <button class="mnav" onclick="nextMonth()">›</button>
     <span class="exch-pill" id="exch-pill" onclick="togglePanel()">0 échange</span>
   </div>
   <div id="shift-widget"></div>
@@ -300,7 +300,7 @@ button{font-family:inherit;}
   <div class="sess-box">
     <div class="sess-title">&#x23F1; Session expirée</div>
     <div class="sess-sub">Entrez votre PIN pour reprendre</div>
-    <input class="sess-pin" id="sess-pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="â¢â¢â¢â¢â¢â¢" oninput="onSessPinInput(this.value)">
+    <input class="sess-pin" id="sess-pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" oninput="onSessPinInput(this.value)">
     <div id="sess-pin-err" class="pin-lockout"></div>
     <button class="sess-btn" onclick="onSessPinSubmit()">Déverrouiller</button>
   </div>
@@ -309,7 +309,7 @@ button{font-family:inherit;}
 <div id="exch-panel">
   <div class="ep-hdr">
     <div class="ep-title">Demandes d'échange</div>
-    <button class="ep-close" onclick="togglePanel()">â</button>
+    <button class="ep-close" onclick="togglePanel()">✕</button>
   </div>
   <div id="exch-list"></div>
 </div>
@@ -351,15 +351,15 @@ button{font-family:inherit;}
         <span style="color:#c9983a;font-size:16px;font-weight:700;">📋 Desiderata</span>
         <div style="display:flex;align-items:center;gap:8px;">
           <span id="desid-deadline-info" style="font-size:11px;color:#94a3b8;background:#152d50;padding:3px 10px;border-radius:5px;"></span>
-          <button onclick="closeDesiderata()" style="background:#1e3a5f;border:none;color:#94a3b8;width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:16px;line-height:1;">â</button>
+          <button onclick="closeDesiderata()" style="background:#1e3a5f;border:none;color:#94a3b8;width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:16px;line-height:1;">✕</button>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div style="width:100%;background:#152d50;border-radius:9px;padding:14px;box-sizing:border-box;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <button onclick="desidChMo(-1)" style="background:#0d2240;border:none;color:#94a3b8;width:26px;height:26px;border-radius:5px;cursor:pointer;font-size:16px;line-height:1;">â¹</button>
+            <button onclick="desidChMo(-1)" style="background:#0d2240;border:none;color:#94a3b8;width:26px;height:26px;border-radius:5px;cursor:pointer;font-size:16px;line-height:1;">‹</button>
             <span id="desid-cal-lbl" style="font-size:13px;font-weight:500;color:#e2e8f0;"></span>
-            <button onclick="desidChMo(1)" style="background:#0d2240;border:none;color:#94a3b8;width:26px;height:26px;border-radius:5px;cursor:pointer;font-size:16px;line-height:1;">âº</button>
+            <button onclick="desidChMo(1)" style="background:#0d2240;border:none;color:#94a3b8;width:26px;height:26px;border-radius:5px;cursor:pointer;font-size:16px;line-height:1;">›</button>
           </div>
           <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px;"><div style="text-align:center;font-size:9px;color:#475569;">Lu</div><div style="text-align:center;font-size:9px;color:#475569;">Ma</div><div style="text-align:center;font-size:9px;color:#475569;">Me</div><div style="text-align:center;font-size:9px;color:#475569;">Je</div><div style="text-align:center;font-size:9px;color:#475569;">Ve</div><div style="text-align:center;font-size:9px;color:#475569;">Sa</div><div style="text-align:center;font-size:9px;color:#475569;">Di</div></div>
           <div id="desid-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
@@ -367,12 +367,12 @@ button{font-family:inherit;}
         </div>
         <div style="background:#152d50;border-radius:9px;padding:12px;">
           <div id="desid-type-hint" style="font-size:10px;color:#475569;margin-bottom:8px;text-align:center;font-style:italic;">Sélectionnez une période</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;"><button id="desid-btn-c" onclick="desidPickType('c')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">âï¸ Congé</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;"><button id="desid-btn-c" onclick="desidPickType('c')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">☀️ Congé</button>
           <button id="desid-btn-r" onclick="desidPickType('r')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">🌙 Repos souhaité</button>
           <button id="desid-btn-f" onclick="desidPickType('f')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">🎓 Formation</button>
           <button id="desid-btn-ip" onclick="desidPickType('ip')" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">🚫 Indispo poste</button>
           <button id="desid-btn-p" onclick="desidClickPoste()" disabled style="width:100%;padding:10px 8px;text-align:left;background:#1a3358;border:1.5px solid transparent;border-radius:7px;color:#94a3b8;font-size:12px;cursor:pointer;">📌 Poste particulier</button>
-          </div><div id="desid-warn-poste" style="display:none;background:#1e1a0a;border:1px solid #7a5a10;border-radius:6px;padding:6px 8px;font-size:10px;color:#d4a030;margin-bottom:6px;line-height:1.5;">🔒 Un poste ne peut Ãªtre demandé que pour <strong>un seul jour</strong>.</div>
+          </div><div id="desid-warn-poste" style="display:none;background:#1e1a0a;border:1px solid #7a5a10;border-radius:6px;padding:6px 8px;font-size:10px;color:#d4a030;margin-bottom:6px;line-height:1.5;">🔒 Un poste ne peut être demandé que pour <strong>un seul jour</strong>.</div>
           <input id="desid-f-input" placeholder="Nom de la formation..." style="display:none;width:100%;margin-bottom:6px;background:#0d2240;border:1px solid #2a4a72;border-radius:6px;color:#e2e8f0;font-size:11px;padding:5px 7px;box-sizing:border-box;" oninput="desidUpdAdd()">
           <div id="desid-ip-section" style="display:none;">
           <div style="background:#1e0a0a;border:1px solid #7a1010;border-radius:6px;padding:6px 8px;font-size:10px;color:#e05050;margin-bottom:6px;line-height:1.5;">🚫 Indispo poste : sélectionnez un <strong>seul jour</strong> dans le calendrier, puis choisissez le poste. Soumise à validation.</div>
@@ -398,7 +398,7 @@ button{font-family:inherit;}
   <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-size:15px;font-weight:700;">📋 Mes demandes de desiderata</div>
-      <button onclick="closeMesDemandes()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">â</button>
+      <button onclick="closeMesDemandes()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
     </div>
     <div id="demandes-list"></div>
   </div>
@@ -434,9 +434,9 @@ button{font-family:inherit;}
 <div id="toast"></div>
 
 <script>
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // CONFIG — Remplacer par vos valeurs depuis supabase.com
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 const CFG = {
   url: 'https://zzqbcjtrtisexyokezaq.supabase.co',
   key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cWJjanRydGlzZXh5b2tlemFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDg1MzgsImV4cCI6MjA5MDc4NDUzOH0.m8DBLJ1T3gOYuZL9sGUDmrTvUHAZ6tRAIfJYIVUzGIE',
@@ -444,9 +444,9 @@ const CFG = {
   gest_email: 'sorcegiuseppepro@gmail.com'
 };
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // STATE
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 let sb, doctors=[], me=null, selectedDoc=null;
 let planning=null, exchanges=[];
 let cy=new Date().getFullYear(), cm=new Date().getMonth();
@@ -458,19 +458,19 @@ var PIN_MAX_ATTEMPTS=5;
 var _pinAttempts=0, _pinLockedUntil=0;
 
 const MO=['Janvier','Février','Mars','Avril','Mai','Juin',
-          'Juillet','AoÃ»t','Septembre','Octobre','Novembre','Décembre'];
+          'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const DS=['Di','Lu','Ma','Me','Je','Ve','Sa'];
 const SEC_ORDER=['jour','soir','nuit','we'];
-const SEC_LBL={jour:'JOURNÃE SEMAINE',soir:'SOIRÃE',nuit:'GARDES NUIT SEM.',we:'WEEK-END'};
+const SEC_LBL={jour:'JOURNÉE SEMAINE',soir:'SOIRÉE',nuit:'GARDES NUIT SEM.',we:'WEEK-END'};
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // INIT
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 async function init(){
   if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW:',e));}
 
   if(CFG.url==='VOTRE_SUPABASE_URL'){
-    document.getElementById('doc-grid').innerHTML='<div class="ld" style="color:var(--err);">â  Configurez les clés Supabase dans le fichier viewer (variables CFG).</div>';
+    document.getElementById('doc-grid').innerHTML='<div class="ld" style="color:var(--err);">⚠ Configurez les clés Supabase dans le fichier viewer (variables CFG).</div>';
     return;
   }
   sb=supabase.createClient(CFG.url,CFG.key);
@@ -479,9 +479,9 @@ async function init(){
   await loadDoctors();
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // AUTH
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 async function loadDoctors(){
   try{
     const {data,error}=await sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin_hash,pin_set,weekly_hours').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname');
@@ -573,12 +573,12 @@ function logout(){
   document.getElementById('echanges-btn').style.display='none';
 }
 
-const DCAL_MO=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','AoÃ»t','Septembre','Octobre','Novembre','Décembre'];
+const DCAL_MO=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 // Desiderata state
 var _desidReqs=[], _desidD1=null, _desidD2=null, _desidType=null;
 var _desidCalY=new Date().getFullYear(), _desidCalM=new Date().getMonth();
 var _desidRid=0;
-var _DESID_MNS=['jan.','fév.','mars','avr.','mai','juin','juil.','aoÃ»t','sep.','oct.','nov.','déc.'];
+var _DESID_MNS=['jan.','fév.','mars','avr.','mai','juin','juil.','août','sep.','oct.','nov.','déc.'];
 
 async function openDesiderata(){
   if(!me)return;
@@ -593,7 +593,7 @@ async function openDesiderata(){
   _desidCalY=nextQYear;_desidCalM=(nextQNum-1)*3;
   desidResetType();desidRenderCal();desidRenderReqs();desidUpdPanel();
   const info=document.getElementById('desid-deadline-info');
-  info.textContent='â³ Chargement...';
+  info.textContent='⏳ Chargement...';
   try{
     const {data}=await sb.from('hospital_config').select('desiderata_deadlines').eq('hospital_id',CFG.hospital).maybeSingle();
     if(data?.desiderata_deadlines?.[qKey]){const p=data.desiderata_deadlines[qKey].split('-');info.textContent='Limite : '+p[2]+'/'+p[1]+'/'+p[0];}
@@ -701,7 +701,7 @@ function desidPickType(t){
   // Gérer la section ip
   document.getElementById('desid-ip-section').style.display=(t==='ip')?'block':'none';
   if(t==='ip'){
-    // Peupler le sélecteur de postes via desidGetPosts (mÃªme source que poste particulier)
+    // Peupler le sélecteur de postes via desidGetPosts (même source que poste particulier)
     const postSel=document.getElementById('desid-ip-post-sel');
     if(postSel&&postSel.options.length<=1){
       const postNames=desidGetPosts();
@@ -817,7 +817,7 @@ function desidRenderReqs(){
     var label=TLABS[r.type]+(r.detail?' — '+r.detail:'');
     var d=document.createElement('div');
     d.style.cssText='display:inline-flex;align-items:center;gap:5px;background:#152d50;border-radius:6px;padding:4px 8px;font-size:11px;margin:3px;border:0.5px solid #2a4a72;';
-    d.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:'+TCOLS[r.type]+';flex-shrink:0;display:inline-block;"></span><span style="font-weight:600;color:#e2e8f0;">'+label+'</span><span style="color:#64748b;margin-left:3px;">'+ds+'</span><span onclick="desidRemoveReq('+r.id+')" style="cursor:pointer;color:#475569;margin-left:4px;">â</span>';
+    d.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:'+TCOLS[r.type]+';flex-shrink:0;display:inline-block;"></span><span style="font-weight:600;color:#e2e8f0;">'+label+'</span><span style="color:#64748b;margin-left:3px;">'+ds+'</span><span onclick="desidRemoveReq('+r.id+')" style="cursor:pointer;color:#475569;margin-left:4px;">✕</span>';
     el.appendChild(d);
   });
 }
@@ -839,14 +839,14 @@ async function submitDesiderata(){
   });
   if(error){alert('Erreur : '+error.message);return;}
   closeDesiderata();
-  toast('â Desiderata envoyés au gestionnaire !'); loadMyDesids();
+  toast('✅ Desiderata envoyés au gestionnaire !'); loadMyDesids();
 }
 
 async function openMesDemandes(){
   if(!me) return;
   document.getElementById('demandes-bg').style.display='block';
   const list=document.getElementById('demandes-list');
-  list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">â³ Chargement...</div>';
+  list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">⏳ Chargement...</div>';
   try{
     const {data,error}=await sb.from('desiderata_requests')
       .select('*')
@@ -861,8 +861,8 @@ async function openMesDemandes(){
     const fmtD=dk=>{const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
     const fmtDt=s=>new Date(s).toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'});
     const stBadge=st=>{
-      if(st==='pending') return '<span style="background:#fbbf2433;color:#fbbf24;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">â³ En attente</span>';
-      if(st==='validated'||st==='accepted') return '<span style="background:#22c55e33;color:#22c55e;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">â Validée</span>';
+      if(st==='pending') return '<span style="background:#fbbf2433;color:#fbbf24;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">⏳ En attente</span>';
+      if(st==='validated'||st==='accepted') return '<span style="background:#22c55e33;color:#22c55e;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">✅ Validée</span>';
       if(st==='refused'||st==='rejected') return '<span style="background:#ef444433;color:#ef4444;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">✗ Refusée</span>';
       return `<span style="background:var(--bg3);color:var(--t3);font-size:11px;border-radius:6px;padding:2px 8px;">${st}</span>`;
     };
@@ -980,9 +980,9 @@ function showMain(){
   logAccess('login','');
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // DATA
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 async function loadAll(){
   document.getElementById('grid-area').innerHTML='<div class="ld"><div class="sp"></div>Chargement...</div>';
   document.getElementById('shift-widget').innerHTML='';
@@ -1016,16 +1016,16 @@ async function loadAll(){
       }else{
         var isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
         var msg=isNet?'Impossible de joindre le serveur. Vérifiez votre connexion.':'Erreur serveur : '+e.message;
-        document.getElementById('grid-area').innerHTML='<div class="err-banner"><div>â ï¸ '+msg+'</div><button class="err-retry" onclick="loadAll()">â» Réessayer</button></div>';
+        document.getElementById('grid-area').innerHTML='<div class="err-banner"><div>⚠️ '+msg+'</div><button class="err-retry" onclick="loadAll()">↻ Réessayer</button></div>';
       }
       renderBadge();
     }
   })();
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // REALTIME
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 function subscribeRT(){
   if(rtChannel){sb.removeChannel(rtChannel);rtChannel=null;}
   rtChannel=sb.channel('jlx_exchanges_'+CFG.hospital)
@@ -1038,9 +1038,9 @@ function subscribeRT(){
           const ev=payload.eventType;
           const n=payload.new||{};
           if(ev==='INSERT'&&n.proposer_id!==me.id) toast('📬 Nouvelle demande d\'échange !');
-          if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('â Votre échange a été accepté !');
+          if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('✅ Votre échange a été accepté !');
           if(ev==='UPDATE'&&n.status==='pending_j1'&&(n.proposer_id===me.id||n.acceptor_id===me.id)) toast('Un switch J+1 a été proposé par le gestionnaire !');
-          if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('â Ãchange confirmé !');
+          if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('✅ Échange confirmé !');
         });
     })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'planning_months'},payload=>{
@@ -1054,9 +1054,9 @@ function subscribeRT(){
     });
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // RENDER GRID
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 function openPickerModal(dk,p0,p1){
   var ov=document.createElement('div');
   ov.className='picker-ov';
@@ -1085,8 +1085,8 @@ function openPickerModal(dk,p0,p1){
     });
     return btn;
   }
-  box.appendChild(mkBtn(p0,p0.full+' · '+p0.start+'â'+p0.end));
-  box.appendChild(mkBtn(p1,p1.full+' · '+p1.start+'â'+p1.end));
+  box.appendChild(mkBtn(p0,p0.full+' · '+p0.start+'–'+p0.end));
+  box.appendChild(mkBtn(p1,p1.full+' · '+p1.start+'–'+p1.end));
   var btnBoth=document.createElement('button');
   btnBoth.className='picker-btn';
   btnBoth.style.background='var(--bg3)';
@@ -1101,7 +1101,7 @@ function openPickerModal(dk,p0,p1){
     openModal(dk,p0.id);
     setTimeout(function(){
       var ms=document.getElementById('ms');
-      if(ms) ms.textContent=p0.name+' ('+p0.start+'â'+p0.end+') + '+p1.name+' ('+p1.start+'â'+p1.end+')';
+      if(ms) ms.textContent=p0.name+' ('+p0.start+'–'+p0.end+') + '+p1.name+' ('+p1.start+'–'+p1.end+')';
     },50);
   });
   box.appendChild(btnBoth);
@@ -1181,7 +1181,7 @@ function renderCalPerso(){
       dspan.style.color=p0.color+'cc';
       var cspan=document.createElement('span'); cspan.className='cp-code';
       cspan.style.color=p0.color; cspan.textContent=sc; cell.appendChild(cspan);
-      cell.title=p0.full+' · '+p0.start+'â'+p0.end;
+      cell.title=p0.full+' · '+p0.start+'–'+p0.end;
       if(!isPast){(function(d2,pid){cell.addEventListener('click',function(){openModal(d2,pid);});})(dk,p0.id);}
     } else if(myPosts.length>=2){
       var p0=myPosts[0],p1=myPosts[1];
@@ -1261,7 +1261,7 @@ function renderCalPerso(){
   bottom.appendChild(statsDiv);
   var cgEnt=me.role==="Médecin Généraliste"?0:(me.role&&me.role.indexOf("Assistant")>-1?30:40);
   if(cgEnt>0){
-    function cgEaster(y){var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),dy=(h+l-7*m+114)%31+1;return new Date(y+'-'+(mo<10?'0':'')+mo+'-'+(dy<10?'0':'')+dy+'T12:00:00');}
+    function cgEaster(y){var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),dy=(h+l-7*m+114)%31+1;return new Date(y,mo-1,dy);}
     function cgHolidays(y){var e=cgEaster(y);function add(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r.toISOString().slice(0,10);}var fixed=[y+"-01-01",y+"-05-01",y+"-07-21",y+"-08-15",y+"-11-01",y+"-11-11",y+"-12-25"];var mobile=[add(e,1),add(e,39),add(e,49),add(e,50)];var all={};fixed.concat(mobile).forEach(function(dk){all[dk]=1;});return all;}
     function cgWd(start,end){
       var days=0,cur=new Date(start+"T12:00:00"),eDate=new Date(end+"T12:00:00");
@@ -1386,7 +1386,7 @@ function renderGrid(){
     h+=`<tr class="sr"><td colspan="${d2+1}">${SEC_LBL[sec]}</td></tr>`;
     for(const p of sp){
       h+='<tr>';
-      h+=`<td class="pc"><span class="pdot" style="background:${p.color||'#888'}"></span><span class="pn">${p.full||p.name}</span><span class="ph">${p.start}â${p.end}</span></td>`;
+      h+=`<td class="pc"><span class="pdot" style="background:${p.color||'#888'}"></span><span class="pn">${p.full||p.name}</span><span class="ph">${p.start}–${p.end}</span></td>`;
       for(let d=1;d<=d2;d++){
         const dk=dkStr(cy,cm,d),dw=new Date(dk+'T12:00:00').getDay(),we=dw===0||dw===6;
         const isTd=dk===today;
@@ -1409,7 +1409,7 @@ function renderGrid(){
   document.getElementById('grid-area').innerHTML=h;
 }
 
-// ââââââââ SHIFT WIDGET ââââââââ
+// ════════ SHIFT WIDGET ════════
 function renderShiftWidget(){
   var el=document.getElementById('shift-widget');
   if(!el||!planning||!me)return;
@@ -1431,7 +1431,7 @@ function renderShiftWidget(){
   if(todayS.length){
     var p=todayS[0].p;
     el.className='shift-widget shift-today';
-    el.innerHTML='<span style="font-size:20px">🔴</span><div><strong>Shift aujourd\'hui !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' · '+p.start+'â'+p.end+'</span></div>';
+    el.innerHTML='<span style="font-size:20px">🔴</span><div><strong>Shift aujourd\'hui !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' · '+p.start+'–'+p.end+'</span></div>';
   }else if(nextS){
     var dt=new Date(nextS.dk+'T12:00:00');
     var diff=Math.round((dt.getTime()-new Date().setHours(0,0,0,0))/86400000);
@@ -1439,11 +1439,11 @@ function renderShiftWidget(){
     var dlbl=DS2[dt.getDay()]+' '+dt.getDate()+' '+MO[dt.getMonth()].toLowerCase().slice(0,3)+'.';
     var pp=nextS.p;
     el.className='shift-widget shift-next';
-    el.innerHTML='<span style="font-size:20px">📅</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' — '+(pp.full||pp.name)+' · <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
+    el.innerHTML='<span style="font-size:20px">📅</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' — '+(pp.full||pp.name)+' '+pp.start+'–'+pp.end+' · <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
   }else{el.className='';el.innerHTML='';}
 }
 
-// ââââââââ SESSION TIMEOUT ââââââââ
+// ════════ SESSION TIMEOUT ════════
 function initSession(){
   _sessActive=true;resetSessTimer();
   ['click','touchstart','keydown'].forEach(function(ev){document.addEventListener(ev,resetSessTimer,{passive:true});});
@@ -1477,15 +1477,15 @@ function onSessPinSubmit(){
   }
 }
 
-// ââââââââ LOGS RGPD ââââââââ
+// ════════ LOGS RGPD ════════
 function logAccess(action,detail){
   if(!sb||!me)return;
   try{sb.from('access_logs').insert({hospital_id:CFG.hospital,doctor_id:me.id,action:action,detail:detail||'',ts:new Date().toISOString()}).then(function(){});}catch(e){}
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // EXCHANGES
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 function renderBadge(){
   const open=exchanges.filter(r=>r.status==='open').length;
   const pendJ1=exchanges.filter(r=>r.status==='pending_j1'&&(r.proposer_id===me.id||r.acceptor_id===me.id)&&!(r.proposer_id===me.id?r.j1_proposer_ok:r.j1_acceptor_ok)).length;
@@ -1493,7 +1493,7 @@ function renderBadge(){
   const act=exchanges.filter(r=>(r.status==='accepted'&&r.proposer_id===me.id)||(r.status==='open'&&r.proposer_id!==me.id)).length+pendJ1+pendSw;
   const pill=document.getElementById('exch-pill');
   if(open>0||pendJ1>0||pendSw>0){
-    pill.textContent=act>0?`${act} action(s)`:pendSw>0?`${pendSw} switch`:pendJ1>0?`${pendJ1} J+1`:`${open} échange(s)`;
+    pill.textContent=act>0?`${act} action(s)`:pendJ1>0?`${pendJ1} J+1`:` ${open} échange(s)`;
     pill.classList.add('show');
     pill.classList.toggle('urgent',act>0||pendJ1>0);
   }else{pill.classList.remove('show');}
@@ -1515,7 +1515,7 @@ function renderPanel(){
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
-    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">â Refuser</button>`;
+    if(r.status==='open'&&!isMe2)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
     if(r.status==='accepted'&&isMe2)acts=`<button class="xbtn confirm" onclick="confirmX('${r.id}')">✓ Confirmer</button><button class="xbtn cancel" onclick="cancelX('${r.id}')">Refuser</button>`;
     if(r.status==='pending_j1'){
@@ -1544,9 +1544,10 @@ function renderPanel(){
           +'<button class="xbtn confirm" onclick="confirmJ1(\''+r.id+'\','+isProp+')" style="background:#3b82f6;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">J\'accepte le switch J0+J1</button>'
           +' <button class="xbtn cancel" onclick="refuseJ1(\''+r.id+'\','+isProp+')" style="background:transparent;border:1px solid var(--err);color:var(--err);border-radius:7px;padding:8px 14px;font-size:12px;cursor:pointer;margin-left:6px;">Je refuse</button>';
       } else {
-        acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">â Vous avez validé le switch J0+J1 — en attente de '+othName+'</div>';
+        acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">✅ Vous avez validé le switch J0+J1 — en attente de '+othName+'</div>';
       }
     }
+
     if(r.status==='pending_switch'){
       const isPropSw=r.proposer_id===me.id;
       const alreadyOkSw=isPropSw?r.switch_proposer_ok:r.switch_acceptor_ok;
@@ -1572,20 +1573,15 @@ function renderPanel(){
     return `<div class="xcard">
       <div class="xcard-hdr">
         <div style="font-size:12px;font-weight:600;">${prop?prop.firstname+' '+prop.lastname:'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
-        <span class="xbadge exch">🔄 Ãchange</span>
+        <span class="xbadge exch">🔄 Échange</span>
       </div>
       <div class="xinfo">${(function(){var m=post?post.full||post.name:r.proposer_post;if(!r.proposer_post2)return m;var p2=(planning.posts||[]).find(function(q){return q.id===r.proposer_post2;});return m+' + '+(p2?p2.full||p2.name:r.proposer_post2);}())} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
       ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
   }).join('');
-  // Boutons switch — event listeners (évite guillemets dans onclick)
-  l.querySelectorAll('.xbtn-sw-ok').forEach(function(btn){
-    btn.addEventListener('click',function(){confirmSwitch(btn.dataset.xid,btn.dataset.xprop==='1');});
-  });
-  l.querySelectorAll('.xbtn-sw-no').forEach(function(btn){
-    btn.addEventListener('click',function(){refuseSwitch(btn.dataset.xid,btn.dataset.xprop==='1');});
-  });
+  l.querySelectorAll('.xbtn-sw-ok').forEach(function(btn){btn.addEventListener('click',function(){confirmSwitch(btn.dataset.xid,btn.dataset.xprop==='1');});});
+  l.querySelectorAll('.xbtn-sw-no').forEach(function(btn){btn.addEventListener('click',function(){refuseSwitch(btn.dataset.xid,btn.dataset.xprop==='1');});});
 }
 
 async function confirmJ1(id,isProp){
@@ -1597,11 +1593,11 @@ async function confirmJ1(id,isProp){
   }catch(e){toast('Erreur : '+e.message);}
 }
 async function refuseJ1(id,isProp){
-  if(!confirm('Refuser le switch J+1 ? Lâéchange J0 sera remis en attente.')) return;
+  if(!confirm('Refuser le switch J+1 ? L’échange J0 sera remis en attente.')) return;
   try{
     var {error}=await sb.from('exchange_requests').update({status:'accepted',j1_date:null,j1_proposer_post:null,j1_acceptor_posts:null,j1_proposer_ok:false,j1_acceptor_ok:false,acceptor_id:null}).eq('id',id);
     if(error)throw error;
-    toast('Switch J+1 refusé — échange J0 remis à lâétat ouvert.');
+    toast('Switch J+1 refusé — échange J0 remis à l’état ouvert.');
   }catch(e){toast('Erreur : '+e.message);}
 }
 async function confirmSwitch(id,isProp){
@@ -1609,7 +1605,7 @@ async function confirmSwitch(id,isProp){
     var upd=isProp?{switch_proposer_ok:true}:{switch_acceptor_ok:true};
     var {error}=await sb.from('exchange_requests').update(upd).eq('id',id);
     if(error)throw error;
-    toast('Switch validé — le gestionnaire recevra une notification.');
+    toast('Switch validé — le gestionnaire appliquera le changement.');
     loadQShifts();
   }catch(e){toast('Erreur : '+e.message,true);}
 }
@@ -1622,9 +1618,9 @@ async function refuseSwitch(id,isProp){
     if(newStatus==='accepted') upd.acceptor_id=null;
     var {error}=await sb.from('exchange_requests').update(upd).eq('id',id);
     if(error)throw error;
-    toast(newStatus==='cancelled'?'Switch refus\u00e9 \u2014 demande annul\u00e9e.':'Switch refus\u00e9 \u2014 \u00e9change remis \u00e0 disposition.');
+    toast(newStatus==='cancelled'?'Switch refusé — demande annulée.':'Switch refusé — échange remis à disposition.');
     loadQShifts();
-  }catch(e){toast('Erreur : '+e.message,true);}
+  }catch(e){toast('Erreur : '+e.message,true);}
 }
 async function acceptX(id){
   try{
@@ -1644,7 +1640,7 @@ async function acceptX(id){
             hospital: CFG.hospital,
             doctor_ids: [String(xr.proposer_id)],
             title: '✓ Demande acceptée',
-            message: me.firstname+' '+me.lastname+' a accepté votre demande dâéchange — '+_postName,
+            message: me.firstname+' '+me.lastname+' a accepté votre demande d’échange — '+_postName,
             url: 'https://julandrex.github.io/julandrex-viewer/'
           })
         }).catch(()=>{});
@@ -1678,7 +1674,7 @@ async function confirmX(id){
   try{
     const {error}=await sb.from('exchange_requests').update({status:'confirmed',confirmed_at:new Date().toISOString()}).eq('id',id);
     if(error)throw error;
-    toast('✓ Ãchange confirmé !');
+    toast('✓ Échange confirmé !');
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
@@ -1690,16 +1686,16 @@ async function cancelX(id){
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // MODAL
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 function openModal(dk,pid){
   mDate=dk;mPost=pid;
   const post=planning?.posts?.find(p=>p.id===pid);
   document.getElementById('ms').textContent=(post?post.full||post.name:pid)+' · '+fmtDate(dk);
   document.getElementById('m-msg').value='';
   setTarget('all');
-  // Remplir le sélecteur de médecins (hors soi-mÃªme)
+  // Remplir le sélecteur de médecins (hors soi-même)
   const sel=document.getElementById('m-target-doc');
   sel.innerHTML=[...doctors].filter(d=>d.id!==me.id).sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname)).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
   document.getElementById('modal-bg').classList.add('show');
@@ -1735,7 +1731,7 @@ async function submitExchange(){
       const _postName = planning?.posts?.find(p=>p.id===mPost)?.full || mPost;
       const _pushPayload = {
         hospital: CFG.hospital,
-        title: '🔄 Demande dâéchange',
+        title: '🔄 Demande d’échange',
         message: me.firstname+' '+me.lastname+' vous propose un échange — '+_postName,
         url: 'https://julandrex.github.io/julandrex-viewer/'
       };
@@ -1760,27 +1756,27 @@ async function submitExchange(){
       body:JSON.stringify({..._notifData,to_email:email,to_name:name,doctor_id:docId})
     }).catch(()=>{});
     if(targetDocId){
-      // Ãchange ciblé → notifier uniquement ce médecin
+      // Échange ciblé → notifier uniquement ce médecin
       sb.from('doctors').select('id,email,firstname,lastname').eq('id',targetDocId).maybeSingle()
         .then(({data:d})=>{ if(d?.email) _sendNotif(d.email,d.firstname+' '+d.lastname,d.id); });
     } else {
-      // Ãchange ouvert à tous → notifier tous les médecins actifs avec un email
+      // Échange ouvert à tous → notifier tous les médecins actifs avec un email
       sb.from('doctors').select('id,email,firstname,lastname').eq('active',true).eq('hospital_id',CFG.hospital).not('email','is',null)
         .then(({data:docs})=>{ (docs||[]).filter(d=>d.email&&d.id!==me.id).forEach(d=>_sendNotif(d.email,d.firstname+' '+d.lastname,d.id)); });
     }
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // NAV
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 function prevMonth(){cm--;if(cm<0){cm=11;cy--;}updateMonthLbl();loadAll();}
 function nextMonth(){cm++;if(cm>11){cm=0;cy++;}updateMonthLbl();loadAll();}
 function updateMonthLbl(){document.getElementById('mlbl').textContent=MO[cm]+' '+cy;}
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 // UTILS
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
 function dkStr(y,m,d){return y+'-'+('0'+(m+1)).slice(-2)+'-'+('0'+d).slice(-2);}
 
 function fmtDate(dk){const d=new Date(dk+'T12:00:00');return DS[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();}
@@ -1837,14 +1833,14 @@ function toast(msg,err){
 }
 
 
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// MES ÃCHANGES
-// ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════
+// MES ÉCHANGES
+// ══════════════════════════════════════════════════════════
 async function openMesEchanges(){
   if(!me) return;
   document.getElementById('mesechanges-bg').style.display='block';
   const list=document.getElementById('mesechanges-list');
-  list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">â³ Chargement...</div>';
+  list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">⏳ Chargement...</div>';
   try{
     const {data,error}=await sb.from('exchange_requests')
       .select('*').eq('hospital_id',CFG.hospital).eq('proposer_id',me.id)
@@ -1863,9 +1859,9 @@ async function openMesEchanges(){
       // Badge statut
       let badge='',color='';
       if(r.status==='open'){
-        badge='â³ En attente de réponse';color='#f59e0b';
+        badge='⏳ En attente de réponse';color='#f59e0b';
       } else if(r.status==='accepted'){
-        badge='â Acceptée par '+(accName||'un médecin');color='#22c55e';
+        badge='✅ Acceptée par '+(accName||'un médecin');color='#22c55e';
       } else if(r.status==='confirmed'){
         badge='✔ Validée par le gestionnaire';color='#22c55e';
       } else if(r.status==='cancelled'){
@@ -1964,7 +1960,7 @@ function updateNotifBtn(state) {
   if (lbl) lbl.textContent = 'Notif.';
 }
 
-/* ââ RAPPEL 24H ââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ══ RAPPEL 24H ════════════════════════════════════════════════ */
 function r24Key(){ return 'jlx_r24_' + (window._r24DocId||''); }
 function r24DoneKey(d,pid){ return 'jlx_r24done_'+(window._r24DocId||'')+'_'+d+'_'+pid; }
 function initRappel24Btn(){ updateRappel24Btn(); }
@@ -2110,7 +2106,7 @@ async function renderMonPlanning() {
   if (!titleEl) return;
 
   titleEl.textContent = MO[mpM] + ' ' + mpY;
-  statsEl.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:8px;text-align:center">Chargementâ¦</div>';
+  statsEl.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:8px;text-align:center">Chargement…</div>';
   listEl.innerHTML = '';
 
   // Charger le planning du mois si différent du mois courant
@@ -2130,7 +2126,7 @@ async function renderMonPlanning() {
   const { shifts, posts } = pl;
   const d2 = new Date(mpY, mpM + 1, 0).getDate();
   const today = new Date().toISOString().slice(0, 10);
-  const DN = ['â Dim', '→ Lun', '→ Mar', '→ Mer', '→ Jeu', '→ Ven', '→ Sam'];
+  const DN = ['↓ Dim', '→ Lun', '→ Mar', '→ Mer', '→ Jeu', '→ Ven', '→ Sam'];
   const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
   // Collecter mes gardes
@@ -2177,7 +2173,7 @@ async function renderMonPlanning() {
     const canExchange = !isPast;
     const clickAttr = canExchange
       ? `onclick="closeMonPlanning();openModal('${dk}','${post.id}')"`
-      : `onclick="showToast('Les gardes passées ne peuvent pas Ãªtre échangées', 2500)"`;
+      : `onclick="showToast('Les gardes passées ne peuvent pas être échangées', 2500)"`;
     return `<div ${clickAttr} style="
       display:flex;align-items:center;gap:12px;
       background:var(--bg2);border-radius:10px;padding:12px 14px;
@@ -2195,7 +2191,7 @@ async function renderMonPlanning() {
           <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${post.color || '#888'};flex-shrink:0"></span>
           <span style="font-size:13px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${post.full || post.name}</span>
         </div>
-        <div style="font-size:11px;color:var(--t3);margin-top:3px">${post.start}â${post.end}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:3px">${post.start}–${post.end}</div>
       </div>
       <div style="font-size:16px;color:${canExchange ? 'var(--acc)' : 'var(--t3)'};">${canExchange ? '🔄' : '🔒'}</div>
     </div>`;
@@ -2222,10 +2218,10 @@ document.addEventListener('click', function(e) {
 // ===== FIN TOPBAR DROPDOWN MENU =====
 
 function rejectX(id){
-  if(!confirm('Refuser cette demande dâéchange ?'))return;
+  if(!confirm('Refuser cette demande d’échange ?'))return;
   sb.from('exchange_requests').update({status:'cancelled'}).eq('id',id).then(({error})=>{
     if(error){toast('Erreur: '+error.message,3000);return;}
-    toast('â Demande refusée',2500);
+    toast('✕ Demande refusée',2500);
     openMesEchanges();
   });
 }
@@ -2236,7 +2232,7 @@ function rejectX(id){
   <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-size:15px;font-weight:700;">🔄 Mes demandes d'échange</div>
-      <button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">â</button>
+      <button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
     </div>
     <div id="mesechanges-list"></div>
   </div>
@@ -2247,17 +2243,17 @@ function rejectX(id){
   <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="display:flex;align-items:center;gap:10px;">
-        <button onclick="mpPrevMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">â¹</button>
+        <button onclick="mpPrevMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">‹</button>
         <span id="mp-title" style="font-size:15px;font-weight:700;min-width:140px;text-align:center;"></span>
-        <button onclick="mpNextMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">âº</button>
+        <button onclick="mpNextMonth()" style="background:var(--bg2);border:none;color:var(--t1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;">›</button>
       </div>
-      <button onclick="closeMonPlanning()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px;">â</button>
+      <button onclick="closeMonPlanning()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px;">✕</button>
     </div>
     <div id="mp-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;"></div>
     <div id="mp-list"></div>
   </div>
 </div>
-<div id="pso" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;"><div id="pso-icon" style="font-size:28px;margin-bottom:6px">&#x1F510;</div><h2 id="pso-title" style="color:#e2e8f0;font-size:18px;margin:0 0 6px">Créez votre PIN</h2><p id="pso-desc" style="color:#94a3b8;font-size:13px;margin:0 0 18px">Choisissez un code PIN permanent (min. 6 chiffres).</p><div id="pso-cur-wrap" style="display:none;margin-bottom:10px;"><input id="pso-cur" type="password" inputmode="numeric" placeholder="PIN actuel" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;box-sizing:border-box;"></div><input id="npi" type="password" inputmode="numeric" placeholder="Nouveau PIN (6-8 chiffres)" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;"><input id="cpi" type="password" inputmode="numeric" placeholder="Confirmer nouveau PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:14px;box-sizing:border-box;"><div id="pse" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:10px;"></div><button onclick="doConfirmPin()" style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">Valider mon PIN</button><button id="pso-cancel-btn" onclick="doCancelPin()" style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">Retour</button></div></div><div id="pso-msg" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px">â ï¸</div><p id="pso-msg-text" style="color:#e2e8f0;font-size:15px;margin:0 0 20px"></p><button onclick="document.getElementById('pso-msg').style.display='none'" style="padding:10px 24px;background:#1e3a5f;color:#e2e8f0;border:none;border-radius:8px;font-size:14px;cursor:pointer;">OK</button></div></div><script>window._pinHash=null;window._pinSetupForce=false;document.addEventListener("DOMContentLoaded",function(){  var pi=document.getElementById("pin-inp");  if(pi)pi.addEventListener("input",function(){    if(pi.value)crypto.subtle.digest("SHA-256",new TextEncoder().encode(pi.value)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");});    else window._pinHash=null;  });});function showPinMsg(msg){  document.getElementById("pso-msg-text").textContent=msg;  document.getElementById("pso-msg").style.display="flex";}function showPinSetup(forced){  window._pinSetupForce=!!forced;  var o=document.getElementById("pso");  if(!o)return;  if(forced){    document.getElementById("pso-title").textContent="Créez votre PIN permanent";    document.getElementById("pso-desc").textContent="Pour sécuriser votre accès, choisissez un PIN personnel (6â8 chiffres). Il remplacera le PIN temporaire.";    document.getElementById("pso-cur-wrap").style.display="none";    document.getElementById("pso-cancel-btn").style.display="none";  } else {    document.getElementById("pso-title").textContent="Changer mon PIN";    document.getElementById("pso-desc").textContent="Entrez votre PIN actuel puis choisissez un nouveau PIN (6â8 chiffres).";    document.getElementById("pso-cur-wrap").style.display="block";    document.getElementById("pso-cancel-btn").style.display="inline-block";  }  document.getElementById("pse").textContent="";  document.getElementById("npi").value="";  document.getElementById("cpi").value="";  if(!forced){var c=document.getElementById("pso-cur");if(c)c.value="";}  o.style.display="flex";  setTimeout(function(){var i=document.getElementById(forced?"npi":"pso-cur");if(i)i.focus();},100);}function showChangePin(){showPinSetup(false);}function doCancelPin(){var o=document.getElementById("pso");if(o)o.style.display="none";}function doConfirmPin(){  var np=document.getElementById("npi").value.trim();  var cp=document.getElementById("cpi").value.trim();  var err=document.getElementById("pse");  err.textContent="";  if(!/^\d{6,8}$/.test(np)){err.textContent="PIN invalide : 6 à 8 chiffres numériques requis.";return;}  if(np!==cp){err.textContent="Les deux PINs ne correspondent pas.";return;}  if(!window._pinSetupForce){    var cur=document.getElementById("pso-cur").value.trim();    if(!cur){err.textContent="Entrez votre PIN actuel.";return;}    crypto.subtle.digest("SHA-256",new TextEncoder().encode(cur)).then(function(b){      var h=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");      if(h!==window._loginDoc.pin_hash){err.textContent="PIN actuel incorrect.";return;}      doSavePin(np,err);    });    return;  }  doSavePin(np,err);}function doSavePin(){
+<div id="pso" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;"><div id="pso-icon" style="font-size:28px;margin-bottom:6px">&#x1F510;</div><h2 id="pso-title" style="color:#e2e8f0;font-size:18px;margin:0 0 6px">Créez votre PIN</h2><p id="pso-desc" style="color:#94a3b8;font-size:13px;margin:0 0 18px">Choisissez un code PIN permanent (min. 6 chiffres).</p><div id="pso-cur-wrap" style="display:none;margin-bottom:10px;"><input id="pso-cur" type="password" inputmode="numeric" placeholder="PIN actuel" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;box-sizing:border-box;"></div><input id="npi" type="password" inputmode="numeric" placeholder="Nouveau PIN (6-8 chiffres)" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;"><input id="cpi" type="password" inputmode="numeric" placeholder="Confirmer nouveau PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:14px;box-sizing:border-box;"><div id="pse" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:10px;"></div><button onclick="doConfirmPin()" style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">Valider mon PIN</button><button id="pso-cancel-btn" onclick="doCancelPin()" style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">Retour</button></div></div><div id="pso-msg" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px">⚠️</div><p id="pso-msg-text" style="color:#e2e8f0;font-size:15px;margin:0 0 20px"></p><button onclick="document.getElementById('pso-msg').style.display='none'" style="padding:10px 24px;background:#1e3a5f;color:#e2e8f0;border:none;border-radius:8px;font-size:14px;cursor:pointer;">OK</button></div></div><script>window._pinHash=null;window._pinSetupForce=false;document.addEventListener("DOMContentLoaded",function(){  var pi=document.getElementById("pin-inp");  if(pi)pi.addEventListener("input",function(){    if(pi.value)crypto.subtle.digest("SHA-256",new TextEncoder().encode(pi.value)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");});    else window._pinHash=null;  });});function showPinMsg(msg){  document.getElementById("pso-msg-text").textContent=msg;  document.getElementById("pso-msg").style.display="flex";}function showPinSetup(forced){  window._pinSetupForce=!!forced;  var o=document.getElementById("pso");  if(!o)return;  if(forced){    document.getElementById("pso-title").textContent="Créez votre PIN permanent";    document.getElementById("pso-desc").textContent="Pour sécuriser votre accès, choisissez un PIN personnel (6–8 chiffres). Il remplacera le PIN temporaire.";    document.getElementById("pso-cur-wrap").style.display="none";    document.getElementById("pso-cancel-btn").style.display="none";  } else {    document.getElementById("pso-title").textContent="Changer mon PIN";    document.getElementById("pso-desc").textContent="Entrez votre PIN actuel puis choisissez un nouveau PIN (6–8 chiffres).";    document.getElementById("pso-cur-wrap").style.display="block";    document.getElementById("pso-cancel-btn").style.display="inline-block";  }  document.getElementById("pse").textContent="";  document.getElementById("npi").value="";  document.getElementById("cpi").value="";  if(!forced){var c=document.getElementById("pso-cur");if(c)c.value="";}  o.style.display="flex";  setTimeout(function(){var i=document.getElementById(forced?"npi":"pso-cur");if(i)i.focus();},100);}function showChangePin(){showPinSetup(false);}function doCancelPin(){var o=document.getElementById("pso");if(o)o.style.display="none";}function doConfirmPin(){  var np=document.getElementById("npi").value.trim();  var cp=document.getElementById("cpi").value.trim();  var err=document.getElementById("pse");  err.textContent="";  if(!/^\d{6,8}$/.test(np)){err.textContent="PIN invalide : 6 à 8 chiffres numériques requis.";return;}  if(np!==cp){err.textContent="Les deux PINs ne correspondent pas.";return;}  if(!window._pinSetupForce){    var cur=document.getElementById("pso-cur").value.trim();    if(!cur){err.textContent="Entrez votre PIN actuel.";return;}    crypto.subtle.digest("SHA-256",new TextEncoder().encode(cur)).then(function(b){      var h=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");      if(h!==window._loginDoc.pin_hash){err.textContent="PIN actuel incorrect.";return;}      doSavePin(np,err);    });    return;  }  doSavePin(np,err);}function doSavePin(){
   var np=document.getElementById('npi').value.trim();
   var err=document.getElementById('pso-msg');
   err.style.color='var(--t3)';
@@ -2281,5 +2277,5 @@ function rejectX(id){
     err.textContent='Erreur réseau: '+e.message;
   });
 }
-</script><div class="grille-ov" id="grille-ov"><div class="grille-wrap"><div class="grille-tb"><span style="font-size:13px;font-weight:600;flex:1;">Planning complet</span><button class="grille-close" onclick="closeGrille()">â Fermer</button></div><div class="grille-bd" id="grille-bd"></div></div></div>
+</script><div class="grille-ov" id="grille-ov"><div class="grille-wrap"><div class="grille-tb"><span style="font-size:13px;font-weight:600;flex:1;">Planning complet</span><button class="grille-close" onclick="closeGrille()">✕ Fermer</button></div><div class="grille-bd" id="grille-bd"></div></div></div>
 </body>
