@@ -629,7 +629,6 @@ function desidMkDay(dn,yr,mo,isCur,loT,hiT){
   b.style.background=isCur?'#1a3358':'#111d30';
   b.style.color=(isWe||isHol)?(isCur?'#4a6080':'#1e2c3c'):(isCur?'#cbd5e1':'#2e4460');
   if(ndT===todT&&isCur){b.style.outline='1.5px solid #c9983a';b.style.outlineOffset='-1.5px';}
-  // Coloration permanente des jours déjà couverts par une demande ajoutée
   var inReq=false;
   if(typeof _desidReqs!=='undefined'){
     for(var ri=0;ri<_desidReqs.length;ri++){
