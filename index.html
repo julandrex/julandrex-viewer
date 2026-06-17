@@ -619,16 +619,19 @@ function desidFmtDate(dt){
   return dt.getDate()+' '+_DESID_MNS[dt.getMonth()]+(dt.getFullYear()!==_desidCalY?' '+dt.getFullYear():'');
 }
 
+function desidEaster(y){var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),dy=(h+l-7*m+114)%31+1;return new Date(y,mo-1,dy,12,0,0);}
+function desidHolidays(y){var e=desidEaster(y);function add(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r.toISOString().slice(0,10);}var fixed=[y+"-01-01",y+"-05-01",y+"-07-21",y+"-08-15",y+"-11-01",y+"-11-11",y+"-12-25"];var mobile=[add(e,1),add(e,39),add(e,49),add(e,50)];var all={};fixed.concat(mobile).forEach(function(dk){all[dk]=1;});return all;}
 function desidMkDay(dn,yr,mo,isCur,loT,hiT){
   var b=document.createElement('button');
   var dow=new Date(yr,mo,dn).getDay(),ndT=new Date(yr,mo,dn).getTime(),isWe=dow===0||dow===6;
   var dk0=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(dn).padStart(2,'0');
-  var isHol=!!cgHolidays(yr)[dk0];
+  var isHol=!!desidHolidays(yr)[dk0];
   var tod=new Date(),todT=new Date(tod.getFullYear(),tod.getMonth(),tod.getDate()).getTime();
   b.style.cssText='aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:5px;font-size:11px;cursor:pointer;border:none;padding:0;';
   b.style.background=isCur?'#1a3358':'#111d30';
   b.style.color=(isWe||isHol)?(isCur?'#4a6080':'#1e2c3c'):(isCur?'#cbd5e1':'#2e4460');
   if(ndT===todT&&isCur){b.style.outline='1.5px solid #c9983a';b.style.outlineOffset='-1.5px';}
+  // Coloration permanente des jours déjà couverts par une demande ajoutée
   var inReq=false;
   if(typeof _desidReqs!=='undefined'){
     for(var ri=0;ri<_desidReqs.length;ri++){
