@@ -1237,6 +1237,11 @@ function renderCalPerso(){
           totalShifts++;
           var p0s=post2.start.split(':'),p1s=post2.end.split(':');
           var h0=parseInt(p0s[0])+parseInt(p0s[1])/60,h1=parseInt(p1s[0])+parseInt(p1s[1])/60;
+          // Règle stricte : poste B suivi de SMUR-N le même jour en semaine -> B se termine à 19h
+          if(post2.id==='b'&&dw2>=1&&dw2<=5){
+            var hasSmurN2=pids2.indexOf('smur-n')!==-1&&dayS2['smur-n']==(me.local_id||me.id);
+            if(hasSmurN2) h1=19;
+          }
           var isON=(h1<=h0)||post2.overnight;
           var dur=isON?(h1===h0?24:(24-h0+h1)):(h1-h0);
           if(dur>0) totalH+=dur;
