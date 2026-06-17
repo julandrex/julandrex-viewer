@@ -364,6 +364,7 @@ button{font-family:inherit;}
           <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px;"><div style="text-align:center;font-size:9px;color:#475569;">Lu</div><div style="text-align:center;font-size:9px;color:#475569;">Ma</div><div style="text-align:center;font-size:9px;color:#475569;">Me</div><div style="text-align:center;font-size:9px;color:#475569;">Je</div><div style="text-align:center;font-size:9px;color:#475569;">Ve</div><div style="text-align:center;font-size:9px;color:#475569;">Sa</div><div style="text-align:center;font-size:9px;color:#475569;">Di</div></div>
           <div id="desid-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
           <div id="desid-sel-info" style="margin-top:7px;font-size:10px;color:#64748b;min-height:13px;text-align:center;font-style:italic;"></div>
+          <div style="margin-top:8px;font-size:10px;color:#8a93ab;line-height:1.5;background:rgba(201,152,58,.08);border-left:2px solid #c9983a;border-radius:0 6px 6px 0;padding:7px 9px;">⚠️ Lorsque vous sélectionnez vos congés, sélectionnez également les week-ends et jours fériés attenants — ceux-ci ne sont pas comptés dans vos jours de congé.</div>
         </div>
         <div style="background:#152d50;border-radius:9px;padding:12px;">
           <div id="desid-type-hint" style="font-size:10px;color:#475569;margin-bottom:8px;text-align:center;font-style:italic;">Sélectionnez une période</div>
@@ -621,11 +622,21 @@ function desidFmtDate(dt){
 function desidMkDay(dn,yr,mo,isCur,loT,hiT){
   var b=document.createElement('button');
   var dow=new Date(yr,mo,dn).getDay(),ndT=new Date(yr,mo,dn).getTime(),isWe=dow===0||dow===6;
+  var dk0=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(dn).padStart(2,'0');
+  var isHol=!!cgHolidays(yr)[dk0];
   var tod=new Date(),todT=new Date(tod.getFullYear(),tod.getMonth(),tod.getDate()).getTime();
   b.style.cssText='aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:5px;font-size:11px;cursor:pointer;border:none;padding:0;';
   b.style.background=isCur?'#1a3358':'#111d30';
-  b.style.color=isWe?(isCur?'#4a6080':'#1e2c3c'):(isCur?'#cbd5e1':'#2e4460');
+  b.style.color=(isWe||isHol)?(isCur?'#4a6080':'#1e2c3c'):(isCur?'#cbd5e1':'#2e4460');
   if(ndT===todT&&isCur){b.style.outline='1.5px solid #c9983a';b.style.outlineOffset='-1.5px';}
+  // Coloration permanente des jours déjà couverts par une demande ajoutée
+  var inReq=false;
+  if(typeof _desidReqs!=='undefined'){
+    for(var ri=0;ri<_desidReqs.length;ri++){
+      if(dk0>=_desidReqs[ri].date_start&&dk0<=_desidReqs[ri].date_end){inReq=true;break;}
+    }
+  }
+  if(inReq){b.style.background='#2d4a6b';b.style.color='#bcd4ee';}
   if(loT!==null&&hiT!==null){
     if(ndT===loT||ndT===hiT){b.style.background='#c9983a';b.style.color='#0d2240';b.style.fontWeight='700';}
     else if(ndT>loT&&ndT<hiT){b.style.background='#7a5c1a';b.style.color='#f5d99a';}
@@ -801,7 +812,7 @@ function desidAddRequest(){
   desidResetType();desidUpdPanel();desidRenderCal();desidRenderReqs();
 }
 
-function desidRemoveReq(id){_desidReqs=_desidReqs.filter(function(r){return r.id!==id;});desidRenderReqs();}
+function desidRemoveReq(id){_desidReqs=_desidReqs.filter(function(r){return r.id!==id;});desidRenderReqs();desidRenderCal();}
 
 function desidRenderReqs(){
   var el=document.getElementById('desid-req-items'),em=document.getElementById('desid-req-empty');
