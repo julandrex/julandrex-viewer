@@ -33,14 +33,14 @@ button{font-family:inherit;}
 .doc-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
 .doc-nm{font-size:12px;font-weight:600;}
 .doc-rl{font-size:10px;color:var(--t3);}
-.pin-area{display:none;flex-direction:column;gap:10px;max-width:300px;}
-.pin-area.show{display:flex;}
-.pin-lbl{font-size:13px;color:var(--t2);}
-.pin-inp{width:100%;background:var(--bg2);border:1px solid var(--b);border-radius:10px;padding:14px;color:var(--t1);font-size:28px;text-align:center;letter-spacing:10px;outline:none;transition:border .15s;}
-.pin-inp:focus{border-color:var(--acc);}
-.pin-err{color:var(--err);font-size:12px;display:none;}
-.pin-btn{background:var(--acc);color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s;}
-.pin-btn:hover{opacity:.88;}
+.pwd-area{display:none;flex-direction:column;gap:10px;max-width:360px;}
+.pwd-area.show{display:flex;}
+.pwd-lbl{font-size:13px;color:var(--t2);}
+.pwd-inp{width:100%;background:var(--bg2);border:1px solid var(--b);border-radius:10px;padding:14px;color:var(--t1);font-size:15px;outline:none;transition:border .15s;}
+.pwd-inp:focus{border-color:var(--acc);}
+.pwd-err{color:var(--err);font-size:12px;display:none;}
+.pwd-btn{background:var(--acc);color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+.pwd-btn:hover{opacity:.88;}
 
 /* ── MAIN ───────────────────────────────────── */
 #scr-main{display:none;flex-direction:column;height:100dvh;height:100vh;}
@@ -152,9 +152,9 @@ button{font-family:inherit;}
 .sess-box{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:28px 32px;text-align:center;max-width:320px;}
 .sess-title{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:8px;}
 .sess-sub{font-size:13px;color:var(--t2);margin-bottom:20px;}
-.sess-pin{width:100%;background:var(--bg3);border:1px solid var(--b);border-radius:10px;padding:12px;color:var(--t1);font-size:26px;text-align:center;letter-spacing:8px;outline:none;margin-bottom:12px;}
+.sess-pwd{width:100%;background:var(--bg3);border:1px solid var(--b);border-radius:10px;padding:12px;color:var(--t1);font-size:15px;outline:none;margin-bottom:12px;}
 .sess-btn{width:100%;background:var(--acc);color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;}
-.pin-lockout{color:var(--err);font-size:12px;text-align:center;margin-top:4px;}
+.pwd-lockout{color:var(--err);font-size:12px;text-align:center;margin-top:4px;}
 
 /* ── RAPPEL 24H ── */
 #rappel24-btn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:none;color:var(--t1);padding:10px 14px;cursor:pointer;font-size:13px;border-radius:6px;transition:background .15s;}
@@ -243,11 +243,14 @@ button{font-family:inherit;}
   <div class="login-box">
     <div class="step-title">Sélectionnez votre nom</div>
     <div class="doc-grid" id="doc-grid"><div class="ld"><div class="sp"></div>Chargement...</div></div>
-    <div class="pin-area" id="pin-area">
-      <div class="pin-lbl" id="pin-lbl">Entrez votre code PIN</div>
-      <input class="pin-inp" id="pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
-      <div class="pin-err" id="pin-err">Code PIN incorrect — réessayez</div>
-      <button class="pin-btn" onclick="doLogin()">Se connecter</button>
+    <div class="pwd-area" id="pin-area">
+      <div class="pwd-lbl" id="pin-lbl">Mot de passe de <span id="pwd-docname"></span></div>
+      <div style="position:relative;">
+        <input class="pwd-inp" id="pin-inp" type="password" placeholder="Votre mot de passe" autocomplete="current-password">
+        <button type="button" onclick="togglePwdVis('pin-inp',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:0;">👁</button>
+      </div>
+      <div class="pwd-err" id="pin-err">Mot de passe incorrect — réessayez</div>
+      <button class="pwd-btn" onclick="doLogin()">Se connecter</button>
     </div>
   </div>
 </div>
@@ -280,7 +283,7 @@ button{font-family:inherit;}
         </button>
 <button id="rappel24-btn" onclick="toggleRappel24()"><span class="r24-bar" id="rappel24-bar"></span> Rappel 24h</button>
         <div style="border-top:1px solid var(--b);margin:5px 0;"></div>
-<button onclick="showChangePin()" style="display:block;width:100%;text-align:left;padding:8px 16px;background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;">&#x1F510; Changer mon PIN</button>
+<button onclick="showChangePassword()" style="display:block;width:100%;text-align:left;padding:8px 16px;background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;">&#x1F510; Changer mon mot de passe</button>
         <button onclick="logout();closeTbMenu()" class="tb-dd-item" style="color:#f87171;">→ Déconnexion</button>
       </div>
     </div>
@@ -299,10 +302,13 @@ button{font-family:inherit;}
 <div id="session-overlay">
   <div class="sess-box">
     <div class="sess-title">&#x23F1; Session expirée</div>
-    <div class="sess-sub">Entrez votre PIN pour reprendre</div>
-    <input class="sess-pin" id="sess-pin-inp" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" oninput="onSessPinInput(this.value)">
-    <div id="sess-pin-err" class="pin-lockout"></div>
-    <button class="sess-btn" onclick="onSessPinSubmit()">Déverrouiller</button>
+    <div class="sess-sub">Entrez votre mot de passe pour reprendre</div>
+    <div style="position:relative;">
+      <input class="sess-pwd" id="sess-pin-inp" type="password" placeholder="Votre mot de passe" autocomplete="current-password">
+      <button type="button" onclick="togglePwdVis('sess-pin-inp',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:0;">👁</button>
+    </div>
+    <div id="sess-pin-err" class="pwd-lockout"></div>
+    <button class="sess-btn" onclick="onSessPwdSubmit()">Déverrouiller</button>
   </div>
 </div>
 <!-- EXCHANGE PANEL -->
@@ -455,8 +461,8 @@ let mDate=null, mPost=null;
 let rtChannel=null;
 var _sessTimer=null, _sessActive=false;
 var SESS_TIMEOUT=25*60*1000;
-var PIN_MAX_ATTEMPTS=5;
-var _pinAttempts=0, _pinLockedUntil=0;
+var PWD_MAX_ATTEMPTS=5;
+var _pwdAttempts=0, _pwdLockedUntil=0;
 
 const MO=['Janvier','Février','Mars','Avril','Mai','Juin',
           'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -514,7 +520,7 @@ function selectDoc(id){
   selectedDoc=doctors.find(d=>d.id===id);
   document.querySelectorAll('.doc-card').forEach(c=>c.classList.remove('sel'));
   document.getElementById('dc-'+id)?.classList.add('sel');
-  document.getElementById('pin-lbl').textContent='PIN de '+selectedDoc.firstname+' '+selectedDoc.lastname;
+  const nameEl=document.getElementById('pwd-docname');if(nameEl) nameEl.textContent=selectedDoc.firstname+' '+selectedDoc.lastname;
   const pa=document.getElementById('pin-area');
   pa.classList.add('show');
   document.getElementById('pin-inp').value='';
@@ -522,27 +528,44 @@ function selectDoc(id){
   document.getElementById('pin-inp').focus();
 }
 
-function doLogin(){
+// Utilitaire SHA-256 → hex
+async function hashStr(s){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+// Bascule visibilité mot de passe
+function togglePwdVis(inputId,btn){
+  const el=document.getElementById(inputId);
+  if(!el)return;
+  el.type=el.type==='password'?'text':'password';
+  btn.textContent=el.type==='password'?'👁':'🙈';
+}
+async function doLogin(){
   var doc=selectedDoc;if(!doc)return;
   var now=Date.now();
-  if(now<_pinLockedUntil){
+  if(now<_pwdLockedUntil){
     var errEl=document.getElementById('pin-err');
-    errEl.textContent='Trop de tentatives. Patientez '+Math.ceil((_pinLockedUntil-now)/1000)+'s.';
+    errEl.textContent='Trop de tentatives. Patientez '+Math.ceil((_pwdLockedUntil-now)/1000)+'s.';
     errEl.style.display='block';return;
   }
-  var pin=document.getElementById('pin-inp').value;
-  window._loginDoc=doc;if(!doc.pin_hash){showPinSetup(false);return;}if(window._pinHash===doc.pin_hash){if(!doc.pin_set){showPinSetup(true);return;}
-    _pinAttempts=0;me={...doc};
+  var pwd=document.getElementById('pin-inp').value;
+  if(!pwd){return;}
+  if(!doc.pin_hash){window._loginDoc=doc;showPwdSetup(false);return;}
+  var hHex=await hashStr(pwd);
+  if(hHex===doc.pin_hash){
+    if(!doc.pin_set){window._loginDoc=doc;showPwdSetup(true);return;}
+    _pwdAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     showMain();
   }else{
-    _pinAttempts++;
+    _pwdAttempts++;
     var errEl=document.getElementById('pin-err');
-    if(_pinAttempts>=PIN_MAX_ATTEMPTS){
-      _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
-      errEl.textContent='5 tentatives échouées. Bloqué 30s.';
+    if(_pwdAttempts>=PWD_MAX_ATTEMPTS){
+      _pwdLockedUntil=Date.now()+30000;_pwdAttempts=0;
+      errEl.textContent='5 tentatives échouées. Bloqué 30 secondes.';
+      logAccess('pwd_lockout','');
     }else{
-      errEl.textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
+      errEl.textContent='Mot de passe incorrect ('+_pwdAttempts+'/'+PWD_MAX_ATTEMPTS+')';
     }
     errEl.style.display='block';
     document.getElementById('pin-inp').value='';
@@ -552,6 +575,10 @@ function doLogin(){
 
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&document.getElementById('pin-area').classList.contains('show'))doLogin();
+  if(e.key==='Enter'&&document.getElementById('pwd-setup-overlay')?.style.display==='flex'){
+    var activeBtn=document.querySelector('#pwd-setup-overlay button.pwd-btn');
+    if(activeBtn) activeBtn.click();
+  }
 });
 
 function logout(){
@@ -572,6 +599,156 @@ function logout(){
   document.getElementById('desid-btn').style.display='none';
   document.getElementById('demandes-btn').style.display='none';
   document.getElementById('echanges-btn').style.display='none';
+}
+
+// ── SESSION EXPIRY : reprise par mot de passe ────────────────────────────────
+async function onSessPwdSubmit(){
+  const inp=document.getElementById('sess-pin-inp');
+  const errEl=document.getElementById('sess-pin-err');
+  if(!inp||!me)return;
+  const hHex=await hashStr(inp.value);
+  if(hHex===me.pin_hash){
+    inp.value='';errEl.textContent='';
+    document.getElementById('session-overlay').style.display='none';
+    _sessActive=true;resetSessTimer();
+    logAccess('session_resume','');
+  }else{
+    errEl.textContent='Mot de passe incorrect — réessayez.';
+    inp.value='';inp.focus();
+  }
+}
+
+// ── VALIDATION MOT DE PASSE ────────────────────────────────────────────
+function validatePasswordStrength(pwd,fn,ln){
+  if(!pwd||pwd.length<12) return 'Le mot de passe doit contenir au moins 12 caractères.';
+  let types=0;
+  if(/[A-Z]/.test(pwd)) types++;
+  if(/[a-z]/.test(pwd)) types++;
+  if(/[0-9]/.test(pwd)) types++;
+  if(/[^A-Za-z0-9]/.test(pwd)) types++;
+  if(types<3) return 'Incluez au moins 3 types parmi : Maj, min, chiffres, spéciaux.';
+  if(/012|123|234|345|456|567|678|789|890|abc|bcd|cde|def|password|motdepasse|azerty|qwerty/i.test(pwd))
+    return 'Évitez les suites évidentes (123, abc, azerty…).';
+  const l=pwd.toLowerCase();
+  if(fn&&l.includes(fn.toLowerCase().slice(0,4))) return "N'incluez pas votre prénom dans le mot de passe.";
+  if(ln&&l.includes(ln.toLowerCase().slice(0,4))) return "N'incluez pas votre nom dans le mot de passe.";
+  return null;
+}
+function getPwdStrengthScore(pwd){
+  if(!pwd) return 0;
+  let s=0;
+  if(pwd.length>=12)s++;if(pwd.length>=16)s++;
+  if(/[A-Z]/.test(pwd))s++;if(/[a-z]/.test(pwd))s++;
+  if(/[0-9]/.test(pwd))s++;if(/[^A-Za-z0-9]/.test(pwd))s++;
+  return s;
+}
+function updateStrengthBar(pwd,barId,lblId){
+  const score=getPwdStrengthScore(pwd);
+  const bar=document.getElementById(barId),lbl=document.getElementById(lblId);
+  if(!bar||!lbl)return;
+  const pct=Math.round((score/6)*100);
+  const colors=['#ef4444','#ef4444','#f59e0b','#f59e0b','#22c55e','#22c55e','#22c55e'];
+  const labels=['Très faible','Très faible','Faible','Moyen','Fort','Très fort','Excellent'];
+  bar.style.width=pct+'%';bar.style.background=colors[Math.min(score,6)];
+  lbl.textContent=labels[Math.min(score,6)];lbl.style.color=colors[Math.min(score,6)];
+}
+
+// ── PREMIER LOGIN / SETUP MOT DE PASSE ──────────────────────────────────────
+function showPwdSetup(isFirstLogin){
+  const doc=window._loginDoc||selectedDoc;if(!doc)return;
+  var ov=document.getElementById('pwd-setup-overlay');
+  if(!ov){
+    ov=document.createElement('div');ov.id='pwd-setup-overlay';
+    ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+    ov.innerHTML='<div style="background:#0d2240;border-radius:16px;padding:24px;width:100%;max-width:400px;color:#e2e8f0;"><div id="pws-title" style="font-size:17px;font-weight:700;margin-bottom:6px;"></div><div id="pws-sub" style="font-size:13px;color:#94a3b8;margin-bottom:20px;line-height:1.5;"></div><div style="margin-bottom:14px;"><label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:6px;">Nouveau mot de passe</label><div style="position:relative;"><input id="pws-new" type="password" placeholder="≥ 12 car., 3 types" autocomplete="new-password" style="width:100%;background:#152d50;border:1px solid #2a4a72;border-radius:9px;padding:12px 40px 12px 12px;color:#e2e8f0;font-size:14px;box-sizing:border-box;outline:none;" oninput="updateStrengthBar(this.value,'pws-bar','pws-bar-lbl')"><button type="button" onclick="togglePwdVis('pws-new',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:0;">👁</button></div><div style="margin-top:8px;height:4px;background:#1e3a5f;border-radius:2px;"><div id="pws-bar" style="height:100%;width:0%;border-radius:2px;transition:all .3s;"></div></div><div id="pws-bar-lbl" style="font-size:11px;color:#64748b;margin-top:4px;"></div><div style="margin-top:10px;background:#0a1f38;border-radius:8px;padding:10px 12px;font-size:11px;color:#64748b;line-height:1.7;">Votre mot de passe doit :<br>• contenir ≥ 12 caractères<br>• inclure 3 types parmi : Maj, min, chiffres, spéciaux<br>• ne pas contenir votre nom ou des suites évidentes<br>• être unique (ne pas être réutilisé ailleurs)</div></div><div style="margin-bottom:20px;"><label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:6px;">Confirmer le mot de passe</label><div style="position:relative;"><input id="pws-confirm" type="password" placeholder="Répétez votre mot de passe" autocomplete="new-password" style="width:100%;background:#152d50;border:1px solid #2a4a72;border-radius:9px;padding:12px 40px 12px 12px;color:#e2e8f0;font-size:14px;box-sizing:border-box;outline:none;"><button type="button" onclick="togglePwdVis('pws-confirm',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:0;">👁</button></div></div><div id="pws-err" style="color:#ef4444;font-size:12px;margin-bottom:12px;display:none;"></div><button class="pwd-btn" onclick="submitPwdSetup()" style="width:100%;margin-bottom:10px;">Définir mon mot de passe</button><div id="pws-cancel-wrap" style="text-align:center;"><button id="pws-cancel" onclick="closePwdSetup()" style="background:none;border:none;color:#64748b;font-size:13px;cursor:pointer;text-decoration:underline;">Annuler</button></div></div>';
+    document.body.appendChild(ov);
+  }
+  const title=document.getElementById('pws-title');
+  const sub=document.getElementById('pws-sub');
+  const cancelWrap=document.getElementById('pws-cancel-wrap');
+  if(isFirstLogin){
+    title.textContent='🔐 Première connexion';
+    sub.innerHTML='Bonjour <strong>'+doc.firstname+'</strong>, vous vous connectez pour la première fois.<br>Définissez votre mot de passe personnel pour continuer.';
+    cancelWrap.style.display='none';
+  }else{
+    title.textContent='🔐 Aucun mot de passe défini';
+    sub.innerHTML="Aucun mot de passe n'a été défini pour ce compte. Contactez le gestionnaire si vous avez déjà reçu un mot de passe temporaire.";
+    cancelWrap.style.display='block';
+  }
+  document.getElementById('pws-new').value='';
+  document.getElementById('pws-confirm').value='';
+  document.getElementById('pws-err').style.display='none';
+  document.getElementById('pws-bar').style.width='0%';
+  document.getElementById('pws-bar-lbl').textContent='';
+  ov.style.display='flex';
+  setTimeout(()=>document.getElementById('pws-new').focus(),100);
+}
+function closePwdSetup(){
+  const ov=document.getElementById('pwd-setup-overlay');
+  if(ov)ov.style.display='none';
+}
+async function submitPwdSetup(){
+  const doc=window._loginDoc||selectedDoc;if(!doc)return;
+  const newPwd=document.getElementById('pws-new').value;
+  const confirm=document.getElementById('pws-confirm').value;
+  const errEl=document.getElementById('pws-err');errEl.style.display='none';
+  const validErr=validatePasswordStrength(newPwd,doc.firstname,doc.lastname);
+  if(validErr){errEl.textContent=validErr;errEl.style.display='block';return;}
+  if(newPwd!==confirm){errEl.textContent='Les mots de passe ne correspondent pas.';errEl.style.display='block';return;}
+  const hHex=await hashStr(newPwd);
+  try{
+    const {error}=await sb.from('doctors').update({pin_hash:hHex,pin_set:true}).eq('id',doc.id);
+    if(error)throw error;
+    doc.pin_hash=hHex;doc.pin_set=true;
+    const idx=doctors.findIndex(d=>d.id===doc.id);
+    if(idx>=0){doctors[idx].pin_hash=hHex;doctors[idx].pin_set=true;}
+    closePwdSetup();
+    _pwdAttempts=0;me={...doc};
+    sessionStorage.setItem('jlx_me',JSON.stringify(me));
+    showMain();
+  }catch(e){errEl.textContent='Erreur : '+e.message;errEl.style.display='block';}
+}
+
+// ── CHANGEMENT MOT DE PASSE VOLONTAIRE ──────────────────────────────────────
+function showChangePassword(){
+  if(typeof closeTbMenu==='function') closeTbMenu();
+  var ov=document.getElementById('chg-pwd-overlay');
+  if(!ov){
+    ov=document.createElement('div');ov.id='chg-pwd-overlay';
+    ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+    ov.innerHTML='<div style="background:#0d2240;border-radius:16px;padding:24px;width:100%;max-width:400px;color:#e2e8f0;"><div style="font-size:17px;font-weight:700;margin-bottom:6px;">🔑 Changer mon mot de passe</div><div style="font-size:13px;color:#94a3b8;margin-bottom:20px;">Votre nouveau mot de passe remplace immédiatement l'ancien.</div><div style="margin-bottom:14px;"><label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:6px;">Mot de passe actuel</label><div style="position:relative;"><input id="cpw-current" type="password" placeholder="Votre mot de passe actuel" autocomplete="current-password" style="width:100%;background:#152d50;border:1px solid #2a4a72;border-radius:9px;padding:12px 40px 12px 12px;color:#e2e8f0;font-size:14px;box-sizing:border-box;outline:none;"><button type="button" onclick="togglePwdVis('cpw-current',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:0;">👁</button></div></div><div style="margin-bottom:14px;"><label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:6px;">Nouveau mot de passe</label><div style="position:relative;"><input id="cpw-new" type="password" placeholder="≥ 12 car., 3 types" autocomplete="new-password" style="width:100%;background:#152d50;border:1px solid #2a4a72;border-radius:9px;padding:12px 40px 12px 12px;color:#e2e8f0;font-size:14px;box-sizing:border-box;outline:none;" oninput="updateStrengthBar(this.value,'cpw-bar','cpw-bar-lbl')"><button type="button" onclick="togglePwdVis('cpw-new',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:0;">👁</button></div><div style="margin-top:8px;height:4px;background:#1e3a5f;border-radius:2px;"><div id="cpw-bar" style="height:100%;width:0%;border-radius:2px;transition:all .3s;"></div></div><div id="cpw-bar-lbl" style="font-size:11px;color:#64748b;margin-top:4px;"></div></div><div style="margin-bottom:20px;"><label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:6px;">Confirmer le nouveau mot de passe</label><div style="position:relative;"><input id="cpw-confirm" type="password" placeholder="Répétez" autocomplete="new-password" style="width:100%;background:#152d50;border:1px solid #2a4a72;border-radius:9px;padding:12px 40px 12px 12px;color:#e2e8f0;font-size:14px;box-sizing:border-box;outline:none;"><button type="button" onclick="togglePwdVis('cpw-confirm',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:0;">👁</button></div></div><div id="cpw-err" style="color:#ef4444;font-size:12px;margin-bottom:12px;display:none;"></div><div style="display:flex;gap:10px;"><button onclick="document.getElementById('chg-pwd-overlay').style.display='none'" style="flex:1;background:transparent;border:1px solid #2d3d54;color:#94a3b8;border-radius:10px;padding:12px;cursor:pointer;font-size:14px;">Annuler</button><button class="pwd-btn" onclick="submitChangePassword()" style="flex:2;">Changer</button></div></div>';
+    document.body.appendChild(ov);
+  }
+  ['cpw-current','cpw-new','cpw-confirm'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cpw-err').style.display='none';
+  document.getElementById('cpw-bar').style.width='0%';
+  document.getElementById('cpw-bar-lbl').textContent='';
+  ov.style.display='flex';
+  setTimeout(()=>document.getElementById('cpw-current').focus(),100);
+}
+async function submitChangePassword(){
+  if(!me)return;
+  const current=document.getElementById('cpw-current').value;
+  const newPwd=document.getElementById('cpw-new').value;
+  const confirm=document.getElementById('cpw-confirm').value;
+  const errEl=document.getElementById('cpw-err');errEl.style.display='none';
+  const hCur=await hashStr(current);
+  if(hCur!==me.pin_hash){errEl.textContent='Mot de passe actuel incorrect.';errEl.style.display='block';return;}
+  const validErr=validatePasswordStrength(newPwd,me.firstname,me.lastname);
+  if(validErr){errEl.textContent=validErr;errEl.style.display='block';return;}
+  if(newPwd===current){errEl.textContent="Le nouveau mot de passe doit être différent de l'ancien.";errEl.style.display='block';return;}
+  if(newPwd!==confirm){errEl.textContent='Les mots de passe ne correspondent pas.';errEl.style.display='block';return;}
+  const hNew=await hashStr(newPwd);
+  try{
+    const {error}=await sb.from('doctors').update({pin_hash:hNew,pin_set:true}).eq('id',me.id);
+    if(error)throw error;
+    me.pin_hash=hNew;me.pin_set=true;
+    sessionStorage.setItem('jlx_me',JSON.stringify(me));
+    const idx=doctors.findIndex(d=>d.id===me.id);
+    if(idx>=0){doctors[idx].pin_hash=hNew;doctors[idx].pin_set=true;}
+    document.getElementById('chg-pwd-overlay').style.display='none';
+    toast('✅ Mot de passe modifié avec succès.');
+  }catch(e){errEl.textContent='Erreur : '+e.message;errEl.style.display='block';}
 }
 
 const DCAL_MO=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -1473,27 +1650,8 @@ function lockSession(){
   var inp=document.getElementById('sess-pin-inp');if(inp){inp.value='';inp.focus();}
   document.getElementById('sess-pin-err').textContent='';
 }
-function onSessPinInput(v){if(v.length>=6)onSessPinSubmit();}
-function onSessPinSubmit(){
-  var now=Date.now();
-  if(now<_pinLockedUntil){document.getElementById('sess-pin-err').textContent='Trop de tentatives. Patientez '+Math.ceil((_pinLockedUntil-now)/1000)+'s.';return;}
-  var inp=document.getElementById('sess-pin-inp');
-  if(inp.value===me.pin){
-    _pinAttempts=0;
-    document.getElementById('session-overlay').classList.remove('show');
-    _sessActive=true;resetSessTimer();logAccess('session_resume','');
-  }else{
-    _pinAttempts++;
-    if(_pinAttempts>=PIN_MAX_ATTEMPTS){
-      _pinLockedUntil=Date.now()+30000;_pinAttempts=0;
-      document.getElementById('sess-pin-err').textContent='5 tentatives échouées. Bloqué 30s.';
-      logAccess('pin_lockout','');
-    }else{
-      document.getElementById('sess-pin-err').textContent='PIN incorrect ('+_pinAttempts+'/'+PIN_MAX_ATTEMPTS+')';
-    }
-    inp.value='';
-  }
-}
+function onSessPinInput(v){}
+function onSessPinSubmit(){onSessPwdSubmit();}
 
 // ════════ LOGS RGPD ════════
 function logAccess(action,detail){
@@ -2284,7 +2442,7 @@ function rejectX(id){
     <div id="mp-list"></div>
   </div>
 </div>
-<div id="pso" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;"><div id="pso-icon" style="font-size:28px;margin-bottom:6px">&#x1F510;</div><h2 id="pso-title" style="color:#e2e8f0;font-size:18px;margin:0 0 6px">Créez votre PIN</h2><p id="pso-desc" style="color:#94a3b8;font-size:13px;margin:0 0 18px">Choisissez un code PIN permanent (min. 6 chiffres).</p><div id="pso-cur-wrap" style="display:none;margin-bottom:10px;"><input id="pso-cur" type="password" inputmode="numeric" placeholder="PIN actuel" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;box-sizing:border-box;"></div><input id="npi" type="password" inputmode="numeric" placeholder="Nouveau PIN (6-8 chiffres)" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;"><input id="cpi" type="password" inputmode="numeric" placeholder="Confirmer nouveau PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:14px;box-sizing:border-box;"><div id="pse" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:10px;"></div><button onclick="doConfirmPin()" style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">Valider mon PIN</button><button id="pso-cancel-btn" onclick="doCancelPin()" style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">Retour</button></div></div><div id="pso-msg" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px">⚠️</div><p id="pso-msg-text" style="color:#e2e8f0;font-size:15px;margin:0 0 20px"></p><button onclick="document.getElementById('pso-msg').style.display='none'" style="padding:10px 24px;background:#1e3a5f;color:#e2e8f0;border:none;border-radius:8px;font-size:14px;cursor:pointer;">OK</button></div></div><script>window._pinHash=null;window._pinSetupForce=false;document.addEventListener("DOMContentLoaded",function(){  var pi=document.getElementById("pin-inp");  if(pi)pi.addEventListener("input",function(){    if(pi.value)crypto.subtle.digest("SHA-256",new TextEncoder().encode(pi.value)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");});    else window._pinHash=null;  });});function showPinMsg(msg){  document.getElementById("pso-msg-text").textContent=msg;  document.getElementById("pso-msg").style.display="flex";}function showPinSetup(forced){  window._pinSetupForce=!!forced;  var o=document.getElementById("pso");  if(!o)return;  if(forced){    document.getElementById("pso-title").textContent="Créez votre PIN permanent";    document.getElementById("pso-desc").textContent="Pour sécuriser votre accès, choisissez un PIN personnel (6–8 chiffres). Il remplacera le PIN temporaire.";    document.getElementById("pso-cur-wrap").style.display="none";    document.getElementById("pso-cancel-btn").style.display="none";  } else {    document.getElementById("pso-title").textContent="Changer mon PIN";    document.getElementById("pso-desc").textContent="Entrez votre PIN actuel puis choisissez un nouveau PIN (6–8 chiffres).";    document.getElementById("pso-cur-wrap").style.display="block";    document.getElementById("pso-cancel-btn").style.display="inline-block";  }  document.getElementById("pse").textContent="";  document.getElementById("npi").value="";  document.getElementById("cpi").value="";  if(!forced){var c=document.getElementById("pso-cur");if(c)c.value="";}  o.style.display="flex";  setTimeout(function(){var i=document.getElementById(forced?"npi":"pso-cur");if(i)i.focus();},100);}function showChangePin(){showPinSetup(false);}function doCancelPin(){var o=document.getElementById("pso");if(o)o.style.display="none";}function doConfirmPin(){  var np=document.getElementById("npi").value.trim();  var cp=document.getElementById("cpi").value.trim();  var err=document.getElementById("pse");  err.textContent="";  if(!/^\d{6,8}$/.test(np)){err.textContent="PIN invalide : 6 à 8 chiffres numériques requis.";return;}  if(np!==cp){err.textContent="Les deux PINs ne correspondent pas.";return;}  if(!window._pinSetupForce){    var cur=document.getElementById("pso-cur").value.trim();    if(!cur){err.textContent="Entrez votre PIN actuel.";return;}    crypto.subtle.digest("SHA-256",new TextEncoder().encode(cur)).then(function(b){      var h=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");      if(h!==window._loginDoc.pin_hash){err.textContent="PIN actuel incorrect.";return;}      doSavePin(np,err);    });    return;  }  doSavePin(np,err);}function doSavePin(){
+<div id="pso" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;"><div id="pso-icon" style="font-size:28px;margin-bottom:6px">&#x1F510;</div><h2 id="pso-title" style="color:#e2e8f0;font-size:18px;margin:0 0 6px">Créez votre PIN</h2><p id="pso-desc" style="color:#94a3b8;font-size:13px;margin:0 0 18px">Choisissez un code PIN permanent (min. 6 chiffres).</p><div id="pso-cur-wrap" style="display:none;margin-bottom:10px;"><input id="pso-cur" type="password" inputmode="numeric" placeholder="PIN actuel" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;box-sizing:border-box;"></div><input id="npi" type="password" inputmode="numeric" placeholder="Nouveau PIN (6-8 chiffres)" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;"><input id="cpi" type="password" inputmode="numeric" placeholder="Confirmer nouveau PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:14px;box-sizing:border-box;"><div id="pse" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:10px;"></div><button onclick="doConfirmPin()" style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">Valider mon PIN</button><button id="pso-cancel-btn" onclick="doCancelPin()" style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">Retour</button></div></div><div id="pso-msg" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px">⚠️</div><p id="pso-msg-text" style="color:#e2e8f0;font-size:15px;margin:0 0 20px"></p><button onclick="document.getElementById('pso-msg').style.display='none'" style="padding:10px 24px;background:#1e3a5f;color:#e2e8f0;border:none;border-radius:8px;font-size:14px;cursor:pointer;">OK</button></div></div><script>window._pinHash=null;window._pinSetupForce=false;document.addEventListener("DOMContentLoaded",function(){  var pi=document.getElementById("pin-inp");  if(pi)pi.addEventListener("input",function(){    if(pi.value)crypto.subtle.digest("SHA-256",new TextEncoder().encode(pi.value)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");});    else window._pinHash=null;  });});function showPinMsg(msg){  document.getElementById("pso-msg-text").textContent=msg;  document.getElementById("pso-msg").style.display="flex";}function showPinSetup(f){showPwdSetup(f);}function showChangePin(){showChangePassword();}function doCancelPin(){var o=document.getElementById("pso");if(o)o.style.display="none";}function doConfirmPin(){  var np=document.getElementById("npi").value.trim();  var cp=document.getElementById("cpi").value.trim();  var err=document.getElementById("pse");  err.textContent="";  if(!/^\d{6,8}$/.test(np)){err.textContent="PIN invalide : 6 à 8 chiffres numériques requis.";return;}  if(np!==cp){err.textContent="Les deux PINs ne correspondent pas.";return;}  if(!window._pinSetupForce){    var cur=document.getElementById("pso-cur").value.trim();    if(!cur){err.textContent="Entrez votre PIN actuel.";return;}    crypto.subtle.digest("SHA-256",new TextEncoder().encode(cur)).then(function(b){      var h=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");      if(h!==window._loginDoc.pin_hash){err.textContent="PIN actuel incorrect.";return;}      doSavePin(np,err);    });    return;  }  doSavePin(np,err);}function doSavePin(){
   var np=document.getElementById('npi').value.trim();
   var err=document.getElementById('pso-msg');
   err.style.color='var(--t3)';
