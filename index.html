@@ -556,7 +556,7 @@ async function doLogin(){
     if(!doc.pin_set){window._loginDoc=doc;showPwdSetup(true);return;}
     _pwdAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
-    showTotpStep();
+    showMain();
   }else{
     _pwdAttempts++;
     var errEl=document.getElementById('pin-err');
@@ -706,7 +706,7 @@ async function submitPwdSetup(){
     closePwdSetup();
     _pwdAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
-    showTotpStep();
+    showMain();
   }catch(e){errEl.textContent='Erreur : '+e.message;errEl.style.display='block';}
 }
 
@@ -2470,111 +2470,6 @@ function rejectX(id){
 }
 </script><div class="grille-ov" id="grille-ov"><div class="grille-wrap"><div class="grille-tb"><span style="font-size:13px;font-weight:600;flex:1;">Planning complet</span><button class="grille-close" onclick="closeGrille()">✕ Fermer</button></div><div class="grille-bd" id="grille-bd"></div></div></div>
 
-<div id="totp-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;">
-  <div style="background:#0f2847;border-radius:14px;padding:2rem 1.75rem;max-width:340px;width:92%;text-align:center;color:#fff;box-shadow:0 12px 40px rgba(0,0,0,.6);">
-    <div id="totp-enroll-view" style="display:none;">
-      <div style="font-size:2rem;margin-bottom:.4rem;">🔐</div>
-      <h3 style="margin:0 0 .4rem;font-size:1.05rem;font-weight:700;">Configurer Microsoft Authenticator</h3>
-      <p style="font-size:.82rem;opacity:.75;margin:.4rem 0 1rem;line-height:1.4;">Scannez ce QR code avec l&apos;application <strong>Microsoft Authenticator</strong>, puis entrez le code affiché.</p>
-      <img id="totp-qr" src="" alt="QR Code" style="width:175px;height:175px;border-radius:8px;background:#fff;padding:8px;display:block;margin:0 auto .75rem;">
-      <p id="totp-enroll-msg" style="font-size:.8rem;opacity:.65;margin:0 0 .25rem;">Entrez le code à 6 chiffres :</p>
-    </div>
-    <div id="totp-verify-view" style="display:none;">
-      <div style="font-size:2rem;margin-bottom:.4rem;">🔐</div>
-      <h3 style="margin:0 0 .4rem;font-size:1.05rem;font-weight:700;">Vérification 2FA</h3>
-      <p style="font-size:.82rem;opacity:.75;margin:.4rem 0 1rem;line-height:1.4;">Entrez le code à 6 chiffres de <strong>Microsoft Authenticator</strong>.</p>
-    </div>
-    <input id="totp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="7" placeholder="000 000"
-      style="font-size:1.9rem;letter-spacing:.35em;text-align:center;width:100%;padding:.5rem .25rem;border:2px solid rgba(255,255,255,.25);border-radius:8px;background:rgba(255,255,255,.08);color:#fff;outline:none;box-sizing:border-box;margin-bottom:.5rem;"
-      oninput="this.value=this.value.replace(/[^0-9]/g,'')" onkeydown="if(event.key==='Enter')submitTotpCode()">
-    <div id="totp-err" style="color:#ff7675;font-size:.8rem;min-height:1.3em;margin:.25rem 0 .5rem;"></div>
-    <button id="totp-submit-btn" onclick="submitTotpCode()"
-      style="width:100%;padding:.75rem;background:linear-gradient(135deg,#1a6fc4,#0d5aa7);border:none;border-radius:9px;color:#fff;font-size:1rem;cursor:pointer;font-weight:700;letter-spacing:.03em;transition:opacity .15s;">
-      Valider
-    </button>
-  </div>
-</div>
-<script>
-function showTotpStep(){
-  const ov=document.getElementById('totp-overlay');
-  const enroll=document.getElementById('totp-enroll-view');
-  const verify=document.getElementById('totp-verify-view');
-  const inp=document.getElementById('totp-input');
-  const btn=document.getElementById('totp-submit-btn');
-  document.getElementById('totp-err').textContent='';
-  inp.value='';
-  if(!me.totp_enabled){
-    enroll.style.display='block';
-    verify.style.display='none';
-    btn.textContent='Confirmer';
-    btn.dataset.totpAction='confirm_enrollment';
-    loadTotpQr();
-  }else{
-    enroll.style.display='none';
-    verify.style.display='block';
-    btn.textContent='Valider';
-    btn.dataset.totpAction='verify';
-  }
-  ov.style.display='flex';
-  setTimeout(function(){inp.focus();},120);
-}
-async function loadTotpQr(){
-  const msg=document.getElementById('totp-enroll-msg');
-  msg.textContent='Génération du QR code...';
-  try{
-    const r=await fetch(CFG.url+'/functions/v1/setup-totp',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},
-      body:JSON.stringify({doctor_id:me.id,action:'generate'})
-    });
-    const d=await r.json();
-    if(d.qrUrl){
-      document.getElementById('totp-qr').src=d.qrUrl;
-      msg.textContent='Entrez le code à 6 chiffres :';
-    }else{
-      msg.textContent='Erreur: '+(d.error||'QR indisponible');
-    }
-  }catch(e){
-    msg.textContent='Erreur réseau';
-  }
-}
-async function submitTotpCode(){
-  const btn=document.getElementById('totp-submit-btn');
-  const inp=document.getElementById('totp-input');
-  const errEl=document.getElementById('totp-err');
-  const action=btn.dataset.totpAction||'verify';
-  const code=inp.value.replace(/s/g,'');
-  if(code.length!==6){errEl.textContent='Code à 6 chiffres requis';return;}
-  btn.disabled=true;
-  const origTxt=btn.textContent;
-  btn.textContent='...';
-  errEl.textContent='';
-  try{
-    const r=await fetch(CFG.url+'/functions/v1/verify-totp',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},
-      body:JSON.stringify({doctor_id:me.id,code:code,action:action})
-    });
-    const d=await r.json();
-    btn.disabled=false;
-    btn.textContent=origTxt;
-    if(d.success){
-      if(action==='confirm_enrollment')me.totp_enabled=true;
-      document.getElementById('totp-overlay').style.display='none';
-      sessionStorage.setItem('jlx_me',JSON.stringify(me));
-      showMain();
-    }else{
-      errEl.textContent=d.error||'Code incorrect';
-      inp.value='';
-      inp.focus();
-    }
-  }catch(e){
-    btn.disabled=false;
-    btn.textContent=origTxt;
-    errEl.textContent='Erreur réseau';
-  }
-}
-</script>
 
 <!--
 ╔══════════════════════════════════════════════════════════════╗
