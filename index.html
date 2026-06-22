@@ -491,7 +491,7 @@ async function init(){
 // ══════════════════════════════════════════════════════════
 async function loadDoctors(){
   try{
-    const {data,error}=await sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin_hash,pin_set,weekly_hours,totp_enabled').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname');
+    const {data,error}=await sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin_hash,pin_set,weekly_hours,totp_enabled,email').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname');
     if(error)throw error;
     doctors=data||[];
     renderLoginDocs();
@@ -2574,5 +2574,59 @@ async function submitTotpCode(){
     errEl.textContent='Erreur réseau';
   }
 }
+</script>
+
+<!--
+╔══════════════════════════════════════════════════════════════╗
+║  TODO AZURE AD — Décommenter quand IT CHR Citadelle approuve ║
+║  Prérequis : App Registration dans le tenant CHR Citadelle   ║
+║  1. IT crée App Registration → noter clientId + tenantId     ║
+║  2. Remplir MSAL_CONFIG ci-dessous                           ║
+║  3. Remplir doctors.email avec adresses @citadelle.be        ║
+║  4. Décommenter script MSAL dans head                        ║
+║  5. Remplacer écran login par bouton Microsoft               ║
+║  6. Supprimer mot de passe + TOTP custom                     ║
+╚══════════════════════════════════════════════════════════════╝
+  <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+-->
+<script>
+/*=== AZURE AD — NE PAS ACTIVER AVANT ACCORD IT ===
+
+const MSAL_CONFIG = {
+  auth: {
+    clientId:    'TODO_CLIENT_ID',
+    authority:   'https://login.microsoftonline.com/TODO_TENANT_ID',
+    redirectUri: 'https://julandrex.github.io/julandrex-viewer/'
+  },
+  cache: { cacheLocation: 'sessionStorage' }
+};
+
+async function msalLogin() {
+  const pca = new msal.PublicClientApplication(MSAL_CONFIG);
+  await pca.initialize();
+  try {
+    const res = await pca.loginPopup({ scopes: ['openid','email','profile'] });
+    const upn = (res.account.username || '').toLowerCase();
+    const doc = doctors.find(d => d.email && d.email.toLowerCase() === upn);
+    if (!doc) { alert('Compte ' + upn + ' non reconnu. Contactez le responsable.'); return; }
+    me = { ...doc };
+    sessionStorage.setItem('jlx_me', JSON.stringify(me));
+    showMain();
+  } catch(e) {
+    if (e.errorCode !== 'user_cancelled') alert('Erreur Microsoft : ' + e.message);
+  }
+}
+
+// Remplacer contenu de #scr-login par :
+// <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1.5rem">
+//   <p style="font-size:1.1rem;font-weight:600">Julandrex — CHR Citadelle</p>
+//   <button onclick="msalLogin()" style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1.5rem;background:#fff;border:1px solid #ccc;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:500;color:#111">
+//     <svg width="20" height="20" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+//     Se connecter avec Microsoft
+//   </button>
+//   <p style="font-size:.75rem;opacity:.5;margin:0">Utilisez votre adresse @citadelle.be</p>
+// </div>
+
+=== FIN BLOC AZURE AD ===*/
 </script>
 </body>
