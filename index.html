@@ -695,10 +695,11 @@ async function submitPwdSetup(){
   const validErr=validatePasswordStrength(newPwd,doc.firstname,doc.lastname);
   if(validErr){errEl.textContent=validErr;errEl.style.display='block';return;}
   if(newPwd!==confirm){errEl.textContent='Les mots de passe ne correspondent pas.';errEl.style.display='block';return;}
-  const hHex=await hashStr(newPwd);
   try{
-    const {error}=await sb.from('doctors').update({pin_hash:hHex,pin_set:true}).eq('id',doc.id);
-    if(error)throw error;
+    const _r=await fetch(CFG.url+'/functions/v1/update-pin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},body:JSON.stringify({action:'set_pwd',doctor_id:doc.id,new_pin:newPwd})});
+    const _d=await _r.json();
+    if(!_r.ok)throw new Error(_d.error||'Erreur serveur');
+    const hHex=await hashStr(newPwd);
     doc.pin_hash=hHex;doc.pin_set=true;
     const idx=doctors.findIndex(d=>d.id===doc.id);
     if(idx>=0){doctors[idx].pin_hash=hHex;doctors[idx].pin_set=true;}
@@ -738,10 +739,11 @@ async function submitChangePassword(){
   if(validErr){errEl.textContent=validErr;errEl.style.display='block';return;}
   if(newPwd===current){errEl.textContent="Le nouveau mot de passe doit être différent de l'ancien.";errEl.style.display='block';return;}
   if(newPwd!==confirm){errEl.textContent='Les mots de passe ne correspondent pas.';errEl.style.display='block';return;}
-  const hNew=await hashStr(newPwd);
   try{
-    const {error}=await sb.from('doctors').update({pin_hash:hNew,pin_set:true}).eq('id',me.id);
-    if(error)throw error;
+    const _r=await fetch(CFG.url+'/functions/v1/update-pin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},body:JSON.stringify({action:'change_pwd',doctor_id:me.id,current_pin:current,new_pin:newPwd})});
+    const _d=await _r.json();
+    if(!_r.ok)throw new Error(_d.error||'Erreur serveur');
+    const hNew=await hashStr(newPwd);
     me.pin_hash=hNew;me.pin_set=true;
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     const idx=doctors.findIndex(d=>d.id===me.id);
