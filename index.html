@@ -1777,7 +1777,7 @@ async function confirmJ1(id,isProp){
 async function refuseJ1(id,isProp){
   if(!confirm('Refuser le switch J+1 ? L’échange J0 sera remis en attente.')) return;
   try{
-    var {error}=await sb.from('exchange_requests').update({status:'accepted',j1_date:null,j1_proposer_post:null,j1_acceptor_posts:null,j1_proposer_ok:false,j1_acceptor_ok:false,acceptor_id:null,refusal_log:(function(){var curEx=exchanges.find(function(e){return e.id===id;});var curLog=Array.isArray(curEx&&curEx.refusal_log)?curEx.refusal_log:[];return curLog.concat([{type:'j1_viewer',by:me?(me.firstname+' '+me.lastname):'Medecin',by_id:me?me.id:null,at:new Date().toISOString(),detail:(isProp?'Demandeur':'Accepteur')+' a refuse le switch J+1'}]);})()}).eq('id',id);
+    var {error}=await sb.from('exchange_requests').update({status:'accepted',j1_date:null,j1_proposer_post:null,j1_acceptor_posts:null,j1_proposer_ok:false,j1_acceptor_ok:false,acceptor_id:null,refusal_log:(function(){var curEx=exchanges.find(function(e){return e.id===id;});var curLog=Array.isArray(curEx&&curEx.refusal_log)?curEx.refusal_log:[];return curLog.concat([{type:'j1_viewer',by:me?(me.firstname+' '+me.lastname):'Medecin',by_id:me?me.id:null,at:new Date().toISOString(),detail:(me?me.firstname:'Inconnu')+' a refusé le switch J+1'}]);})()}).eq('id',id);
     if(error)throw error;
     toast('Switch J+1 refusé — échange J0 remis à l’état ouvert.');
   }catch(e){toast('Erreur : '+e.message);}
@@ -1798,7 +1798,7 @@ async function refuseSwitch(id,isProp){
     var newStatus=r&&r.target_doctor_id?'cancelled':'accepted';
     var upd={status:newStatus,switch_proposer_post:null,switch_acceptor_posts:null,switch_proposer_ok:false,switch_acceptor_ok:false};
     if(newStatus==='accepted') upd.acceptor_id=null;
-    upd.refusal_log=(function(){var curEx=exchanges.find(function(e){return e.id===id;});var curLog=Array.isArray(curEx&&curEx.refusal_log)?curEx.refusal_log:[];return curLog.concat([{type:'switch_viewer',by:me?(me.firstname+' '+me.lastname):'Medecin',by_id:me?me.id:null,at:new Date().toISOString(),detail:(isProp?'Demandeur':'Accepteur')+' a refuse le switch J0'}]);})();
+    upd.refusal_log=(function(){var curEx=exchanges.find(function(e){return e.id===id;});var curLog=Array.isArray(curEx&&curEx.refusal_log)?curEx.refusal_log:[];return curLog.concat([{type:'switch_viewer',by:me?(me.firstname+' '+me.lastname):'Medecin',by_id:me?me.id:null,at:new Date().toISOString(),detail:(me?me.firstname:'Inconnu')+' a refusé le switch J0'}]);})();
     var {error}=await sb.from('exchange_requests').update(upd).eq('id',id);
     if(error)throw error;
     toast(newStatus==='cancelled'?'Switch refusé — demande annulée.':'Switch refusé — échange remis à disposition.');
