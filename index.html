@@ -1703,14 +1703,16 @@ function renderPanel(){
       const j1PostProp=r.j1_proposer_post?((planning&&planning.posts||[]).find(function(p){return p.id===r.j1_proposer_post;})||{full:r.j1_proposer_post}).full||r.j1_proposer_post:'(aucun)';
       const j1PostsAcc=(r.j1_acceptor_posts||[]).map(function(pid){return ((planning&&planning.posts||[]).find(function(p){return p.id===pid;})||{full:pid}).full||pid;}).join(' + ')||'(aucun)';
       const postJ0=(planning&&planning.posts||[]).find(function(p){return p.id===r.proposer_post;});
-      const postJ0Name=postJ0?postJ0.full||postJ0.name:r.proposer_post||'?';
+      const postJ0Name=postJ0?postJ0.full||postJ0.name:r.proposer_post||'?';      const postJ02=(planning&&planning.posts||[]).find(function(p){return p.id===r.proposer_post2;});
+      const postJ02Name=r.proposer_post2?(postJ02?postJ02.full||postJ02.name:r.proposer_post2):null;
+
       const propName2=prop?prop.firstname+' '+prop.lastname:'Demandeur';
       const accName2=acc?acc.firstname+' '+acc.lastname:'Accepteur';
       if(!alreadyOk){
         acts='<div style="background:rgba(59,130,246,.08);border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:10px;font-size:11px;line-height:1.9;">'
           +'<div style="font-weight:700;color:#60a5fa;margin-bottom:6px;text-transform:uppercase;font-size:10px;letter-spacing:.5px;">Proposition de switch J0 + J+1</div>'
           +'<b>J0 — '+r.proposer_date+'</b><br>'
-          +'→ '+propName2+' échange son <b>'+postJ0Name+'</b> contre les postes de '+accName2+'<br>'
+          +'→ '+propName2+' échange son <b>'+postJ0Name+(postJ02Name?' + '+postJ02Name:'')+'</b> contre les postes de '+accName2+'<br>'
           +'<b>J+1 — '+r.j1_date+'</b><br>'
           +(isProp
             ?'→ Vous recevrez : <b>'+(j1PostProp||'(aucun)')+'</b><br>'
