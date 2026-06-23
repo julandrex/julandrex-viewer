@@ -1712,7 +1712,8 @@ function renderPanel(){
         acts='<div style="background:rgba(59,130,246,.08);border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:10px;font-size:11px;line-height:1.9;">'
           +'<div style="font-weight:700;color:#60a5fa;margin-bottom:6px;text-transform:uppercase;font-size:10px;letter-spacing:.5px;">Proposition de switch J0 + J+1</div>'
           +'<b>J0 — '+r.proposer_date+'</b><br>'
-          +'→ '+propName2+' échange son <b>'+postJ0Name+(postJ02Name?' + '+postJ02Name:'')+'</b> contre les postes de '+accName2+'<br>'
+          +'→ <b>'+propName2+'</b> recevra : <b>'+(function(){var aDoc=(planning&&planning.docs||[]).find(function(d){return d.id==r.acceptor_id;});var aLid=aDoc?(aDoc.local_id!=null?aDoc.local_id:aDoc.id):null;var apids=aLid!==null?Object.entries((planning&&planning.shifts||{})[r.proposer_date]||{}).filter(function(e){return e[1]==aLid;}).map(function(e){return e[0];}):[];return apids.map(function(pid){var po=(planning&&planning.posts||[]).find(function(p){return p.id===pid;});return po?(po.full||po.name):pid;}).join(' + ')||'(aucun)';})()+'</b><br>'
+          +'→ <b>'+accName2+'</b> recevra : <b>'+postJ0Name+(postJ02Name?' + '+postJ02Name:'')+'</b><br>'
           +'<b>J+1 — '+r.j1_date+'</b><br>'
           +(isProp
             ?'→ Vous recevrez : <b>'+(j1PostProp||'(aucun)')+'</b><br>'
@@ -1776,7 +1777,7 @@ async function confirmJ1(id,isProp){
 async function refuseJ1(id,isProp){
   if(!confirm('Refuser le switch J+1 ? L’échange J0 sera remis en attente.')) return;
   try{
-    var {error}=await sb.from('exchange_requests').update({status:'accepted',j1_date:null,j1_proposer_post:null,j1_acceptor_posts:null,j1_proposer_ok:false,j1_acceptor_ok:false,acceptor_id:null}).eq('id',id);
+    var {error}=await sb.from('exchange_requests').update({status:'accepted',j1_date:null,j1_proposer_post:null,j1_acceptor_posts:null,j1_proposer_ok:false,j1_acceptor_ok:false,acceptor_id:null,refusal_log:(function(){var curEx=exchanges.find(function(e){return e.id===id;});var curLog=Array.isArray(curEx&&curEx.refusal_log)?curEx.refusal_log:[];return curLog.concat([{type:'j1_viewer',by:me?(me.firstname+' '+me.lastname):'Medecin',by_id:me?me.id:null,at:new Date().toISOString(),detail:(isProp?'Demandeur':'Accepteur')+' a refuse le switch J+1'}]);})()}).eq('id',id);
     if(error)throw error;
     toast('Switch J+1 refusé — échange J0 remis à l’état ouvert.');
   }catch(e){toast('Erreur : '+e.message);}
@@ -1797,6 +1798,7 @@ async function refuseSwitch(id,isProp){
     var newStatus=r&&r.target_doctor_id?'cancelled':'accepted';
     var upd={status:newStatus,switch_proposer_post:null,switch_acceptor_posts:null,switch_proposer_ok:false,switch_acceptor_ok:false};
     if(newStatus==='accepted') upd.acceptor_id=null;
+    upd.refusal_log=(function(){var curEx=exchanges.find(function(e){return e.id===id;});var curLog=Array.isArray(curEx&&curEx.refusal_log)?curEx.refusal_log:[];return curLog.concat([{type:'switch_viewer',by:me?(me.firstname+' '+me.lastname):'Medecin',by_id:me?me.id:null,at:new Date().toISOString(),detail:(isProp?'Demandeur':'Accepteur')+' a refuse le switch J0'}]);})();
     var {error}=await sb.from('exchange_requests').update(upd).eq('id',id);
     if(error)throw error;
     toast(newStatus==='cancelled'?'Switch refusé — demande annulée.':'Switch refusé — échange remis à disposition.');
