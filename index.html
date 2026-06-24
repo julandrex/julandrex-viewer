@@ -416,6 +416,7 @@ button{font-family:inherit;}
   <div id="modal">
     <div class="modal-t" id="mt">Proposer un échange</div>
     <div class="modal-s" id="ms"></div>
+    <div id="m-day-dist" style="display:none;margin-bottom:4px;"></div>
     <div class="mfield">
       <span class="mlbl">Destinataire</span>
       <div class="mradio-g">
@@ -1881,8 +1882,44 @@ function openModal(dk,pid){
   // Remplir le sélecteur de médecins (hors soi-même)
   const sel=document.getElementById('m-target-doc');
   sel.innerHTML=[...doctors].filter(d=>d.id!==me.id).sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname)).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
+  _fillDayDist(dk);
   document.getElementById('modal-bg').classList.add('show');
 }
+function _fillDayDist(dk){
+  var el=document.getElementById('m-day-dist');
+  if(!el) return;
+  var allPosts=(planning&&planning.posts)||[];
+  var dayShifts=(planning&&planning.shifts&&planning.shifts[dk])||{};
+  var entries=[];
+  Object.keys(dayShifts).forEach(function(pid){
+    var docId=dayShifts[pid];
+    var post=allPosts.find(function(p){return p.id===pid;});
+    var doc=doctors.find(function(d){return d.id==docId||d.local_id==docId;});
+    if(!post) return;
+    var isMe2=doc&&me&&(doc.id===me.id||doc.local_id===me.local_id||doc.id===me.local_id);
+    entries.push({post:post,doc:doc,isMe:isMe2});
+  });
+  entries.sort(function(a,b){return (a.post.start||'').localeCompare(b.post.start||'');});
+  if(!entries.length){el.style.display='none';return;}
+  var DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  var dt=new Date(dk+'T12:00:00');
+  var dayLabel=DAYS[dt.getDay()]+' '+dt.getDate()+'/'+(dt.getMonth()+1)+'/'+dt.getFullYear();
+  var html='<div style="background:var(--bg2);border-radius:10px;padding:8px 10px;font-size:11px;max-height:140px;overflow-y:auto;">';
+  html+='<div style="color:var(--t3);font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px;">🗓 Planning du '+dayLabel+'</div>';
+  entries.forEach(function(e){
+    var docName=e.doc?(e.doc.firstname+' '+e.doc.lastname):'—';
+    var dim=e.isMe?'opacity:.45;':'';
+    html+='<div style="display:flex;align-items:center;gap:6px;padding:2px 0;'+dim+'">';
+    html+='<span style="width:7px;height:7px;border-radius:50%;background:'+(e.post.color||'var(--t3)')+';flex-shrink:0;"></span>';
+    html+='<span style="color:var(--t2);min-width:60px;font-weight:600;font-size:11px;">'+(e.post.name||e.post.id)+'</span>';
+    html+='<span style="color:var(--t1);font-size:11px;">'+docName+(e.isMe?' <span style="color:var(--t3);">(vous)</span>':'')+'</span>';
+    html+='</div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
+  el.style.display='';
+}
+
 
 function closeModal(){document.getElementById('modal-bg').classList.remove('show');}
 
