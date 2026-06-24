@@ -1797,7 +1797,6 @@ async function refuseSwitch(id,isProp){
     var {data:r}=await sb.from('exchange_requests').select('target_doctor_id').eq('id',id).single();
     var newStatus=r&&r.target_doctor_id?'cancelled':'accepted';
     var upd={status:newStatus,switch_proposer_post:null,switch_acceptor_posts:null,switch_proposer_ok:false,switch_acceptor_ok:false};
-    if(newStatus==='accepted') upd.acceptor_id=null;
     upd.refusal_log=(function(){var curEx=exchanges.find(function(e){return e.id===id;});var curLog=Array.isArray(curEx&&curEx.refusal_log)?curEx.refusal_log:[];return curLog.concat([{type:'switch_viewer',by:me?(me.firstname+' '+me.lastname):'Medecin',by_id:me?me.id:null,at:new Date().toISOString(),detail:(me?me.firstname:'Inconnu')+' a refusé le switch J0'}]);})();
     var {error}=await sb.from('exchange_requests').update(upd).eq('id',id);
     if(error)throw error;
