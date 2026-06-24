@@ -1693,7 +1693,7 @@ function renderPanel(){
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
-    const _hasRefused=Array.isArray(r.refusal_log)&&r.refusal_log.some(function(e){return e.by_id===me.id;});
+    const _hasRefused=Array.isArray(r.refusal_log)&&r.refusal_log.some(function(e){return e.by_id===me.id&&e.type==='exchange';});
     if(r.status==='open'&&!isMe2&&!_hasRefused)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">✓ Accepter</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
     if(r.status==='accepted')acts='<div style="color:var(--t3);font-size:11px;padding:6px 0;">⏳ En attente de confirmation du gestionnaire</div>';
