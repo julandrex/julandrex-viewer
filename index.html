@@ -1716,10 +1716,10 @@ function renderPanel(){
           +'→ <b>'+accName2+'</b> recevra : <b>'+postJ0Name+(postJ02Name?' + '+postJ02Name:'')+'</b><br>'
           +'<b>J+1 — '+r.j1_date+'</b><br>'
           +(isProp
-            ?'→ Vous recevrez : <b>'+(j1PostProp||'(aucun)')+'</b><br>'
-             +'→ '+othName+' recevra : <b>'+(j1PostsAcc||'(aucun)')+'</b>'
-            :'→ Vous recevrez : <b>'+(j1PostsAcc||'(aucun)')+'</b><br>'
+            ?'→ Vous recevrez : <b>'+(j1PostsAcc||'(aucun)')+'</b><br>'
              +'→ '+othName+' recevra : <b>'+(j1PostProp||'(aucun)')+'</b>'
+            :'→ Vous recevrez : <b>'+(j1PostProp||'(aucun)')+'</b><br>'
+             +'→ '+othName+' recevra : <b>'+(j1PostsAcc||'(aucun)')+'</b>'
           )
           +'</div>'
           +'<button class="xbtn confirm" onclick="confirmJ1(\''+r.id+'\','+isProp+')" style="background:#3b82f6;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">J\'accepte le switch J0+J1</button>'
