@@ -1959,13 +1959,26 @@ function _fillAvailList(dk){
   var el=document.getElementById('m-avail-list');
   if(!el||!dk) return;
   var inds=window._allIndispos||((planning&&planning.indispos)||[]);
+  // Build post section map: postId -> section
+  var postSec={};
+  (planning&&planning.posts||[]).forEach(function(p){postSec[p.id]=p.section;});
+  // Previous day string
+  var pp=dk.split('-'),pd=new Date(+pp[0],+pp[1]-1,+pp[2]-1);
+  var prevDk=pd.getFullYear()+'-'+String(pd.getMonth()+1).padStart(2,'0')+'-'+String(pd.getDate()).padStart(2,'0');
+  // Busy today (any shift)
+  var busyToday={};
+  var shToday=(window._qShifts&&window._qShifts[dk])||(planning&&planning.shifts&&planning.shifts[dk])||{};
+  Object.keys(shToday).forEach(function(p){if(shToday[p])busyToday[shToday[p]]=true;});
+  // Repos post garde/soirée (nuit or soir yesterday)
+  var busyYest={};
+  var shYest=(window._qShifts&&window._qShifts[prevDk])||(planning&&planning.shifts&&planning.shifts[prevDk])||{};
+  Object.keys(shYest).forEach(function(p){var sec=postSec[p];if(shYest[p]&&(sec==='nuit'||sec==='soir'))busyYest[shYest[p]]=true;});
   var availDocs=doctors.filter(function(doc){
     if(doc.id===me.id||(doc.local_id&&doc.local_id===me.local_id)) return false;
-    return !inds.some(function(ind){
-      var dm=ind.docId==doc.id||ind.docId==doc.local_id;
-      var dtm=dk>=ind.start&&dk<=ind.end;
-      return dm&&dtm&&ind.type!=='pref';
-    });
+    if(inds.some(function(ind){var dm=ind.docId==doc.id||ind.docId==doc.local_id;var dtm=dk>=ind.start&&dk<=ind.end;return dm&&dtm&&ind.type!=='pref';})) return false;
+    if(busyToday[doc.id]||busyToday[doc.local_id]) return false;
+    if(busyYest[doc.id]||busyYest[doc.local_id]) return false;
+    return true;
   });
   availDocs.sort(function(a,b){return a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname);});
   if(!availDocs.length){el.innerHTML='<div style="padding:12px;font-size:13px;color:var(--t3);text-align:center;">Aucun médecin disponible ce jour.</div>';return;}
@@ -1976,12 +1989,9 @@ function _fillAvailList(dk){
     var sep=idx>0?'border-top:1px solid var(--b);':'';
     html+='<div class="mddr" data-did="'+doc.id+'" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;'+sep+'">';
     html+='<div style="width:8px;height:8px;border-radius:50%;background:var(--acc);flex-shrink:0;opacity:.7;"></div>';
-    html+='<div style="flex:1;">';
-    html+='<div style="color:var(--t1);font-weight:600;font-size:13px;">'+doc.firstname+' '+doc.lastname+'</div>';
-    html+='<div style="color:var(--t3);font-size:11px;">'+rl+'</div>';
-    html+='</div>';
-    html+='<div style="color:var(--acc);font-size:18px;font-weight:300;">›</div>';
-    html+='</div>';
+    html+='<div style="flex:1;"><div style="color:var(--t1);font-weight:600;font-size:13px;">'+doc.firstname+' '+doc.lastname+'</div>';
+    html+='<div style="color:var(--t3);font-size:11px;">'+rl+'</div></div>';
+    html+='<div style="color:var(--acc);font-size:18px;font-weight:300;">›</div></div>';
   });
   html+='</div>';
   el.innerHTML=html;
@@ -1996,6 +2006,8 @@ function setTarget(t){
   document.getElementById('r-specific').classList.toggle('on',t==='specific');
   document.getElementById('r-avail').classList.toggle('on',t==='avail');
   document.getElementById('m-target-wrap').style.display=t==='specific'?'':'none';
+  var _dd=document.getElementById('m-day-dist');
+  if(_dd) _dd.style.display=t==='avail'?'none':'';
   var _al=document.getElementById('m-avail-list');
   if(_al){if(t==='avail'){_fillAvailList(mDate);_al.style.display='';}else{_al.style.display='none';}}}
 
