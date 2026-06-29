@@ -42,6 +42,16 @@ button{font-family:inherit;}
 .pwd-btn{background:var(--acc);color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s;}
 .pwd-btn:hover{opacity:.88;}
 
+
+/* ── LOGIN MODAL ─────────────────────────────── */
+#login-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;align-items:center;justify-content:center;padding:16px;}
+#login-modal-bg.show{display:flex;}
+#login-modal{background:var(--bg1);border:1px solid var(--b);border-radius:16px;padding:24px 20px 28px;width:100%;max-width:380px;box-shadow:0 16px 48px rgba(0,0,0,.5);position:relative;}
+.lm-av{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;margin:0 auto 12px;}
+.lm-name{font-size:16px;font-weight:700;text-align:center;margin-bottom:4px;}
+.lm-sub{font-size:11px;color:var(--t3);text-align:center;margin-bottom:20px;}
+.lm-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;padding:4px;}
+
 /* ── MAIN ───────────────────────────────────── */
 #scr-main{display:none;flex-direction:column;height:100dvh;height:100vh;}
 .topbar{background:var(--bg1);border-bottom:1px solid var(--b);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
@@ -232,6 +242,11 @@ button{font-family:inherit;}
 .picker-btn{border:none;border-radius:10px;padding:11px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:filter .15s;text-align:left;display:flex;align-items:center;gap:10px;}
 .picker-btn:hover{filter:brightness(1.15);}
 .picker-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+/* ── MOBILE DROPDOWN ────────────────────────────── */
+@media(max-width:480px){
+  #tb-dropdown{position:fixed!important;left:8px!important;right:8px!important;top:auto!important;bottom:8px!important;max-height:80vh;overflow-y:auto;min-width:0!important;}
+}
 </style>
 </head>
 <body>
@@ -243,15 +258,24 @@ button{font-family:inherit;}
   <div class="login-box">
     <div class="step-title">Sélectionnez votre nom</div>
     <div class="doc-grid" id="doc-grid"><div class="ld"><div class="sp"></div>Chargement...</div></div>
-    <div class="pwd-area" id="pin-area">
-      <div class="pwd-lbl" id="pin-lbl">Mot de passe de <span id="pwd-docname"></span></div>
-      <div style="position:relative;">
-        <input class="pwd-inp" id="pin-inp" type="password" placeholder="Votre mot de passe" autocomplete="current-password">
-        <button type="button" onclick="togglePwdVis('pin-inp',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:0;">👁</button>
-      </div>
-      <div class="pwd-err" id="pin-err">Mot de passe incorrect — réessayez</div>
-      <button class="pwd-btn" onclick="doLogin()">Se connecter</button>
+    
+  </div>
+</div>
+
+
+<!-- LOGIN MODAL -->
+<div id="login-modal-bg" onclick="if(event.target===this)closeLoginModal()">
+  <div id="login-modal">
+    <button class="lm-close" onclick="closeLoginModal()">&#x2715;</button>
+    <div class="lm-av" id="lm-av"></div>
+    <div class="lm-name" id="lm-name"></div>
+    <div class="lm-sub" id="lm-role-modal"></div>
+    <div style="position:relative;margin-bottom:10px;">
+      <input class="pwd-inp" id="pin-inp" type="password" placeholder="Votre mot de passe" autocomplete="current-password" style="width:100%;">
+      <button type="button" onclick="togglePwdVis('pin-inp',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:0;">👁</button>
     </div>
+    <div class="pwd-err" id="pin-err" style="margin-bottom:10px;display:none;">Mot de passe incorrect — réessayez</div>
+    <button class="pwd-btn" onclick="doLogin()" style="width:100%;">Se connecter</button>
   </div>
 </div>
 
@@ -494,7 +518,8 @@ async function init(){
 // ══════════════════════════════════════════════════════════
 async function loadDoctors(){
   try{
-    const {data,error}=await sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin_hash,pin_set,weekly_hours,email').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname');
+    const _tmo=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Impossible de charger les médecins (10s). Vérifiez votre connexion.')),10000));
+    const {data,error}=await Promise.race([sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin_hash,pin_set,weekly_hours,email').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname'),_tmo]);
     if(error)throw error;
     doctors=data||[];
     renderLoginDocs();
@@ -523,12 +548,20 @@ function selectDoc(id){
   selectedDoc=doctors.find(d=>d.id===id);
   document.querySelectorAll('.doc-card').forEach(c=>c.classList.remove('sel'));
   document.getElementById('dc-'+id)?.classList.add('sel');
-  const nameEl=document.getElementById('pwd-docname');if(nameEl) nameEl.textContent=selectedDoc.firstname+' '+selectedDoc.lastname;
-  const pa=document.getElementById('pin-area');
-  pa.classList.add('show');
+  const d=selectedDoc;
+  const av=document.getElementById('lm-av');
+  av.textContent=ini(d,doctors);av.style.background=d.color+'33';av.style.color=d.color;
+  document.getElementById('lm-name').textContent=d.firstname+' '+d.lastname;
+  document.getElementById('lm-role-modal').textContent=shortRole(d.role);
   document.getElementById('pin-inp').value='';
   document.getElementById('pin-err').style.display='none';
-  document.getElementById('pin-inp').focus();
+  document.getElementById('login-modal-bg').classList.add('show');
+  setTimeout(()=>document.getElementById('pin-inp').focus(),80);
+}
+function closeLoginModal(){
+  document.getElementById('login-modal-bg').classList.remove('show');
+  document.querySelectorAll('.doc-card').forEach(c=>c.classList.remove('sel'));
+  selectedDoc=null;
 }
 
 // Utilitaire SHA-256 → hex
@@ -559,6 +592,7 @@ async function doLogin(){
     if(!doc.pin_set){window._loginDoc=doc;showPwdSetup(true);return;}
     _pwdAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
+    document.getElementById('login-modal-bg').classList.remove('show');
     showMain();
   }else{
     _pwdAttempts++;
@@ -577,7 +611,7 @@ async function doLogin(){
 }
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&document.getElementById('pin-area').classList.contains('show'))doLogin();
+  if(e.key==='Enter'&&document.getElementById('login-modal-bg').classList.contains('show'))doLogin();
   if(e.key==='Enter'&&document.getElementById('pwd-setup-overlay')?.style.display==='flex'){
     var activeBtn=document.querySelector('#pwd-setup-overlay button.pwd-btn');
     if(activeBtn) activeBtn.click();
@@ -596,7 +630,7 @@ function logout(){
   if(rtChannel){sb.removeChannel(rtChannel);rtChannel=null;}
   document.getElementById('scr-main').style.display='none';
   document.getElementById('scr-login').style.display='flex';
-  document.getElementById('pin-area').classList.remove('show');
+  document.title='Planning Urgences';
   document.querySelectorAll('.doc-card').forEach(c=>c.classList.remove('sel'));
   document.getElementById('cal-btn').style.display='none';
   document.getElementById('desid-btn').style.display='none';
@@ -707,6 +741,7 @@ async function submitPwdSetup(){
     const idx=doctors.findIndex(d=>d.id===doc.id);
     if(idx>=0){doctors[idx].pin_hash=hHex;doctors[idx].pin_set=true;}
     closePwdSetup();
+    document.getElementById('login-modal-bg').classList.remove('show');
     _pwdAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     showMain();
@@ -1154,6 +1189,7 @@ function loadQShifts(pYear,pMo){
 function showMain(){
   document.getElementById('scr-login').style.display='none';
   document.getElementById('scr-main').style.display='flex';
+  document.title='Planning — '+me.firstname+' '+me.lastname;
   document.getElementById('mon-planning-btn').style.display='';
   document.getElementById('tb-menu-wrap').style.display='';
   // Afficher tous les items du dropdown
@@ -1184,11 +1220,12 @@ async function loadAll(){
   var CK='jlx_c_'+CFG.hospital+'_'+cy+'_'+cm;
   (async function(){
     try{
-      var res=await Promise.all([
+      const _lt=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Impossible de charger le planning (10s).')),10000));
+      var res=await Promise.race([Promise.all([
         sb.from('planning_months').select('shifts,posts,indispos').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
         sb.from('doctors').select('id,local_id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
         sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
-      ]);
+      ]),_lt]);
       var pr=res[0],dr=res[1],xr=res[2];
       if(pr.error)throw pr.error;
       doctors=(dr.data||[]).sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname));exchanges=xr.data||[];planning=pr.data||null;
