@@ -235,6 +235,11 @@ button{font-family:inherit;}
 .cs-err{background:rgba(239,68,68,.15);color:var(--err);}
 
 .cp-day.cp-indispo{cursor:default;}
+/* ── DESIDERATA DOTS ─── */
+.desid-dot{position:absolute;bottom:3px;right:3px;width:7px;height:7px;border-radius:50%;border:1.5px solid rgba(0,0,0,.4);}
+.desid-legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:8px 12px 4px;font-size:11px;color:var(--t3);}
+.desid-legend-item{display:flex;align-items:center;gap:5px;}
+.desid-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 
 .picker-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:flex;align-items:center;justify-content:center;}
 .picker-box{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:20px;min-width:220px;max-width:90vw;display:flex;flex-direction:column;gap:10px;}
@@ -810,35 +815,49 @@ async function openDesiderata(){
   if(!me)return;
   _desidReqs=[];_desidD1=null;_desidD2=null;_desidType=null;_desidRid=0;
   window._desidDeadlinePassed=false;
-  const now=new Date();
-  const nextQ=Math.floor(now.getMonth()/3)+2;
-  const nextQYear=nextQ>4?now.getFullYear()+1:now.getFullYear();
-  const nextQNum=nextQ>4?1:nextQ;
-  const qKey='t'+nextQNum;
   const bg=document.getElementById('desid-bg');
-  bg.style.display='block';bg.dataset.quarter=nextQNum;bg.dataset.year=nextQYear;
-  _desidCalY=nextQYear;_desidCalM=(nextQNum-1)*3;
-  desidResetType();desidRenderCal();desidRenderReqs();desidUpdPanel();
+  bg.style.display='block';
   const info=document.getElementById('desid-deadline-info');
   info.textContent='⏳ Chargement...';info.style.cssText='font-size:11px;color:#94a3b8;background:#152d50;padding:3px 10px;border-radius:5px;';
+  let deadlines={};
   try{
     const {data}=await sb.from('hospital_config').select('desiderata_deadlines').eq('hospital_id',CFG.hospital).maybeSingle();
-    if(data?.desiderata_deadlines?.[qKey]){
-      const dl=data.desiderata_deadlines[qKey];
-      const p=dl.split('-');
-      const dlDate=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]),23,59,59);
-      if(Date.now()>dlDate.getTime()){
-        window._desidDeadlinePassed=true;
-        info.textContent='⛔ Clôturé le '+p[2]+'/'+p[1]+'/'+p[0];
-        info.style.cssText='font-size:11px;background:rgba(239,68,68,.15);color:#ef4444;padding:3px 10px;border-radius:5px;';
-        desidBlockUI();
-      }else{
-        info.textContent='Limite : '+p[2]+'/'+p[1]+'/'+p[0];
-      }
-    }else info.textContent='';
-  }catch(e){info.textContent='';}
+    deadlines=data?.desiderata_deadlines||{};
+  }catch(e){}
+  const now=new Date();
+  const todayMs=now.getTime();
+  const curQIdx=Math.floor(now.getMonth()/3);
+  let targetQNum=null,targetQYear=null,targetDl=null;
+  for(let offset=1;offset<=4;offset++){
+    const nextQIdx=curQIdx+offset;
+    const qNum=(nextQIdx%4)+1;
+    const qYear=now.getFullYear()+Math.floor(nextQIdx/4);
+    const dl=deadlines['t'+qNum];
+    if(!dl){targetQNum=qNum;targetQYear=qYear;break;}
+    const p=dl.split('-');
+    const dlDate=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]),23,59,59);
+    if(todayMs<=dlDate.getTime()){targetQNum=qNum;targetQYear=qYear;targetDl=dl;break;}
+  }
+  if(!targetQNum){
+    const nq=curQIdx+1;
+    targetQNum=(nq%4)+1;targetQYear=now.getFullYear()+Math.floor(nq/4);
+    targetDl=deadlines['t'+targetQNum]||null;
+    window._desidDeadlinePassed=true;
+  }
+  bg.dataset.quarter=targetQNum;bg.dataset.year=targetQYear;
+  _desidCalY=targetQYear;_desidCalM=(targetQNum-1)*3;
+  desidResetType();desidRenderCal();desidRenderReqs();desidUpdPanel();
+  if(targetDl){
+    const p=targetDl.split('-');
+    if(window._desidDeadlinePassed){
+      info.textContent='⛔ Clôturé le '+p[2]+'/'+p[1]+'/'+p[0];
+      info.style.cssText='font-size:11px;background:rgba(239,68,68,.15);color:#ef4444;padding:3px 10px;border-radius:5px;';
+      desidBlockUI();
+    }else{
+      info.textContent='Limite : '+p[2]+'/'+p[1]+'/'+p[0];
+    }
+  }else{info.textContent='';}
 }
-
 function closeDesiderata(){
   document.getElementById('desid-bg').style.display='none';
   _desidD1=null;_desidD2=null;_desidType=null;_desidReqs=[];
@@ -1475,9 +1494,49 @@ function renderCalPerso(){
       cell.title=p0.name+' + '+p1.name;
       if(!isPast){(function(d2,q0,q1){cell.addEventListener('click',function(){openPickerModal(d2,q0,q1);});})(dk,p0,p1);}
     }
+    if(window._myDesids&&window._myDesids.length){
+      var dotColor=null,dotTitle='';
+      var STATUS_PRIO={refused:3,pending:2,accepted:1};
+      window._myDesids.forEach(function(row){
+        var reqs=row.requests||[];
+        reqs.forEach(function(r){
+          if(dk>=r.date_start&&dk<=r.date_end){
+            var st=row.status||'pending';
+            if(!dotColor||STATUS_PRIO[st]>STATUS_PRIO[dotColor]){
+              dotColor=st;
+              var tLab={c:'Congé',r:'Repos',f:'Formation',p:'Poste',ip:'Indispo poste'};
+              dotTitle=(st==='accepted'?'✓ Accepté':st==='refused'?'✗ Refusé':'⏳ En attente')+' — '+(tLab[r.type]||r.type);
+            }
+          }
+        });
+      });
+      if(dotColor){
+        var dot=document.createElement('span');
+        dot.className='desid-dot';
+        dot.style.background=dotColor==='accepted'?'#22c55e':dotColor==='refused'?'#ef4444':'#f59e0b';
+        dot.title=dotTitle;
+        cell.style.position='relative';
+        cell.appendChild(dot);
+      }
+    }
     grid.appendChild(cell);
   }
   ga.appendChild(grid);
+  if(window._myDesids&&window._myDesids.length){
+    var legend=document.createElement('div');legend.className='desid-legend';
+    var hasA=window._myDesids.some(function(r){return r.status==='accepted';});
+    var hasP=window._myDesids.some(function(r){return r.status==='pending';});
+    var hasR=window._myDesids.some(function(r){return r.status==='refused';});
+    var lt=document.createElement('span');lt.textContent='Desiderata :';legend.appendChild(lt);
+    [{show:hasA,color:'#22c55e',label:'Accepté'},{show:hasP,color:'#f59e0b',label:'En attente'},{show:hasR,color:'#ef4444',label:'Refusé'}].forEach(function(item){
+      if(!item.show)return;
+      var li=document.createElement('span');li.className='desid-legend-item';
+      var ld=document.createElement('span');ld.className='desid-legend-dot';ld.style.background=item.color;
+      var lbl=document.createElement('span');lbl.textContent=item.label;
+      li.appendChild(ld);li.appendChild(lbl);legend.appendChild(li);
+    });
+    ga.appendChild(legend);
+  }
   var today2=new Date().toISOString().slice(0,10);
   var totalShifts=0,totalH=0,nNuit=0,nWE=0;
   var pids2,did2;
