@@ -906,26 +906,31 @@ function desidMkDay(dn,yr,mo,isCur,loT,hiT){
   var isPast=isCur&&ndT<todT;
   var isOutQtr=false;
   if(window._desidTargetQNum){var qS=(window._desidTargetQNum-1)*3;isOutQtr=(yr!==window._desidTargetQYear)||(mo<qS||mo>qS+2);}
-  if(isPast||isOutQtr){numSpan.style.opacity='0.3';b.style.cursor='not-allowed';}
-  else{(function(y2,m2,d2){b.onclick=function(){desidClickDay(y2,m2,d2);};})(yr,mo,dn);}
+  // Déterminer le statut du jour (archived ignoré)
+  var dColor=null;
   if(isCur&&window._myDesids&&window._myDesids.length){
-    var dColor=null;var SP={rejected:3,archived:2,validated:1};
+    var SP={rejected:3,pending:2,validated:1};
     window._myDesids.forEach(function(row){
+      if(row.status==='archived')return;
       var rqs=row.requests||[];
       rqs.forEach(function(r){
         if(dk0>=r.date_start&&dk0<=r.date_end){
-          var st=row.status||'archived';
-          if(!dColor||SP[st]>SP[dColor])dColor=st;
+          var st=row.status||'pending';
+          if(!dColor||(SP[st]||0)>(SP[dColor]||0))dColor=st;
         }
       });
     });
-    if(dColor){
-      var dBg=dColor==='validated'?'rgba(34,197,94,0.22)':dColor==='rejected'?'rgba(239,68,68,0.22)':'rgba(251,146,60,0.22)';
-      var dNum=dColor==='validated'?'#4ade80':dColor==='rejected'?'#f87171':'#fb923c';
-      b.style.background=dBg;
-      numSpan.style.color=dNum;
-      b.title=dColor==='validated'?'\u2713 Validé':dColor==='rejected'?'\u2717 Rejeté':'\u23f3 En attente';
-    }
+  }
+  if(dColor){
+    b.style.background=dColor==='validated'?'#163322':dColor==='rejected'?'#2d1111':'#2d1f08';
+    numSpan.style.color=dColor==='validated'?'#4ade80':dColor==='rejected'?'#f87171':'#fb923c';
+    numSpan.style.fontWeight='600';
+    b.title=dColor==='validated'?'\u2713 Validé':dColor==='rejected'?'\u2717 Rejeté':'\u23f3 En attente';
+    if(isPast||isOutQtr){b.style.cursor='not-allowed';}
+    else{(function(y2,m2,d2){b.onclick=function(){desidClickDay(y2,m2,d2);};})(yr,mo,dn);}
+  }else{
+    if(isPast||isOutQtr){numSpan.style.opacity='0.25';b.style.cursor='not-allowed';}
+    else{(function(y2,m2,d2){b.onclick=function(){desidClickDay(y2,m2,d2);};})(yr,mo,dn);}
   }
   return b;
 }
@@ -950,13 +955,13 @@ function desidRenderCal(){
   var leg=document.getElementById('desid-history-legend');
   if(leg&&window._myDesids&&window._myDesids.length){
     var hasV=window._myDesids.some(function(r){return r.status==='validated';});
-    var hasArch=window._myDesids.some(function(r){return r.status==='archived';});
+    var hasPend=window._myDesids.some(function(r){return r.status==='pending';});
     var hasRej=window._myDesids.some(function(r){return r.status==='rejected';});
-    if(hasV||hasArch||hasRej){
+    if(hasV||hasPend||hasRej){
       leg.style.display='flex';leg.innerHTML='';
       var ltit=document.createElement('span');ltit.textContent='Mes demandes :';ltit.style.cssText='font-size:10px;color:#64748b;';
       leg.appendChild(ltit);
-      [{show:hasV,color:'#22c55e',label:'Validé'},{show:hasArch,color:'#fb923c',label:'En attente'},{show:hasRej,color:'#ef4444',label:'Rejeté'}].forEach(function(item){
+      [{show:hasV,color:'#4ade80',label:'Validé'},{show:hasPend,color:'#fb923c',label:'En attente'},{show:hasRej,color:'#f87171',label:'Rejeté'}].forEach(function(item){
         if(!item.show)return;
         var li=document.createElement('span');li.style.cssText='display:flex;align-items:center;gap:4px;font-size:10px;color:#94a3b8;';
         var ld=document.createElement('span');ld.style.cssText='width:7px;height:7px;border-radius:50%;background:'+item.color+';flex-shrink:0;';
