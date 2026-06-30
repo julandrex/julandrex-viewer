@@ -398,7 +398,8 @@ button{font-family:inherit;}
           </div>
           <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px;"><div style="text-align:center;font-size:9px;color:#475569;">Lu</div><div style="text-align:center;font-size:9px;color:#475569;">Ma</div><div style="text-align:center;font-size:9px;color:#475569;">Me</div><div style="text-align:center;font-size:9px;color:#475569;">Je</div><div style="text-align:center;font-size:9px;color:#475569;">Ve</div><div style="text-align:center;font-size:9px;color:#475569;">Sa</div><div style="text-align:center;font-size:9px;color:#475569;">Di</div></div>
           <div id="desid-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
-          <div id="desid-sel-info" style="margin-top:7px;font-size:10px;color:#64748b;min-height:13px;text-align:center;font-style:italic;"></div>
+          <div id="desid-history-legend" style="display:none;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px;padding:5px 6px;background:rgba(255,255,255,.04);border-radius:6px;"></div>
+        <div id="desid-sel-info" style="margin-top:7px;font-size:10px;color:#64748b;min-height:13px;text-align:center;font-style:italic;"></div>
           <div style="margin-top:8px;font-size:10px;color:#8a93ab;line-height:1.5;background:rgba(201,152,58,.08);border-left:2px solid #c9983a;border-radius:0 6px 6px 0;padding:7px 9px;">⚠️ Lorsque vous sélectionnez vos congés, sélectionnez également les week-ends et jours fériés attenants — ceux-ci ne sont pas comptés dans vos jours de congé.</div>
         </div>
         <div style="background:#152d50;border-radius:9px;padding:12px;">
@@ -903,6 +904,26 @@ function desidMkDay(dn,yr,mo,isCur,loT,hiT){
   var isPast=isCur&&ndT<todT;
   if(isPast){b.style.opacity='0.3';b.style.cursor='not-allowed';}
   else{(function(y2,m2,d2){b.onclick=function(){desidClickDay(y2,m2,d2);};})(yr,mo,dn);}
+  if(isCur&&window._myDesids&&window._myDesids.length){
+    var dColor=null;var SP={refused:3,pending:2,accepted:1};
+    window._myDesids.forEach(function(row){
+      var rqs=row.requests||[];
+      rqs.forEach(function(r){
+        if(dk0>=r.date_start&&dk0<=r.date_end){
+          var st=row.status||'pending';
+          if(!dColor||SP[st]>SP[dColor])dColor=st;
+        }
+      });
+    });
+    if(dColor){
+      var ddot=document.createElement('span');
+      ddot.style.cssText='position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;pointer-events:none;';
+      ddot.style.background=dColor==='accepted'?'#22c55e':dColor==='refused'?'#ef4444':'#f59e0b';
+      ddot.title=dColor==='accepted'?'\u2713 Accepté':dColor==='refused'?'\u2717 Refusé':'\u23f3 En attente';
+      b.style.position='relative';
+      b.appendChild(ddot);
+    }
+  }
   return b;
 }
 
@@ -923,6 +944,24 @@ function desidRenderCal(){
   var rem=(off+ndays)%7,nN=rem===0?0:7-rem;
   for(var n=1;n<=nN;n++)g.appendChild(desidMkDay(n,nYr,nMo,false,loT,hiT));
   desidUpdSelInfo();
+  var leg=document.getElementById('desid-history-legend');
+  if(leg&&window._myDesids&&window._myDesids.length){
+    var hasA=window._myDesids.some(function(r){return r.status==='accepted';});
+    var hasP=window._myDesids.some(function(r){return r.status==='pending';});
+    var hasR=window._myDesids.some(function(r){return r.status==='refused';});
+    if(hasA||hasP||hasR){
+      leg.style.display='flex';leg.innerHTML='';
+      var ltit=document.createElement('span');ltit.textContent='Mes demandes :';ltit.style.cssText='font-size:10px;color:#64748b;';
+      leg.appendChild(ltit);
+      [{show:hasA,color:'#22c55e',label:'Accepté'},{show:hasP,color:'#f59e0b',label:'En attente'},{show:hasR,color:'#ef4444',label:'Refusé'}].forEach(function(item){
+        if(!item.show)return;
+        var li=document.createElement('span');li.style.cssText='display:flex;align-items:center;gap:4px;font-size:10px;color:#94a3b8;';
+        var ld=document.createElement('span');ld.style.cssText='width:7px;height:7px;border-radius:50%;background:'+item.color+';flex-shrink:0;';
+        var lbl=document.createElement('span');lbl.textContent=item.label;
+        li.appendChild(ld);li.appendChild(lbl);leg.appendChild(li);
+      });
+    }else{leg.style.display='none';}
+  }else if(leg){leg.style.display='none';}
 }
 
 function desidClickDay(yr,mo,dn){
@@ -1494,48 +1533,9 @@ function renderCalPerso(){
       cell.title=p0.name+' + '+p1.name;
       if(!isPast){(function(d2,q0,q1){cell.addEventListener('click',function(){openPickerModal(d2,q0,q1);});})(dk,p0,p1);}
     }
-    if(window._myDesids&&window._myDesids.length){
-      var dotColor=null,dotTitle='';
-      var STATUS_PRIO={refused:3,pending:2,accepted:1};
-      window._myDesids.forEach(function(row){
-        var reqs=row.requests||[];
-        reqs.forEach(function(r){
-          if(dk>=r.date_start&&dk<=r.date_end){
-            var st=row.status||'pending';
-            if(!dotColor||STATUS_PRIO[st]>STATUS_PRIO[dotColor]){
-              dotColor=st;
-              var tLab={c:'Congé',r:'Repos',f:'Formation',p:'Poste',ip:'Indispo poste'};
-              dotTitle=(st==='accepted'?'✓ Accepté':st==='refused'?'✗ Refusé':'⏳ En attente')+' — '+(tLab[r.type]||r.type);
-            }
-          }
-        });
-      });
-      if(dotColor){
-        var dot=document.createElement('span');
-        dot.className='desid-dot';
-        dot.style.background=dotColor==='accepted'?'#22c55e':dotColor==='refused'?'#ef4444':'#f59e0b';
-        dot.title=dotTitle;
-        cell.style.position='relative';
-        cell.appendChild(dot);
-      }
-    }
-    grid.appendChild(cell);
+        grid.appendChild(cell);
   }
   ga.appendChild(grid);
-  if(window._myDesids&&window._myDesids.length){
-    var legend=document.createElement('div');legend.className='desid-legend';
-    var hasA=window._myDesids.some(function(r){return r.status==='accepted';});
-    var hasP=window._myDesids.some(function(r){return r.status==='pending';});
-    var hasR=window._myDesids.some(function(r){return r.status==='refused';});
-    var lt=document.createElement('span');lt.textContent='Desiderata :';legend.appendChild(lt);
-    [{show:hasA,color:'#22c55e',label:'Accepté'},{show:hasP,color:'#f59e0b',label:'En attente'},{show:hasR,color:'#ef4444',label:'Refusé'}].forEach(function(item){
-      if(!item.show)return;
-      var li=document.createElement('span');li.className='desid-legend-item';
-      var ld=document.createElement('span');ld.className='desid-legend-dot';ld.style.background=item.color;
-      var lbl=document.createElement('span');lbl.textContent=item.label;
-      li.appendChild(ld);li.appendChild(lbl);legend.appendChild(li);
-    });
-    ga.appendChild(legend);
   }
   var today2=new Date().toISOString().slice(0,10);
   var totalShifts=0,totalH=0,nNuit=0,nWE=0;
