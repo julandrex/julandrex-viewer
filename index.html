@@ -920,11 +920,11 @@ function desidMkDay(dn,yr,mo,isCur,loT,hiT){
       });
     });
     if(dColor){
-      var ddot=document.createElement('span');
-      ddot.style.cssText='position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 5px 5px;pointer-events:none;';
-      ddot.style.background=dColor==='validated'?'#22c55e':dColor==='rejected'?'#ef4444':'#94a3b8';
-      ddot.title=dColor==='accepted'?'\u2713 Accepté':dColor==='refused'?'\u2717 Refusé':'\u23f3 En attente';
-      b.appendChild(ddot);
+      var dBg=dColor==='validated'?'rgba(34,197,94,0.22)':dColor==='rejected'?'rgba(239,68,68,0.22)':'rgba(251,146,60,0.22)';
+      var dNum=dColor==='validated'?'#4ade80':dColor==='rejected'?'#f87171':'#fb923c';
+      b.style.background=dBg;
+      numSpan.style.color=dNum;
+      b.title=dColor==='validated'?'\u2713 Validé':dColor==='rejected'?'\u2717 Rejeté':'\u23f3 En attente';
     }
   }
   return b;
@@ -956,7 +956,7 @@ function desidRenderCal(){
       leg.style.display='flex';leg.innerHTML='';
       var ltit=document.createElement('span');ltit.textContent='Mes demandes :';ltit.style.cssText='font-size:10px;color:#64748b;';
       leg.appendChild(ltit);
-      [{show:hasV,color:'#22c55e',label:'Validé'},{show:hasArch,color:'#94a3b8',label:'Archivé'},{show:hasRej,color:'#ef4444',label:'Rejeté'}].forEach(function(item){
+      [{show:hasV,color:'#22c55e',label:'Validé'},{show:hasArch,color:'#fb923c',label:'En attente'},{show:hasRej,color:'#ef4444',label:'Rejeté'}].forEach(function(item){
         if(!item.show)return;
         var li=document.createElement('span');li.style.cssText='display:flex;align-items:center;gap:4px;font-size:10px;color:#94a3b8;';
         var ld=document.createElement('span');ld.style.cssText='width:7px;height:7px;border-radius:50%;background:'+item.color+';flex-shrink:0;';
