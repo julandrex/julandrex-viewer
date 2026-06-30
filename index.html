@@ -908,12 +908,12 @@ function desidMkDay(dn,yr,mo,isCur,loT,hiT){
   if(isPast||isOutQtr){b.style.opacity='0.3';b.style.cursor='not-allowed';}
   else{(function(y2,m2,d2){b.onclick=function(){desidClickDay(y2,m2,d2);};})(yr,mo,dn);}
   if(isCur&&window._myDesids&&window._myDesids.length){
-    var dColor=null;var SP={refused:3,pending:2,accepted:1};
+    var dColor=null;var SP={rejected:3,archived:2,validated:1};
     window._myDesids.forEach(function(row){
       var rqs=row.requests||[];
       rqs.forEach(function(r){
         if(dk0>=r.date_start&&dk0<=r.date_end){
-          var st=row.status||'pending';
+          var st=row.status||'archived';
           if(!dColor||SP[st]>SP[dColor])dColor=st;
         }
       });
@@ -921,7 +921,7 @@ function desidMkDay(dn,yr,mo,isCur,loT,hiT){
     if(dColor){
       var ddot=document.createElement('span');
       ddot.style.cssText='position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;pointer-events:none;';
-      ddot.style.background=dColor==='accepted'?'#22c55e':dColor==='refused'?'#ef4444':'#f59e0b';
+      ddot.style.background=dColor==='validated'?'#22c55e':dColor==='rejected'?'#ef4444':'#94a3b8';
       ddot.title=dColor==='accepted'?'\u2713 Accepté':dColor==='refused'?'\u2717 Refusé':'\u23f3 En attente';
       b.style.position='relative';
       b.appendChild(ddot);
@@ -949,14 +949,14 @@ function desidRenderCal(){
   desidUpdSelInfo();
   var leg=document.getElementById('desid-history-legend');
   if(leg&&window._myDesids&&window._myDesids.length){
-    var hasA=window._myDesids.some(function(r){return r.status==='accepted';});
-    var hasP=window._myDesids.some(function(r){return r.status==='pending';});
-    var hasR=window._myDesids.some(function(r){return r.status==='refused';});
-    if(hasA||hasP||hasR){
+    var hasV=window._myDesids.some(function(r){return r.status==='validated';});
+    var hasArch=window._myDesids.some(function(r){return r.status==='archived';});
+    var hasRej=window._myDesids.some(function(r){return r.status==='rejected';});
+    if(hasV||hasArch||hasRej){
       leg.style.display='flex';leg.innerHTML='';
       var ltit=document.createElement('span');ltit.textContent='Mes demandes :';ltit.style.cssText='font-size:10px;color:#64748b;';
       leg.appendChild(ltit);
-      [{show:hasA,color:'#22c55e',label:'Accepté'},{show:hasP,color:'#f59e0b',label:'En attente'},{show:hasR,color:'#ef4444',label:'Refusé'}].forEach(function(item){
+      [{show:hasV,color:'#22c55e',label:'Validé'},{show:hasArch,color:'#94a3b8',label:'Archivé'},{show:hasRej,color:'#ef4444',label:'Rejeté'}].forEach(function(item){
         if(!item.show)return;
         var li=document.createElement('span');li.style.cssText='display:flex;align-items:center;gap:4px;font-size:10px;color:#94a3b8;';
         var ld=document.createElement('span');ld.style.cssText='width:7px;height:7px;border-radius:50%;background:'+item.color+';flex-shrink:0;';
