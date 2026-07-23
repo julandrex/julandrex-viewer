@@ -1942,7 +1942,7 @@ async function acceptX(id){
   try{
     // Récupérer les infos de la demande avant update
     const {data:xr}=await sb.from('exchange_requests').select('proposer_id,proposer_date,proposer_post').eq('id',id).maybeSingle();
-    const {error}=await sb.from('exchange_requests').update({status:'accepted',acceptor_id:me.id,accepted_at:new Date().toISOString()}).eq('id',id);
+    const {error}=await sb.from('exchange_requests').update({status:'accepted',acceptor_id:me.id,accepted_at:new Date().toISOString()}).eq('id',id).eq('status','open');
     if(error)throw error;
     toast('Demande acceptée — en attente de confirmation.');
     // Push au proposeur
