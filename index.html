@@ -1362,7 +1362,7 @@ function subscribeRT(){
           if(document.getElementById('exch-panel').classList.contains('show'))renderPanel();
           const ev=payload.eventType;
           const n=payload.new||{};
-          if(ev==='INSERT'&&n.proposer_id!==me.id) toast('📬 Nouvelle demande d\'échange !');
+          if(ev==='INSERT'&&n.proposer_id!==me.id&&(n.target_doctor_id==null||n.target_doctor_id===me.id)) toast('📬 Nouvelle demande d\'échange !');
           if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('✅ Votre échange a été accepté !');
           if(ev==='UPDATE'&&n.status==='pending_j1'&&(n.proposer_id===me.id||n.acceptor_id===me.id)) toast('Un switch J+1 a été proposé par le gestionnaire !');
           if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('✅ Échange confirmé !');
@@ -1819,7 +1819,7 @@ function togglePanel(){
 function renderPanel(){
   const l=document.getElementById('exch-list');
   if(!exchanges.length){l.innerHTML='<div class="ld">Aucune demande en cours</div>';return;}
-  const myExchanges=exchanges.filter(r=>{if(['confirmed','archived'].includes(r.status))return false;if(r.status==='cancelled')return false;if(r.status==='open'&&r.cancel_reason&&r.acceptor_id===me.id)return true;return(r.status!=='pending_j1'&&r.status!=='pending_switch')||(r.proposer_id===me.id||r.acceptor_id===me.id);});
+  const myExchanges=exchanges.filter(r=>{if(['confirmed','archived'].includes(r.status))return false;if(r.status==='cancelled')return false;if(r.target_doctor_id!=null&&r.target_doctor_id!==me.id&&r.proposer_id!==me.id&&r.acceptor_id!==me.id)return false;if(r.status==='open'&&r.cancel_reason&&r.acceptor_id===me.id)return true;return(r.status!=='pending_j1'&&r.status!=='pending_switch')||(r.proposer_id===me.id||r.acceptor_id===me.id);});
   l.innerHTML=myExchanges.map(r=>{
     const prop=doctors.find(d=>d.id===r.proposer_id);
     const acc=r.acceptor_id?doctors.find(d=>d.id===r.acceptor_id):null;
@@ -1942,8 +1942,13 @@ async function acceptX(id){
   try{
     // Récupérer les infos de la demande avant update
     const {data:xr}=await sb.from('exchange_requests').select('proposer_id,proposer_date,proposer_post').eq('id',id).maybeSingle();
-    const {error}=await sb.from('exchange_requests').update({status:'accepted',acceptor_id:me.id,accepted_at:new Date().toISOString()}).eq('id',id).eq('status','open');
+    const {data:updRows,error}=await sb.from('exchange_requests').update({status:'accepted',acceptor_id:me.id,accepted_at:new Date().toISOString()}).eq('id',id).eq('status','open').select();
     if(error)throw error;
+    if(!updRows||!updRows.length){
+      toast('Cette demande n’est plus disponible.',true);
+      try{const {data:fresh}=await sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false});exchanges=fresh||[];if(typeof renderBadge==='function')renderBadge();renderPanel();}catch(_e){}
+      return;
+    }
     toast('Demande acceptée — en attente de confirmation.');
     // Push au proposeur
     try {
@@ -2666,13 +2671,20 @@ document.addEventListener('click', function(e) {
 });
 // ===== FIN TOPBAR DROPDOWN MENU =====
 
-function rejectX(id){
+async function rejectX(id){
   if(!confirm('Refuser cette demande d’échange ?'))return;
-  sb.from('exchange_requests').update({status:'cancelled'}).eq('id',id).then(({error})=>{
+  try{
+    const curEx=exchanges.find(e=>e.id===id);
+    const isTargeted=!!(curEx&&curEx.target_doctor_id!=null);
+    const curLog=Array.isArray(curEx&&curEx.refusal_log)?curEx.refusal_log:[];
+    const newLog=curLog.concat([{type:'exchange',by:me?(me.firstname+' '+me.lastname):'Medecin',by_id:me?me.id:null,at:new Date().toISOString(),detail:(me?me.firstname:'Inconnu')+' a refusé la demande'}]);
+    const upd=isTargeted?{status:'cancelled',cancelled_at:new Date().toISOString(),refusal_log:newLog}:{refusal_log:newLog};
+    const {data:updRows,error}=await sb.from('exchange_requests').update(upd).eq('id',id).eq('status','open').select();
     if(error){toast('Erreur: '+error.message,3000);return;}
-    toast('✕ Demande refusée',2500);
-    openMesEchanges();
-  });
+    if(!updRows||!updRows.length){toast('Cette demande n’est plus disponible.',true);}
+    else{toast('✕ Demande refusée',2500);}
+    try{const {data:fresh}=await sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false});exchanges=fresh||[];if(typeof renderBadge==='function')renderBadge();renderPanel();}catch(_e){}
+  }catch(e){toast('Erreur: '+e.message,3000);}
 }
 </script>
 
