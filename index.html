@@ -592,7 +592,6 @@ async function doLogin(){
   }
   var pwd=document.getElementById('pin-inp').value;
   if(!pwd){return;}
-  if(!doc.has_pin){window._loginDoc=doc;showPwdSetup(false);return;}
   var _vp=await sb.rpc('verify_pin',{p_doctor_id:doc.id,p_hospital:CFG.hospital,p_pin:pwd});
   if(_vp&&_vp.error){var eN=document.getElementById('pin-err');eN.textContent='Erreur réseau — réessayez.';eN.style.display='block';return;}
   var _vs=_vp?_vp.data:null;
