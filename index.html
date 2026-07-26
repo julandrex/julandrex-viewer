@@ -1798,16 +1798,21 @@ function logAccess(action,detail){
 // EXCHANGES
 // ══════════════════════════════════════════════════════════
 function renderBadge(){
-  const open=exchanges.filter(r=>r.status==='open').length;
+  // Ne compter QUE les échanges qui concernent le médecin connecté (cohérent avec renderPanel)
+  const _hasRefused=r=>Array.isArray(r.refusal_log)&&r.refusal_log.some(e=>e.by_id===me.id&&e.type==='exchange');
+  // offres ouvertes que JE peux accepter : ouvertes à tous OU ciblées sur moi, pas les miennes, pas déjà refusées
+  const openForMe=exchanges.filter(r=>r.status==='open'&&r.proposer_id!==me.id&&(r.target_doctor_id==null||r.target_doctor_id===me.id)&&!_hasRefused(r)).length;
+  // ma propre demande acceptée, en attente de validation gestionnaire
+  const myAccepted=exchanges.filter(r=>r.status==='accepted'&&r.proposer_id===me.id).length;
   const pendJ1=exchanges.filter(r=>r.status==='pending_j1'&&(r.proposer_id===me.id||r.acceptor_id===me.id)&&!(r.proposer_id===me.id?r.j1_proposer_ok:r.j1_acceptor_ok)).length;
   const pendSw=exchanges.filter(r=>r.status==='pending_switch'&&(r.proposer_id===me.id||r.acceptor_id===me.id)&&!(r.proposer_id===me.id?r.switch_proposer_ok:r.switch_acceptor_ok)).length;
-  const act=exchanges.filter(r=>(r.status==='accepted'&&r.proposer_id===me.id)||(r.status==='open'&&r.proposer_id!==me.id)).length+pendJ1+pendSw;
+  const act=openForMe+myAccepted+pendJ1+pendSw;
   const pill=document.getElementById('exch-pill');
-  if(open>0||pendJ1>0||pendSw>0){
-    pill.textContent=act>0?`${act} action(s)`:pendJ1>0?`${pendJ1} J+1`:` ${open} échange(s)`;
+  if(act>0){
+    pill.textContent=`${act} action(s)`;
     pill.classList.add('show');
-    pill.classList.toggle('urgent',act>0||pendJ1>0);
-  }else{pill.classList.remove('show');}
+    pill.classList.add('urgent');
+  }else{pill.classList.remove('show');pill.classList.remove('urgent');}
 }
 
 function togglePanel(){
