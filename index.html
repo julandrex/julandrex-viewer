@@ -525,7 +525,7 @@ async function init(){
 async function loadDoctors(){
   try{
     const _tmo=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Impossible de charger les médecins (10s). Vérifiez votre connexion.')),10000));
-    const {data,error}=await Promise.race([sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin_hash,pin_set,weekly_hours,email').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname'),_tmo]);
+    const {data,error}=await Promise.race([sb.from('doctors_public').select('id,local_id,firstname,lastname,role,color,pin_set,has_pin,weekly_hours').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname'),_tmo]);
     if(error)throw error;
     doctors=data||[];
     renderLoginDocs();
@@ -592,10 +592,13 @@ async function doLogin(){
   }
   var pwd=document.getElementById('pin-inp').value;
   if(!pwd){return;}
-  if(!doc.pin_hash){window._loginDoc=doc;showPwdSetup(false);return;}
-  var hHex=await hashStr(pwd);
-  if(hHex===doc.pin_hash){
-    if(!doc.pin_set){window._loginDoc=doc;showPwdSetup(true);return;}
+  if(!doc.has_pin){window._loginDoc=doc;showPwdSetup(false);return;}
+  var _vp=await sb.rpc('verify_pin',{p_doctor_id:doc.id,p_hospital:CFG.hospital,p_pin:pwd});
+  if(_vp&&_vp.error){var eN=document.getElementById('pin-err');eN.textContent='Erreur réseau — réessayez.';eN.style.display='block';return;}
+  var _vs=_vp?_vp.data:null;
+  if(_vs==='no_pin'){window._loginDoc=doc;showPwdSetup(false);return;}
+  if(_vs==='ok'||_vs==='ok_temp'){
+    if(_vs==='ok_temp'){window._loginDoc=doc;showPwdSetup(true);return;}
     _pwdAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     document.getElementById('login-modal-bg').classList.remove('show');
@@ -649,8 +652,8 @@ async function onSessPwdSubmit(){
   const inp=document.getElementById('sess-pin-inp');
   const errEl=document.getElementById('sess-pin-err');
   if(!inp||!me)return;
-  const hHex=await hashStr(inp.value);
-  if(hHex===me.pin_hash){
+  const _vp=await sb.rpc('verify_pin',{p_doctor_id:me.id,p_hospital:CFG.hospital,p_pin:inp.value});
+  if(_vp&&!_vp.error&&(_vp.data==='ok'||_vp.data==='ok_temp')){
     inp.value='';errEl.textContent='';
     document.getElementById('session-overlay').style.display='none';
     _sessActive=true;resetSessTimer();
@@ -742,10 +745,9 @@ async function submitPwdSetup(){
     const _r=await fetch(CFG.url+'/functions/v1/update-pin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},body:JSON.stringify({action:'set_pwd',doctor_id:doc.id,new_pin:newPwd})});
     const _d=await _r.json();
     if(!_r.ok)throw new Error(_d.error||'Erreur serveur');
-    const hHex=await hashStr(newPwd);
-    doc.pin_hash=hHex;doc.pin_set=true;
+    doc.has_pin=true;doc.pin_set=true;
     const idx=doctors.findIndex(d=>d.id===doc.id);
-    if(idx>=0){doctors[idx].pin_hash=hHex;doctors[idx].pin_set=true;}
+    if(idx>=0){doctors[idx].has_pin=true;doctors[idx].pin_set=true;}
     closePwdSetup();
     document.getElementById('login-modal-bg').classList.remove('show');
     _pwdAttempts=0;me={...doc};
@@ -777,8 +779,8 @@ async function submitChangePassword(){
   const newPwd=document.getElementById('cpw-new').value;
   const confirm=document.getElementById('cpw-confirm').value;
   const errEl=document.getElementById('cpw-err');errEl.style.display='none';
-  const hCur=await hashStr(current);
-  if(hCur!==me.pin_hash){errEl.textContent='Mot de passe actuel incorrect.';errEl.style.display='block';return;}
+  const _vpc=await sb.rpc('verify_pin',{p_doctor_id:me.id,p_hospital:CFG.hospital,p_pin:current});
+  if(!(_vpc&&!_vpc.error&&(_vpc.data==='ok'||_vpc.data==='ok_temp'))){errEl.textContent='Mot de passe actuel incorrect.';errEl.style.display='block';return;}
   const validErr=validatePasswordStrength(newPwd,me.firstname,me.lastname);
   if(validErr){errEl.textContent=validErr;errEl.style.display='block';return;}
   if(newPwd===current){errEl.textContent="Le nouveau mot de passe doit être différent de l'ancien.";errEl.style.display='block';return;}
@@ -787,11 +789,10 @@ async function submitChangePassword(){
     const _r=await fetch(CFG.url+'/functions/v1/update-pin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},body:JSON.stringify({action:'change_pwd',doctor_id:me.id,current_pin:current,new_pin:newPwd})});
     const _d=await _r.json();
     if(!_r.ok)throw new Error(_d.error||'Erreur serveur');
-    const hNew=await hashStr(newPwd);
-    me.pin_hash=hNew;me.pin_set=true;
+    me.pin_set=true;me.has_pin=true;
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     const idx=doctors.findIndex(d=>d.id===me.id);
-    if(idx>=0){doctors[idx].pin_hash=hNew;doctors[idx].pin_set=true;}
+    if(idx>=0){doctors[idx].pin_set=true;doctors[idx].has_pin=true;}
     document.getElementById('chg-pwd-overlay').style.display='none';
     toast('✅ Mot de passe modifié avec succès.');
   }catch(e){errEl.textContent='Erreur : '+e.message;errEl.style.display='block';}
