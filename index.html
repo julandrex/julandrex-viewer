@@ -2914,5 +2914,29 @@ async function msalLogin() {
   document.addEventListener('click',function(){ setTimeout(pass,60); },true); // re-pass contenu dynamique (modales)
 })();
 </script>
+
+<!-- ══════════ #2 Navigation clavier (WCAG 2.1.1) ══════════ -->
+<script id="jx-kb">
+(function(){
+  function onKey(e){
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); this.click(); }
+  }
+  function pass(){
+    document.querySelectorAll('div[onclick]').forEach(function(el){
+      if(el.dataset.jxKb) return;
+      var oc=el.getAttribute('onclick')||'';
+      if(oc.indexOf('event.target===this')>-1) return;                 // backdrop de fermeture, pas un bouton
+      if(el.getAttribute('role')) return;                              // deja un role explicite
+      if(el.querySelector('button,a[href],input,select,textarea')) return; // evite interactif imbrique
+      el.dataset.jxKb='1';
+      el.setAttribute('role','button');
+      el.setAttribute('tabindex','0');
+      el.addEventListener('keydown',onKey);
+    });
+  }
+  if(document.readyState!=='loading') pass(); else document.addEventListener('DOMContentLoaded',pass);
+  document.addEventListener('click',function(){ setTimeout(pass,60); },true); // contenu dynamique (modales, listes)
+})();
+</script>
 </body>
  
