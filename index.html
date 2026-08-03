@@ -537,8 +537,8 @@ async function loadDoctors(){
 function renderLoginDocs(){
   const g=document.getElementById('doc-grid');
   if(!doctors.length){g.innerHTML='<div class="ld">Aucun médecin trouvé. Le planning n\'a pas encore été publié.</div>';return;}
-  g.innerHTML=doctors.map(d=>`
-    <div class="doc-card" id="dc-${d.id}" onclick="selectDoc(${d.id})">
+  g.innerHTML=doctors.map((d,i)=>`
+    <div class="doc-card jx-enter" style="--jx-i:${i}" id="dc-${d.id}" onclick="selectDoc(${d.id})">
       <div class="doc-av" style="background:${d.color}33;color:${d.color};">${ini(d,doctors)}</div>
       <div><div class="doc-nm">${d.lastname}</div><div class="doc-rl">${shortRole(d.role)}</div></div>
     </div>`).join('');
@@ -2828,6 +2828,14 @@ async function msalLogin() {
   @keyframes jxGlow{0%{box-shadow:0 0 0 0 rgba(59,130,246,.5)}100%{box-shadow:0 0 0 9px rgba(59,130,246,0)}}
   .jx-enter{animation:jxEnter .42s cubic-bezier(.16,1,.3,1) backwards;animation-delay:calc(var(--jx-i,0)*45ms)}
   .jx-glow{animation:jxEnter .42s cubic-bezier(.16,1,.3,1) backwards,jxGlow 1.3s ease-out .3s}
+
+  /* ── Press feedback (scale) sur les boutons ── */
+  button{transition:transform .14s cubic-bezier(.23,1,.32,1)}
+  button:active{transform:scale(.97)}
+
+  /* ── Menu topbar : entrée fondu + scale ── */
+  #tb-dropdown{transform-origin:bottom center}
+  #tb-dropdown[style*="block"]{animation:jxPop .18s cubic-bezier(.23,1,.32,1)}
 }
 </style>
 <script>
