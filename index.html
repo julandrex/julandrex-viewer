@@ -2882,5 +2882,37 @@ async function msalLogin() {
   };
 })();
 </script>
+
+<!-- ══════════ A11Y quick wins (WCAG 2.2) ══════════ -->
+<style id="jx-a11y">
+:root{--t3:#7683a1}                                  /* #4 contraste: 2.9:1 -> ~4.9:1 AA */
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}   /* #1 focus visible */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}   /* #7 */
+</style>
+<script>
+(function(){
+  function pass(){
+    // #3 inputs sans label -> placeholder = nom accessible
+    document.querySelectorAll('input,select,textarea').forEach(function(el){
+      if(el.getAttribute('aria-label')) return;
+      try{ if(el.id && document.querySelector('label[for="'+CSS.escape(el.id)+'"]')) return; }catch(e){}
+      if(el.closest && el.closest('label')) return;
+      var ph=el.getAttribute('placeholder');
+      if(ph) el.setAttribute('aria-label',ph);
+    });
+    // #5 boutons symbole (fermer) sans nom accessible
+    document.querySelectorAll('button').forEach(function(b){
+      if(b.getAttribute('aria-label')) return;
+      var s=(b.textContent||'').trim();
+      if(s==='\u2715'||s==='\u2716'||s==='\u00d7'||s==='\u2573') b.setAttribute('aria-label','Fermer');
+    });
+    // #6 toast -> live region (annonces lecteur d'ecran)
+    var tt=document.getElementById('toast');
+    if(tt && !tt.getAttribute('aria-live')){ tt.setAttribute('role','status'); tt.setAttribute('aria-live','polite'); }
+  }
+  if(document.readyState!=='loading') pass(); else document.addEventListener('DOMContentLoaded',pass);
+  document.addEventListener('click',function(){ setTimeout(pass,60); },true); // re-pass contenu dynamique (modales)
+})();
+</script>
 </body>
  
