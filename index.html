@@ -425,7 +425,7 @@ button{font-family:inherit;}
       </div>
       <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;">
         <button onclick="closeDesiderata()" style="background:transparent;border:1px solid #2d3d54;color:#94a3b8;border-radius:10px;padding:11px 22px;cursor:pointer;font-size:13px;">Annuler</button>
-        <button onclick="submitDesiderata()" style="background:#c9983a;color:#000;border:none;border-radius:10px;padding:11px 22px;font-weight:700;cursor:pointer;font-size:13px;">🤝 Envoyer</button>
+        <button onclick="submitDesiderata()" class="jx-shine" style="background:#c9983a;color:#000;border:none;border-radius:10px;padding:11px 22px;font-weight:700;cursor:pointer;font-size:13px;">🤝 Envoyer</button>
       </div>
     </div>
   </div>
@@ -1580,7 +1580,7 @@ function renderCalPerso(){
   var statsDiv=document.createElement('div'); statsDiv.className='cal-stats';
   function mkStat(val,lbl,color){
     var c=document.createElement('div'); c.className='cs-card';
-    var v=document.createElement('div'); v.className='cs-val'; v.style.color=color||'var(--t1)'; v.textContent=val;
+    var v=document.createElement('div'); v.className='cs-val'; v.style.color=color||'var(--t1)'; if(window.jxCountUp){window.jxCountUp(v,val);}else{v.textContent=val;}
     var l=document.createElement('div'); l.className='cs-lbl'; l.textContent=lbl;
     c.appendChild(v); c.appendChild(l); return c;
   }
@@ -2614,16 +2614,17 @@ async function renderMonPlanning() {
     ['WE', wes, '#e67e22'],
     ['SMUR', smur, '#1abc9c']
   ].map(([l, v, c]) => `<div style="background:var(--bg2);border-radius:10px;padding:10px 6px;text-align:center;">
-    <div style="font-size:22px;font-weight:800;color:${c}">${v}</div>
+    <div class="jx-count" style="font-size:22px;font-weight:800;color:${c}">${v}</div>
     <div style="font-size:11px;color:var(--t3);margin-top:2px">${l}</div>
   </div>`).join('');
+  if(window.jxAnimateCounts){window.jxAnimateCounts(statsEl);}
 
   if (!myShifts.length) {
     listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Aucune garde ce mois.</div>';
     return;
   }
 
-  listEl.innerHTML = myShifts.map(({ dk, post }) => {
+  listEl.innerHTML = myShifts.map(({ dk, post }, i) => {
     const dt = new Date(dk + 'T12:00:00');
     const isToday = dk === today;
     const isPast = dk < today;
@@ -2633,7 +2634,7 @@ async function renderMonPlanning() {
     const clickAttr = canExchange
       ? `onclick="closeMonPlanning();openModal('${dk}','${post.id}')"`
       : `onclick="showToast('Les gardes passées ne peuvent pas être échangées', 2500)"`;
-    return `<div ${clickAttr} style="
+    return `<div ${clickAttr} class="jx-enter${isToday ? ' jx-glow' : ''}" style="--jx-i:${i};
       display:flex;align-items:center;gap:12px;
       background:var(--bg2);border-radius:10px;padding:12px 14px;
       margin-bottom:8px;cursor:pointer;
@@ -2719,7 +2720,7 @@ async function rejectX(id){
     <div id="mp-list"></div>
   </div>
 </div>
-<div id="pso" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;"><div id="pso-icon" style="font-size:28px;margin-bottom:6px">&#x1F510;</div><h2 id="pso-title" style="color:#e2e8f0;font-size:18px;margin:0 0 6px">Créez votre PIN</h2><p id="pso-desc" style="color:#94a3b8;font-size:13px;margin:0 0 18px">Choisissez un code PIN permanent (min. 6 chiffres).</p><div id="pso-cur-wrap" style="display:none;margin-bottom:10px;"><input id="pso-cur" type="password" inputmode="numeric" placeholder="PIN actuel" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;box-sizing:border-box;"></div><input id="npi" type="password" inputmode="numeric" placeholder="Nouveau PIN (6-8 chiffres)" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;"><input id="cpi" type="password" inputmode="numeric" placeholder="Confirmer nouveau PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:14px;box-sizing:border-box;"><div id="pse" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:10px;"></div><button onclick="doConfirmPin()" style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">Valider mon PIN</button><button id="pso-cancel-btn" onclick="doCancelPin()" style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">Retour</button></div></div><div id="pso-msg" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px">⚠️</div><p id="pso-msg-text" style="color:#e2e8f0;font-size:15px;margin:0 0 20px"></p><button onclick="document.getElementById('pso-msg').style.display='none'" style="padding:10px 24px;background:#1e3a5f;color:#e2e8f0;border:none;border-radius:8px;font-size:14px;cursor:pointer;">OK</button></div></div><script>window._pinHash=null;window._pinSetupForce=false;document.addEventListener("DOMContentLoaded",function(){  var pi=document.getElementById("pin-inp");  if(pi)pi.addEventListener("input",function(){    if(pi.value)crypto.subtle.digest("SHA-256",new TextEncoder().encode(pi.value)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");});    else window._pinHash=null;  });});function showPinMsg(msg){  document.getElementById("pso-msg-text").textContent=msg;  document.getElementById("pso-msg").style.display="flex";}function showPinSetup(f){showPwdSetup(f);}function showChangePin(){showChangePassword();}function doCancelPin(){var o=document.getElementById("pso");if(o)o.style.display="none";}function doConfirmPin(){  var np=document.getElementById("npi").value.trim();  var cp=document.getElementById("cpi").value.trim();  var err=document.getElementById("pse");  err.textContent="";  if(!/^\d{6,8}$/.test(np)){err.textContent="PIN invalide : 6 à 8 chiffres numériques requis.";return;}  if(np!==cp){err.textContent="Les deux PINs ne correspondent pas.";return;}  if(!window._pinSetupForce){    var cur=document.getElementById("pso-cur").value.trim();    if(!cur){err.textContent="Entrez votre PIN actuel.";return;}    crypto.subtle.digest("SHA-256",new TextEncoder().encode(cur)).then(function(b){      var h=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");      if(h!==window._loginDoc.pin_hash){err.textContent="PIN actuel incorrect.";return;}      doSavePin(np,err);    });    return;  }  doSavePin(np,err);}function doSavePin(){
+<div id="pso" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;"><div id="pso-icon" style="font-size:28px;margin-bottom:6px">&#x1F510;</div><h2 id="pso-title" style="color:#e2e8f0;font-size:18px;margin:0 0 6px">Créez votre PIN</h2><p id="pso-desc" style="color:#94a3b8;font-size:13px;margin:0 0 18px">Choisissez un code PIN permanent (min. 6 chiffres).</p><div id="pso-cur-wrap" style="display:none;margin-bottom:10px;"><input id="pso-cur" type="password" inputmode="numeric" placeholder="PIN actuel" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;box-sizing:border-box;"></div><input id="npi" type="password" inputmode="numeric" placeholder="Nouveau PIN (6-8 chiffres)" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:10px;box-sizing:border-box;"><input id="cpi" type="password" inputmode="numeric" placeholder="Confirmer nouveau PIN" maxlength="8" style="width:100%;padding:12px;border-radius:8px;border:1px solid #2d4a6e;background:#0d1525;color:#e2e8f0;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:14px;box-sizing:border-box;"><div id="pse" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:10px;"></div><button onclick="doConfirmPin()" class="jx-shine" style="width:100%;padding:13px;background:#c9983a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;">Valider mon PIN</button><button id="pso-cancel-btn" onclick="doCancelPin()" style="margin-top:10px;background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline;">Retour</button></div></div><div id="pso-msg" style="display:none;position:fixed;inset:0;background:rgba(10,15,28,.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;"><div style="background:#131c2e;border:1px solid #1e3a5f;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;"><div style="font-size:32px;margin-bottom:12px">⚠️</div><p id="pso-msg-text" style="color:#e2e8f0;font-size:15px;margin:0 0 20px"></p><button onclick="document.getElementById('pso-msg').style.display='none'" style="padding:10px 24px;background:#1e3a5f;color:#e2e8f0;border:none;border-radius:8px;font-size:14px;cursor:pointer;">OK</button></div></div><script>window._pinHash=null;window._pinSetupForce=false;document.addEventListener("DOMContentLoaded",function(){  var pi=document.getElementById("pin-inp");  if(pi)pi.addEventListener("input",function(){    if(pi.value)crypto.subtle.digest("SHA-256",new TextEncoder().encode(pi.value)).then(function(b){window._pinHash=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");});    else window._pinHash=null;  });});function showPinMsg(msg){  document.getElementById("pso-msg-text").textContent=msg;  document.getElementById("pso-msg").style.display="flex";}function showPinSetup(f){showPwdSetup(f);}function showChangePin(){showChangePassword();}function doCancelPin(){var o=document.getElementById("pso");if(o)o.style.display="none";}function doConfirmPin(){  var np=document.getElementById("npi").value.trim();  var cp=document.getElementById("cpi").value.trim();  var err=document.getElementById("pse");  err.textContent="";  if(!/^\d{6,8}$/.test(np)){err.textContent="PIN invalide : 6 à 8 chiffres numériques requis.";return;}  if(np!==cp){err.textContent="Les deux PINs ne correspondent pas.";return;}  if(!window._pinSetupForce){    var cur=document.getElementById("pso-cur").value.trim();    if(!cur){err.textContent="Entrez votre PIN actuel.";return;}    crypto.subtle.digest("SHA-256",new TextEncoder().encode(cur)).then(function(b){      var h=Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");      if(h!==window._loginDoc.pin_hash){err.textContent="PIN actuel incorrect.";return;}      doSavePin(np,err);    });    return;  }  doSavePin(np,err);}function doSavePin(){
   var np=document.getElementById('npi').value.trim();
   var err=document.getElementById('pso-msg');
   err.style.color='var(--t3)';
@@ -2798,6 +2799,80 @@ async function msalLogin() {
 // </div>
 
 === FIN BLOC AZURE AD ===*/
+</script>
+<!-- ══════════ ANIMATIONS (port animate-ui → vanilla) ══════════ -->
+<style id="jx-anim">
+@media (prefers-reduced-motion: no-preference){
+  /* ── Transitions de modales ── */
+  @keyframes jxFade{from{opacity:0}to{opacity:1}}
+  @keyframes jxPop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+  @keyframes jxSheet{from{opacity:0;transform:translateY(42px)}to{opacity:1;transform:none}}
+  #login-modal-bg.show,#modal-bg.show,#desid-bg,#demandes-bg,#mesechanges-bg,#mon-planning-bg,#lm-role-modal.show{animation:jxFade .16s ease-out}
+  #login-modal-bg.show #login-modal{animation:jxPop .26s cubic-bezier(.16,1,.3,1)}
+  #modal-bg.show #modal{animation:jxSheet .28s cubic-bezier(.16,1,.3,1)}
+  #desid-bg>div,#demandes-bg>div,#mesechanges-bg>div,#mon-planning-bg>div{animation:jxPop .28s cubic-bezier(.16,1,.3,1)}
+
+  /* ── Ripple (onde au clic sur les boutons) ── */
+  .jx-ripple-host{position:relative;overflow:hidden}
+  .jx-ink{position:absolute;border-radius:50%;transform:scale(0);background:rgba(255,255,255,.4);pointer-events:none;animation:jxInk .6s ease-out forwards}
+  @keyframes jxInk{to{transform:scale(2.4);opacity:0}}
+
+  /* ── Shine (brillance au survol des CTA) ── */
+  .jx-shine,.pwd-btn,.msubmit{position:relative;overflow:hidden}
+  .jx-shine::after,.pwd-btn::after,.msubmit::after{content:"";position:absolute;top:0;left:-160%;width:60%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-18deg);pointer-events:none}
+  .jx-shine:hover::after,.pwd-btn:hover::after,.msubmit:hover::after{animation:jxShine .85s ease}
+  @keyframes jxShine{to{left:160%}}
+
+  /* ── Highlight : entrée en cascade + pulse ── */
+  @keyframes jxEnter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes jxGlow{0%{box-shadow:0 0 0 0 rgba(59,130,246,.5)}100%{box-shadow:0 0 0 9px rgba(59,130,246,0)}}
+  .jx-enter{animation:jxEnter .42s cubic-bezier(.16,1,.3,1) backwards;animation-delay:calc(var(--jx-i,0)*45ms)}
+  .jx-glow{animation:jxEnter .42s cubic-bezier(.16,1,.3,1) backwards,jxGlow 1.3s ease-out .3s}
+}
+</style>
+<script>
+(function(){
+  var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Ripple délégué sur tout <button> */
+  document.addEventListener('pointerdown', function(e){
+    if(RM || e.button) return;
+    var btn = e.target.closest && e.target.closest('button');
+    if(!btn || btn.disabled) return;
+    if(getComputedStyle(btn).position === 'static') btn.style.position = 'relative';
+    btn.classList.add('jx-ripple-host');
+    var r = btn.getBoundingClientRect(), size = Math.max(r.width, r.height) * 2;
+    var ink = document.createElement('span');
+    ink.className = 'jx-ink';
+    ink.style.width = ink.style.height = size + 'px';
+    ink.style.left = (e.clientX - r.left - size/2) + 'px';
+    ink.style.top  = (e.clientY - r.top  - size/2) + 'px';
+    btn.appendChild(ink);
+    setTimeout(function(){ ink.remove(); }, 640);
+  }, true);
+
+  /* Count-up (extrait le préfixe numérique, garde le suffixe ex. "h") */
+  window.jxCountUp = function(el, finalText){
+    var s = String(finalText), m = s.match(/^\s*(-?\d+)(.*)$/);
+    if(RM || !m){ el.textContent = s; return; }
+    var target = parseInt(m[1], 10), suffix = m[2] || '', dur = 700, t0 = null;
+    el.textContent = '0' + suffix;
+    function tick(t){
+      if(t0 === null) t0 = t;
+      var p = Math.min(1, (t - t0) / dur), k = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(target * k) + suffix;
+      if(p < 1) requestAnimationFrame(tick); else el.textContent = s;
+    }
+    requestAnimationFrame(tick);
+  };
+  window.jxAnimateCounts = function(root){
+    (root || document).querySelectorAll('.jx-count').forEach(function(el){
+      if(el.dataset.jxDone) return;
+      el.dataset.jxDone = '1';
+      window.jxCountUp(el, el.textContent);
+    });
+  };
+})();
 </script>
 </body>
  
