@@ -1001,7 +1001,7 @@ function subscribeRT(){
           if(document.getElementById('exch-panel').classList.contains('show'))renderPanel();
           const ev=payload.eventType;
           const n=payload.new||{};
-          if(ev==='INSERT'&&n.proposer_id!==me.id) toast('📬 Nouvelle demande d\'échange !');
+          if(ev==='INSERT'&&n.proposer_id!==me.id&&(n.target_doctor_id==null||n.target_doctor_id===me.id)) toast('📬 Nouvelle demande d\'échange !');
           if(ev==='UPDATE'&&n.proposer_id==me.id&&n.status==='accepted') toast('✅ Votre échange a été accepté !');
           if(ev==='UPDATE'&&n.acceptor_id==me.id&&n.status==='confirmed') toast('✅ Échange confirmé !');
         });
@@ -1215,8 +1215,16 @@ function togglePanel(){
 
 function renderPanel(){
   const l=document.getElementById('exch-list');
-  if(!exchanges.length){l.innerHTML='<div class="ld">Aucune demande en cours</div>';return;}
-  l.innerHTML=exchanges.map(r=>{
+  const _hasRefused=r=>Array.isArray(r.refusal_log)&&r.refusal_log.some(e=>e.by_id===me.id&&e.type==='exchange');
+  const _visibles=exchanges.filter(r=>{
+    // offre ciblée : visible du seul ciblé (+ proposeur et accepteur)
+    if(r.target_doctor_id!=null&&r.target_doctor_id!==me.id&&r.proposer_id!==me.id&&r.acceptor_id!==me.id)return false;
+    // offre ouverte que j'ai déjà refusée : masquée pour moi, reste dispo aux autres
+    if(r.status==='open'&&r.target_doctor_id==null&&_hasRefused(r))return false;
+    return true;
+  });
+  if(!_visibles.length){l.innerHTML='<div class="ld">Aucune demande en cours</div>';return;}
+  l.innerHTML=_visibles.map(r=>{
     const prop=doctors.find(d=>d.id===r.proposer_id);
     const acc=r.acceptor_id?doctors.find(d=>d.id===r.acceptor_id):null;
     const post=planning?.posts?.find(p=>p.id===r.proposer_post);
@@ -1855,13 +1863,24 @@ document.addEventListener('click', function(e) {
 });
 // ===== FIN TOPBAR DROPDOWN MENU =====
 
-function rejectX(id){
+async function rejectX(id){
   if(!confirm('Refuser cette demande d’échange ?'))return;
-  sb.from('exchange_requests').update({status:'cancelled'}).eq('id',id).then(({error})=>{
-    if(error){toast('Erreur: '+error.message,3000);return;}
-    toast('✕ Demande refusée',2500);
+  try{
+    const cur=exchanges.find(e=>e.id===id);
+    const cible=!!(cur&&cur.target_doctor_id!=null);
+    const log=(Array.isArray(cur&&cur.refusal_log)?cur.refusal_log:[])
+      .concat([{type:'exchange',by_id:me.id,by:me.firstname+' '+me.lastname,at:new Date().toISOString()}]);
+    // offre CIBLÉE refusée : annulée. Offre OUVERTE : seulement journalisée, reste dispo aux autres.
+    const upd=cible?{status:'cancelled',cancelled_at:new Date().toISOString(),refusal_log:log}:{refusal_log:log};
+    const {data:rows,error}=await sb.from('exchange_requests').update(upd).eq('id',id).eq('status','open').select();
+    if(error)throw error;
+    if(!rows||!rows.length){toast('Cette demande n’est plus disponible.',3000);openMesEchanges();return;}
+    if(cur){cur.refusal_log=log;if(cible)cur.status='cancelled';}
+    toast(cible?'✕ Demande refusée':'✕ Refusée — reste proposée aux autres',2500);
+    if(typeof renderBadge==='function')renderBadge();
+    if(typeof renderPanel==='function')renderPanel();
     openMesEchanges();
-  });
+  }catch(e){toast('Erreur: '+e.message,3000);}
 }
 </script>
 
