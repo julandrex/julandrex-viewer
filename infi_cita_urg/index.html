@@ -415,7 +415,7 @@ async function init(){
 // ══════════════════════════════════════════════════════════
 async function loadDoctors(){
   try{
-    const {data,error}=await sb.from('doctors').select('id,local_id,firstname,lastname,role,color,pin_hash,pin_set').eq('hospital_id',CFG.hospital).eq('active',true).order('role').order('lastname');
+    const {data,error}=await sb.from('doctors_public').select('id,local_id,firstname,lastname,role,color,has_pin,pin_set').eq('hospital_id',CFG.hospital).eq('active',true).order('role').order('lastname');
     if(error)throw error;
     doctors=data||[];
     renderLoginDocs();
@@ -452,7 +452,7 @@ function selectDoc(id){
   document.getElementById('pin-inp').focus();
 }
 
-function doLogin(){
+async function doLogin(){
   var doc=selectedDoc;if(!doc)return;
   var now=Date.now();
   if(now<_pinLockedUntil){
@@ -461,7 +461,20 @@ function doLogin(){
     errEl.style.display='block';return;
   }
   var pin=document.getElementById('pin-inp').value;window._rawPin=pin;
-  window._loginDoc=doc;if(!doc.pin_hash){showPinSetup(false);return;}if(window._pinHash===doc.pin_hash){if(!doc.pin_set){showPinSetup(true);return;}
+  window._loginDoc=doc;
+  var _vr;
+  try{
+    const {data:_vd,error:_ve}=await sb.rpc('verify_pin',{p_doctor_id:doc.id,p_hospital:CFG.hospital,p_pin:pin});
+    if(_ve)throw _ve;
+    _vr=_vd;
+  }catch(_e){
+    var errEl0=document.getElementById('pin-err');
+    errEl0.textContent="Connexion au serveur impossible. Réessayez.";
+    errEl0.style.display='block';return;
+  }
+  if(_vr==='no_pin'){showPinSetup(false);return;}
+  if(_vr==='ok_temp'){showPinSetup(true);return;}
+  if(_vr==='ok'){
     _pinAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     showMain();
@@ -1103,8 +1116,9 @@ async function acceptX(id){
   try{
     // Récupérer les infos de la demande avant update
     const {data:xr}=await sb.from('exchange_requests').select('proposer_id,proposer_date,proposer_post').eq('id',id).maybeSingle();
-    const {error}=await sb.from('exchange_requests').update({status:'accepted',acceptor_id:me.id,accepted_at:new Date().toISOString()}).eq('id',id);
+    const {data:_upd,error}=await sb.from('exchange_requests').update({status:'accepted',acceptor_id:me.id,accepted_at:new Date().toISOString()}).eq('id',id).eq('status','open').select();
     if(error)throw error;
+    if(!_upd||!_upd.length){toast("Trop tard — cette demande n'est plus disponible.",true);return;}
     toast('Demande acceptée — en attente de confirmation.');
     // Push au proposeur
     try {
