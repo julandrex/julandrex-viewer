@@ -1317,7 +1317,7 @@ async function loadAll(){
     try{
       const _lt=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Impossible de charger le planning (10s).')),10000));
       var res=await Promise.race([Promise.all([
-        sb.from('planning_months').select('shifts,posts,indispos').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
+        sb.from('planning_months').select('shifts,posts,indispos,published_at').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
         sb.from('doctors').select('id,local_id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
         sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false}),
         sb.from('hospital_config').select('exc:app_config->shared->exceptionalShifts').eq('hospital_id',CFG.hospital).maybeSingle()
@@ -1359,6 +1359,7 @@ function subscribeRT(){
   if(rtChannel){sb.removeChannel(rtChannel);rtChannel=null;}
   rtChannel=sb.channel('jlx_exchanges_'+CFG.hospital)
     .on('postgres_changes',{event:'*',schema:'public',table:'exchange_requests'},payload=>{
+      schedulePlanningChecks([1500,6000]); // un échange appliqué republie le mois juste avant
       sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
         .then(({data})=>{
           exchanges=data||[];
@@ -1372,12 +1373,9 @@ function subscribeRT(){
           if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('✅ Échange confirmé !');
         });
     })
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'planning_months'},payload=>{
-      if(payload.new&&payload.new.hospital_id===CFG.hospital){
-        loadAll();
-        loadQShifts(cy,cm);
-      }
-    })
+    // Pas d'écoute planning_months : la table n'est pas dans la publication temps réel et sa
+    // présence faisait échouer TOUT le canal (échanges compris). Fraîcheur du planning :
+    // voir checkPlanningFresh (12/09).
     .subscribe((status)=>{
       console.log('Realtime status:', status);
     });
@@ -1386,7 +1384,11 @@ function subscribeRT(){
   if(window._rtCfgChannel){sb.removeChannel(window._rtCfgChannel);window._rtCfgChannel=null;}
   window._rtCfgChannel=sb.channel('jlx_config_'+CFG.hospital)
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'hospital_config'},payload=>{
-      if(!payload.new||!payload.new.hospital_id||payload.new.hospital_id===CFG.hospital) refreshExcShifts();
+      if(!payload.new||!payload.new.hospital_id||payload.new.hospital_id===CFG.hospital){
+        refreshExcShifts();
+        // Publier écrit la config AVANT les mois (avec d'éventuelles confirmations) → contrôles étalés
+        schedulePlanningChecks([4000,12000,30000,60000]);
+      }
     })
     .subscribe();
 }
@@ -1402,9 +1404,39 @@ function refreshExcShifts(){
       if(planning) renderCalPerso();
     }).catch(function(e){console.warn('refreshExcShifts err',e);});
 }
+// Recharge le mois affiché si sa date de publication a changé (lecture de quelques octets)
+function checkPlanningFresh(){
+  if(!me||!sb) return Promise.resolve(false);
+  var y=cy,m=cm;
+  return sb.from('planning_months').select('published_at').eq('hospital_id',CFG.hospital).eq('year',y).eq('month',m).maybeSingle()
+    .then(function(r){
+      if(r.error||y!==cy||m!==cm) return false;
+      var pa=(r.data&&r.data.published_at)||null;
+      var known=(planning&&planning.published_at)||null;
+      if(pa===known) return false;
+      loadAll();
+      if(known&&pa) toast('🔄 Planning mis à jour');
+      return true;
+    }).catch(function(){return false;});
+}
+var _pubCheckTimers=[];
+function schedulePlanningChecks(delays){
+  _pubCheckTimers.forEach(clearTimeout);_pubCheckTimers=[];
+  delays.forEach(function(ms){
+    _pubCheckTimers.push(setTimeout(function(){
+      checkPlanningFresh().then(function(changed){
+        if(changed){_pubCheckTimers.forEach(clearTimeout);_pubCheckTimers=[];}
+      });
+    },ms));
+  });
+}
 document.addEventListener('visibilitychange',function(){
-  if(document.visibilityState==='visible') refreshExcShifts();
+  if(document.visibilityState==='visible'){refreshExcShifts();checkPlanningFresh();}
 });
+// Secours si la connexion temps réel est tombée : contrôle toutes les 3 min, onglet visible
+setInterval(function(){
+  if(document.visibilityState==='visible'){refreshExcShifts();checkPlanningFresh();}
+},180000);
 
 // ══════════════════════════════════════════════════════════
 // RENDER GRID
