@@ -1163,6 +1163,18 @@ async function submitDesiderata(){
     remarques:'',status:'pending'
   });
   if(error){alert('Erreur : '+error.message);return;}
+  // [2026-09-12] Prévenir le gestionnaire par e-mail : avant, il ne voyait la demande qu'en ouvrant l'admin
+  if(CFG.gest_email){
+    fetch(CFG.url+'/functions/v1/send-notification',{
+      method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
+      body:JSON.stringify({
+        type:'desiderata_submitted',to_email:CFG.gest_email,to_name:'Gestionnaire',
+        hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
+        data:{doctor_name:me.firstname+' '+me.lastname,quarter:quarter,year:year,
+          requests:_desidReqs.map(function(r){return {type:r.type,date_start:r.date_start,date_end:r.date_end,detail:r.detail||''};})}
+      })
+    }).catch(function(){});
+  }
   closeDesiderata();
   toast('✅ Desiderata envoyés au gestionnaire !'); loadMyDesids();
 }
