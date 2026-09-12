@@ -1381,7 +1381,30 @@ function subscribeRT(){
     .subscribe((status)=>{
       console.log('Realtime status:', status);
     });
+  // Canal séparé : planning_months n'est pas dans la publication temps réel, et Supabase
+  // refuse alors TOUTES les écoutes postgres_changes du canal ci-dessus (testé le 12/09)
+  if(window._rtCfgChannel){sb.removeChannel(window._rtCfgChannel);window._rtCfgChannel=null;}
+  window._rtCfgChannel=sb.channel('jlx_config_'+CFG.hospital)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'hospital_config'},payload=>{
+      if(!payload.new||!payload.new.hospital_id||payload.new.hospital_id===CFG.hospital) refreshExcShifts();
+    })
+    .subscribe();
 }
+// Relit les postes exceptionnels et ne redessine que s'ils ont changé
+function refreshExcShifts(){
+  if(!me||!sb) return;
+  sb.from('hospital_config').select('exc:app_config->shared->exceptionalShifts').eq('hospital_id',CFG.hospital).maybeSingle()
+    .then(function(r){
+      if(r.error||!r.data) return;
+      var nx=r.data.exc||{};
+      if(JSON.stringify(nx)===JSON.stringify(window._excShifts||{})) return;
+      window._excShifts=nx;
+      if(planning) renderCalPerso();
+    }).catch(function(e){console.warn('refreshExcShifts err',e);});
+}
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible') refreshExcShifts();
+});
 
 // ══════════════════════════════════════════════════════════
 // RENDER GRID
