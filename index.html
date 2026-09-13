@@ -517,7 +517,10 @@ async function init(){
   }
   sb=supabase.createClient(CFG.url,CFG.key);
   const saved=sessionStorage.getItem('jlx_me');
-  if(saved){try{me=JSON.parse(saved);showMain();return;}catch(e){}}
+  // [2026-09-13] Pas de reprise automatique si la session a expiré (un simple rafraîchissement contournait le code)
+  const _last=+sessionStorage.getItem('jlx_last')||0;
+  if(saved&&Date.now()-_last<SESS_TIMEOUT){try{me=JSON.parse(saved);showMain();return;}catch(e){}}
+  sessionStorage.removeItem('jlx_me');
   await loadDoctors();
 }
 
@@ -656,7 +659,9 @@ async function onSessPwdSubmit(){
   const _vp=await sb.rpc('verify_pin',{p_doctor_id:me.id,p_hospital:CFG.hospital,p_pin:inp.value});
   if(_vp&&!_vp.error&&(_vp.data==='ok'||_vp.data==='ok_temp')){
     inp.value='';errEl.textContent='';
-    document.getElementById('session-overlay').style.display='none';
+    // [2026-09-13] Retirer la classe (le style forcé empêchait l'écran de réapparaître au verrouillage suivant)
+    var _ov=document.getElementById('session-overlay');_ov.classList.remove('show');_ov.style.display='';
+    try{sessionStorage.setItem('jlx_me',JSON.stringify(me));}catch(e){}
     _sessActive=true;resetSessTimer();
     logAccess('session_resume','');
   }else{
@@ -1488,7 +1493,10 @@ function schedulePlanningChecks(delays){
   });
 }
 document.addEventListener('visibilitychange',function(){
-  if(document.visibilityState==='visible'){refreshExcShifts();checkPlanningFresh();}
+  if(document.visibilityState!=='visible') return;
+  // [2026-09-13] Sur mobile les minuteries dorment en arrière-plan : vérifier l'expiration au retour sur l'onglet
+  if(_sessActive&&me){var _l=+sessionStorage.getItem('jlx_last')||0;if(Date.now()-_l>=SESS_TIMEOUT){lockSession();return;}}
+  refreshExcShifts();checkPlanningFresh();
 });
 // Secours si la connexion temps réel est tombée : contrôle toutes les 3 min, onglet visible
 setInterval(function(){
@@ -1927,10 +1935,16 @@ function initSession(){
   _sessActive=true;resetSessTimer();
   ['click','touchstart','keydown'].forEach(function(ev){document.addEventListener(ev,resetSessTimer,{passive:true});});
 }
-function resetSessTimer(){clearTimeout(_sessTimer);_sessTimer=setTimeout(lockSession,SESS_TIMEOUT);}
+function resetSessTimer(){
+  clearTimeout(_sessTimer);_sessTimer=setTimeout(lockSession,SESS_TIMEOUT);
+  // Heure de la dernière activité : sert à refuser la reprise après expiration (rechargement, retour sur l'onglet)
+  if(_sessActive){try{sessionStorage.setItem('jlx_last',String(Date.now()));}catch(e){}}
+}
 function lockSession(){
   _sessActive=false;
-  var ov=document.getElementById('session-overlay');if(ov)ov.classList.add('show');
+  // [2026-09-13] Session verrouillée = plus de reprise automatique au rechargement (retour à l'écran de connexion)
+  try{sessionStorage.removeItem('jlx_me');}catch(e){}
+  var ov=document.getElementById('session-overlay');if(ov){ov.style.display='';ov.classList.add('show');}
   var inp=document.getElementById('sess-pin-inp');if(inp){inp.value='';inp.focus();}
   document.getElementById('sess-pin-err').textContent='';
 }
