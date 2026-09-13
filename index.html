@@ -1347,12 +1347,14 @@ async function loadAll(){
         sb.from('planning_months').select('shifts,posts,indispos,published_at').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
         sb.from('doctors').select('id,local_id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
         sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false}),
-        sb.from('hospital_config').select('exc:app_config->shared->exceptionalShifts').eq('hospital_id',CFG.hospital).maybeSingle()
+        sb.from('hospital_config').select('email_gestionnaire,exc:app_config->shared->exceptionalShifts').eq('hospital_id',CFG.hospital).maybeSingle()
       ]),_lt]);
       var pr=res[0],dr=res[1],xr=res[2],er=res[3];
       if(pr.error)throw pr.error;
       doctors=(dr.data||[]).sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname));exchanges=xr.data||[];planning=pr.data||null;
       window._excShifts=(er&&!er.error&&er.data&&er.data.exc)||{};
+      // [2026-09-13] Adresse du gestionnaire réglée dans l'admin (hospital_config.email_gestionnaire) ; l'adresse codée reste en secours
+      if(er&&!er.error&&er.data&&er.data.email_gestionnaire&&/@/.test(er.data.email_gestionnaire)) CFG.gest_email=er.data.email_gestionnaire.trim();
       if(planning&&doctors.length){try{localStorage.setItem(CK,JSON.stringify({planning:planning,doctors:doctors,exc:window._excShifts,ts:Date.now()}));}catch(ce){}}
       logAccess('view_planning',cy+'-'+(cm+1<10?'0':'')+(cm+1));
       if(!planning){
