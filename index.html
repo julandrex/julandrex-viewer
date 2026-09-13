@@ -827,6 +827,11 @@ async function openDesiderata(){
     const {data}=await sb.from('hospital_config').select('desiderata_deadlines').eq('hospital_id',CFG.hospital).maybeSingle();
     deadlines=data?.desiderata_deadlines||{};
   }catch(e){}
+  // [2026-09-13] Absences réellement enregistrées (onglet Congés du gestionnaire) : le calendrier en est le miroir
+  try{
+    const {data:abs}=await sb.rpc('doctor_indispos',{p_hospital:CFG.hospital,p_doc_id:String(me.local_id!=null?me.local_id:me.id)});
+    window._myAbsences=Array.isArray(abs)?abs:[];
+  }catch(e){window._myAbsences=[];}
   const now=new Date();
   const todayMs=now.getTime();
   const curQIdx=Math.floor(now.getMonth()/3);
@@ -924,11 +929,21 @@ function desidMkDay(dn,yr,mo,isCur,loT,hiT){
       });
     });
   }
+  // [2026-09-13] Miroir de l'onglet Congés : vert = absence réellement enregistrée ; orange = demande pas encore traitée.
+  // Une demande refusée, ou acceptée puis supprimée par le gestionnaire, n'est plus colorée (historique : « Mes demandes »).
+  if(isCur){
+    var _hasAbs=(window._myAbsences||[]).some(function(a){return a&&dk0>=a.start&&dk0<=a.end;});
+    var _hasPend=(window._myDesids||[]).some(function(row){
+      if(row.status!=='pending'&&row.status!=='partial') return false;
+      return (row.requests||[]).some(function(r){return dk0>=r.date_start&&dk0<=r.date_end&&r.status!=='accepted'&&r.status!=='refused';});
+    });
+    dColor=_hasAbs?'validated':_hasPend?'pending':null;
+  }
   if(dColor){
     b.style.background=dColor==='validated'?'#163322':dColor==='rejected'?'#2d1111':'#2d1f08';
     numSpan.style.color=dColor==='validated'?'#4ade80':dColor==='rejected'?'#f87171':'#fb923c';
     numSpan.style.fontWeight='600';
-    b.title=dColor==='validated'?'\u2713 Validé':dColor==='rejected'?'\u2717 Rejeté':'\u23f3 En attente';
+    b.title=dColor==='validated'?'✓ Dans le planning':'⏳ En attente';
     if(isPast||isOutQtr){b.style.cursor='not-allowed';}
     else{(function(y2,m2,d2){b.onclick=function(){desidClickDay(y2,m2,d2);};})(yr,mo,dn);}
   }else{
@@ -956,15 +971,15 @@ function desidRenderCal(){
   for(var n=1;n<=nN;n++)g.appendChild(desidMkDay(n,nYr,nMo,false,loT,hiT));
   desidUpdSelInfo();
   var leg=document.getElementById('desid-history-legend');
-  if(leg&&window._myDesids&&window._myDesids.length){
-    var hasV=window._myDesids.some(function(r){return r.status==='validated'||r.status==='partial';});
-    var hasPend=window._myDesids.some(function(r){return r.status==='pending';});
-    var hasRej=window._myDesids.some(function(r){return r.status==='rejected'||r.status==='partial';});
+  if(leg){
+    var hasV=(window._myAbsences||[]).length>0;
+    var hasPend=(window._myDesids||[]).some(function(r){return r.status==='pending'||r.status==='partial';});
+    var hasRej=false;
     if(hasV||hasPend||hasRej){
       leg.style.display='flex';leg.innerHTML='';
       var ltit=document.createElement('span');ltit.textContent='Mes demandes :';ltit.style.cssText='font-size:10px;color:#64748b;';
       leg.appendChild(ltit);
-      [{show:hasV,color:'#4ade80',label:'Validé'},{show:hasPend,color:'#fb923c',label:'En attente'},{show:hasRej,color:'#f87171',label:'Rejeté'}].forEach(function(item){
+      [{show:hasV,color:'#4ade80',label:'Dans le planning'},{show:hasPend,color:'#fb923c',label:'En attente'},{show:hasRej,color:'#f87171',label:'Rejeté'}].forEach(function(item){
         if(!item.show)return;
         var li=document.createElement('span');li.style.cssText='display:flex;align-items:center;gap:4px;font-size:10px;color:#94a3b8;';
         var ld=document.createElement('span');ld.style.cssText='width:7px;height:7px;border-radius:50%;background:'+item.color+';flex-shrink:0;';
