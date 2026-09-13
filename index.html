@@ -917,7 +917,8 @@ function desidMkDay(dn,yr,mo,isCur,loT,hiT){
       var rqs=row.requests||[];
       rqs.forEach(function(r){
         if(dk0>=r.date_start&&dk0<=r.date_end){
-          var st=row.status||'pending';
+          // Statut de la LIGNE d'abord : une décision partielle colore chaque jour selon sa propre demande
+          var st=r.status==='accepted'?'validated':r.status==='refused'?'rejected':(row.status==='partial'?'pending':(row.status||'pending'));
           if(!dColor||(SP[st]||0)>(SP[dColor]||0))dColor=st;
         }
       });
@@ -956,9 +957,9 @@ function desidRenderCal(){
   desidUpdSelInfo();
   var leg=document.getElementById('desid-history-legend');
   if(leg&&window._myDesids&&window._myDesids.length){
-    var hasV=window._myDesids.some(function(r){return r.status==='validated';});
+    var hasV=window._myDesids.some(function(r){return r.status==='validated'||r.status==='partial';});
     var hasPend=window._myDesids.some(function(r){return r.status==='pending';});
-    var hasRej=window._myDesids.some(function(r){return r.status==='rejected';});
+    var hasRej=window._myDesids.some(function(r){return r.status==='rejected'||r.status==='partial';});
     if(hasV||hasPend||hasRej){
       leg.style.display='flex';leg.innerHTML='';
       var ltit=document.createElement('span');ltit.textContent='Mes demandes :';ltit.style.cssText='font-size:10px;color:#64748b;';
@@ -1200,20 +1201,34 @@ async function openMesDemandes(){
     const stBadge=st=>{
       if(st==='pending') return '<span style="background:#fbbf2433;color:#fbbf24;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">⏳ En attente</span>';
       if(st==='validated'||st==='accepted') return '<span style="background:#22c55e33;color:#22c55e;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">✅ Validée</span>';
+      if(st==='partial') return '<span style="background:#f59e0b33;color:#f59e0b;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">◐ Partiellement validée</span>';
       if(st==='refused'||st==='rejected') return '<span style="background:#ef444433;color:#ef4444;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;">✗ Refusée</span>';
+      if(st==='archived') return '<span style="background:var(--bg3);color:var(--t3);font-size:11px;border-radius:6px;padding:2px 8px;">🗄 Archivée</span>';
       return `<span style="background:var(--bg3);color:var(--t3);font-size:11px;border-radius:6px;padding:2px 8px;">${st}</span>`;
     };
+    // [2026-09-12] Détail depuis r.requests (les 5 types + statut par ligne) ; conges/indispos = ancien format seulement
+    const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const TLAB={c:'☀️ Congé',r:'🌙 Repos souhaité',f:'🎓 Formation',p:'📌 Poste particulier',ip:'🚫 Indispo poste'};
+    const itemLine=it=>{
+      const ds=it.date_start===it.date_end?fmtD(it.date_start):fmtD(it.date_start)+' → '+fmtD(it.date_end);
+      const mark=it.status==='accepted'?' <span style="color:#22c55e;font-weight:700;">✓ acceptée</span>':it.status==='refused'?' <span style="color:#ef4444;font-weight:700;">✗ refusée</span>':'';
+      return (TLAB[it.type]||esc(it.type))+' : '+ds+(it.detail?' — '+esc(it.detail):'')+mark;
+    };
+    const BORDER={pending:'#fbbf24',validated:'#22c55e',accepted:'#22c55e',partial:'#f59e0b',archived:'var(--t3)'};
     const Q=['T1','T2','T3','T4'];
     list.innerHTML=data.map(r=>{
-      const cgs=(r.conges||[]).map(c=>`🏖 ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}`).join('<br>');
-      const inds=(r.indispos||[]).map(i=>`🚫 ${fmtD(i.date||i.start)}`).join('<br>');
+      const cgs=(r.conges||[]).map(c=>`☀️ Congé : ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}`).join('<br>');
+      const inds=(r.indispos||[]).map(i=>`🌙 Repos souhaité : ${fmtD(i.date||i.start)}`).join('<br>');
+      const lines=(r.requests&&r.requests.length)?r.requests.map(itemLine).join('<br>'):[cgs,inds].filter(Boolean).join('<br>');
       const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">💬 ${r.remarques}</div>`:'';
-      return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:10px;border-left:3px solid ${r.status==='pending'?'#fbbf24':r.status==='validated'||r.status==='accepted'?'#22c55e':'#ef4444'};">
+      const note=r.reviewer_note?`<div style="font-size:11px;color:var(--t2);margin-top:6px;">📝 Note du gestionnaire : ${esc(r.reviewer_note)}</div>`:'';
+      return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:10px;border-left:3px solid ${BORDER[r.status]||'#ef4444'};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <span style="font-size:13px;font-weight:700;">${Q[(r.quarter||1)-1]} ${r.year}</span>
           ${stBadge(r.status)}
         </div>
-        <div style="font-size:12px;color:var(--t2);line-height:1.8;">${[cgs,inds].filter(Boolean).join('<br>')||'<i>Aucun détail</i>'}</div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.8;">${lines||'<i>Aucun détail</i>'}</div>
+        ${note}
         ${rem}
         <div style="font-size:10px;color:var(--t3);margin-top:6px;">Soumis le ${fmtDt(r.submitted_at||r.created_at||r.updated_at)}</div>
       </div>`;
