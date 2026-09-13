@@ -2301,10 +2301,12 @@ async function submitExchange(){
         message: me.firstname+' '+me.lastname+' vous propose un échange — '+_postName,
         url: 'https://julandrex.github.io/julandrex-viewer/'
       };
-      if(targetDocId) {
-        _pushPayload.doctor_ids = [String(targetDocId)];
-      }
-      fetch(CFG.url+'/functions/v1/send-push',{
+      // [2026-09-13] Toujours une liste explicite : sans doctor_ids, send-push envoie à TOUS
+      // les abonnés de l'hôpital, demandeur compris. Liste vide → pas d'envoi (sinon = tout le monde).
+      _pushPayload.doctor_ids = targetDocId
+        ? [String(targetDocId)]
+        : doctors.filter(d=>d.id!==me.id).map(d=>String(d.id));
+      if(_pushPayload.doctor_ids.length) fetch(CFG.url+'/functions/v1/send-push',{
         method:'POST',
         headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
         body:JSON.stringify(_pushPayload)
