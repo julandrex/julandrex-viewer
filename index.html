@@ -2079,9 +2079,19 @@ async function confirmJ1(id,isProp){
 async function refuseJ1(id,isProp){
   if(!confirm('Refuser le switch J+1 ? L’échange J0 sera remis en attente.')) return;
   try{
-    var {error}=await sb.from('exchange_requests').update({status:'accepted',j1_date:null,j1_proposer_post:null,j1_acceptor_posts:null,j1_proposer_ok:false,j1_acceptor_ok:false,acceptor_id:null,refusal_log:(function(){var curEx=exchanges.find(function(e){return e.id===id;});var curLog=Array.isArray(curEx&&curEx.refusal_log)?curEx.refusal_log:[];return curLog.concat([{type:'j1_viewer',by:me?(me.firstname+' '+me.lastname):'Medecin',by_id:me?me.id:null,at:new Date().toISOString(),detail:(me?me.firstname:'Inconnu')+' a refusé le switch J+1'}]);})()}).eq('id',id);
+    var {error}=await sb.from('exchange_requests').update({status:'accepted',j1_date:null,j1_proposer_post:null,j1_acceptor_posts:null,j1_proposer_ok:false,j1_acceptor_ok:false,refusal_log:(function(){var curEx=exchanges.find(function(e){return e.id===id;});var curLog=Array.isArray(curEx&&curEx.refusal_log)?curEx.refusal_log:[];return curLog.concat([{type:'j1_viewer',by:me?(me.firstname+' '+me.lastname):'Medecin',by_id:me?me.id:null,at:new Date().toISOString(),detail:(me?me.firstname:'Inconnu')+' a refusé le switch J+1'}]);})()}).eq('id',id);
     if(error)throw error;
-    toast('Switch J+1 refusé — échange J0 remis à l’état ouvert.');
+    // [2026-09-14] L'accepteur est CONSERVÉ (avant : acceptor_id:null → demande « acceptée » sans accepteur, plus aucun
+    // bouton côté gestionnaire). Le gestionnaire reprend la main ; l'autre médecin est prévenu.
+    try{
+      var _cx=exchanges.find(function(e){return e.id===id;});
+      var _other=_cx?(isProp?_cx.acceptor_id:_cx.proposer_id):null;
+      if(_other) fetch(CFG.url+'/functions/v1/send-push',{method:'POST',headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
+        body:JSON.stringify({hospital:CFG.hospital,doctor_ids:[String(_other)],title:'❌ Switch J+1 refusé',
+          message:me.firstname+' '+me.lastname+' a refusé le switch J+1'+(_cx.proposer_date?' lié à l’échange du '+_cx.proposer_date:'')+'. Le gestionnaire va réexaminer l’échange.',
+          url:'https://julandrex.github.io/julandrex-viewer/'})}).catch(function(){});
+    }catch(_e){}
+    toast('Switch J+1 refusé — le gestionnaire va réexaminer l’échange.');
   }catch(e){toast('Erreur : '+e.message);}
 }
 async function confirmSwitch(id,isProp){
