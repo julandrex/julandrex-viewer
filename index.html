@@ -2011,7 +2011,9 @@ function renderPanel(){
       const propName2=prop?prop.firstname+' '+prop.lastname:'Demandeur';
       const accName2=acc?acc.firstname+' '+acc.lastname:'Accepteur';
       if(!alreadyOk){
-        acts='<div style="background:rgba(59,130,246,.08);border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:10px;font-size:11px;line-height:1.9;">'
+        // [2026-09-16] Encadré + boutons dans UN bloc pleine largeur, boutons sur leur propre ligne : dans la ligne
+        // flex .xacts, l'encadré écrasait les boutons (flex:1) et le 1er toucher faisait rétrécir le bouton sous le doigt.
+        acts='<div style="width:100%;"><div style="background:rgba(59,130,246,.08);border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:10px;font-size:11px;line-height:1.9;">'
           +'<div style="font-weight:700;color:#60a5fa;margin-bottom:6px;text-transform:uppercase;font-size:10px;letter-spacing:.5px;">Proposition de switch J0 + J+1</div>'
           +'<b>J0 — '+r.proposer_date+'</b><br>'
           +'→ <b>'+propName2+'</b> recevra : <b>'+(function(){var aDoc=(planning&&planning.docs||[]).find(function(d){return d.id==r.acceptor_id;});var aLid=aDoc?(aDoc.local_id!=null?aDoc.local_id:aDoc.id):null;var apids=aLid!==null?Object.entries((planning&&planning.shifts||{})[r.proposer_date]||{}).filter(function(e){return e[1]==aLid;}).map(function(e){return e[0];}):[];return apids.map(function(pid){var po=(planning&&planning.posts||[]).find(function(p){return p.id===pid;});return po?(po.full||po.name):pid;}).join(' + ')||'(aucun)';})()+'</b><br>'
@@ -2024,8 +2026,10 @@ function renderPanel(){
              +'→ '+othName+' recevra : <b>'+(j1PostsAcc||'(aucun)')+'</b>'
           )
           +'</div>'
-          +'<button class="xbtn confirm" onclick="confirmJ1(\''+r.id+'\','+isProp+')" style="background:#3b82f6;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">J\'accepte le switch J0+J1</button>'
-          +' <button class="xbtn cancel" onclick="refuseJ1(\''+r.id+'\','+isProp+')" style="background:transparent;border:1px solid var(--err);color:var(--err);border-radius:7px;padding:8px 14px;font-size:12px;cursor:pointer;margin-left:6px;">Je refuse</button>';
+          +'<div style="display:flex;gap:8px;">'
+          +'<button class="xbtn confirm" onclick="confirmJ1(\''+r.id+'\','+isProp+',this)" style="background:#3b82f6;color:#fff;border:none;border-radius:7px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;">J\'accepte le switch J0+J1</button>'
+          +'<button class="xbtn cancel" onclick="refuseJ1(\''+r.id+'\','+isProp+')" style="background:transparent;border:1px solid var(--err);color:var(--err);border-radius:7px;padding:10px 14px;font-size:12px;cursor:pointer;">Je refuse</button>'
+          +'</div></div>';
       } else {
         acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">✅ Vous avez validé le switch J0+J1 — en attente de '+othName+'</div>';
       }
@@ -2038,15 +2042,17 @@ function renderPanel(){
       const swPostProp=r.switch_proposer_post?((planning&&planning.posts||[]).find(function(p){return p.id===r.switch_proposer_post;})||{full:r.switch_proposer_post}).full||r.switch_proposer_post:'(aucun)';
       const swPostsAcc=(r.switch_acceptor_posts||[]).map(function(pid){return ((planning&&planning.posts||[]).find(function(p){return p.id===pid;})||{full:pid}).full||pid;}).join(' + ')||'(aucun)';
       if(!alreadyOkSw){
-        acts='<div style="background:rgba(249,115,22,.08);border-left:3px solid #f97316;border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:10px;font-size:11px;line-height:1.9;">'
+        acts='<div style="width:100%;"><div style="background:rgba(249,115,22,.08);border-left:3px solid #f97316;border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:10px;font-size:11px;line-height:1.9;">'
           +'<div style="font-weight:700;color:#fb923c;margin-bottom:6px;text-transform:uppercase;font-size:10px;letter-spacing:.5px;">Switch de poste proposé — '+r.proposer_date+'</div>'
           +(isPropSw
             ?'➜ Vous recevrez : <b>'+swPostProp+'</b><br>➜ '+othNameSw+' recevra : <b>'+swPostsAcc+'</b>'
             :'➜ Vous recevrez : <b>'+swPostsAcc+'</b><br>➜ '+othNameSw+' recevra : <b>'+swPostProp+'</b>'
           )
           +'</div>'
-          +'<button class="xbtn-sw-ok" data-xid="'+r.id+'" data-xprop="'+(isPropSw?'1':'0')+'" style="background:#f97316;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">J&#39;accepte le switch</button>'
-          +' <button class="xbtn-sw-no" data-xid="'+r.id+'" data-xprop="'+(isPropSw?'1':'0')+'" style="background:transparent;border:1px solid var(--err);color:var(--err);border-radius:7px;padding:8px 14px;font-size:12px;cursor:pointer;margin-left:6px;">Je refuse</button>';
+          +'<div style="display:flex;gap:8px;">'
+          +'<button class="xbtn-sw-ok" data-xid="'+r.id+'" data-xprop="'+(isPropSw?'1':'0')+'" style="flex:1;background:#f97316;color:#fff;border:none;border-radius:7px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;">J&#39;accepte le switch</button>'
+          +'<button class="xbtn-sw-no" data-xid="'+r.id+'" data-xprop="'+(isPropSw?'1':'0')+'" style="flex:1;background:transparent;border:1px solid var(--err);color:var(--err);border-radius:7px;padding:10px 14px;font-size:12px;cursor:pointer;">Je refuse</button>'
+          +'</div></div>';
       } else {
         acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">✔ Vous avez validé le switch — en attente de '+othNameSw+'</div>';
       }
@@ -2064,17 +2070,31 @@ function renderPanel(){
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
   }).join('');
-  l.querySelectorAll('.xbtn-sw-ok').forEach(function(btn){btn.addEventListener('click',function(){confirmSwitch(btn.dataset.xid,btn.dataset.xprop==='1');});});
+  l.querySelectorAll('.xbtn-sw-ok').forEach(function(btn){btn.addEventListener('click',function(){confirmSwitch(btn.dataset.xid,btn.dataset.xprop==='1',btn);});});
   l.querySelectorAll('.xbtn-sw-no').forEach(function(btn){btn.addEventListener('click',function(){refuseSwitch(btn.dataset.xid,btn.dataset.xprop==='1');});});
 }
 
-async function confirmJ1(id,isProp){
+// [2026-09-16] Un seul clic : bouton désactivé tout de suite (pas de double envoi), puis la carte passe
+// aussitôt à « ✅ Vous avez validé » (avant : on attendait l'évènement temps réel, la carte restait telle quelle).
+function _markExchangeOk(id,upd){
+  var ex=(exchanges||[]).find(function(e){return e.id===id;});
+  if(ex) Object.assign(ex,upd);
+  var p=document.getElementById('exch-panel');
+  if(p&&p.classList.contains('show')) renderPanel();
+  if(typeof renderBadge==='function') renderBadge();
+}
+async function confirmJ1(id,isProp,btn){
+  if(btn){ if(btn.disabled) return; btn.disabled=true; btn.style.opacity='.6'; btn.textContent='Envoi…'; }
   try{
     var upd=isProp?{j1_proposer_ok:true}:{j1_acceptor_ok:true};
     var {error}=await sb.from('exchange_requests').update(upd).eq('id',id);
     if(error)throw error;
+    _markExchangeOk(id,upd);
     toast('Switch J+1 validé !');
-  }catch(e){toast('Erreur : '+e.message);}
+  }catch(e){
+    if(btn){ btn.disabled=false; btn.style.opacity=''; btn.textContent='J\'accepte le switch J0+J1'; }
+    toast('Erreur : '+e.message);
+  }
 }
 async function refuseJ1(id,isProp){
   if(!confirm('Refuser le switch J+1 ? L’échange J0 sera remis en attente.')) return;
@@ -2094,14 +2114,19 @@ async function refuseJ1(id,isProp){
     toast('Switch J+1 refusé — le gestionnaire va réexaminer l’échange.');
   }catch(e){toast('Erreur : '+e.message);}
 }
-async function confirmSwitch(id,isProp){
+async function confirmSwitch(id,isProp,btn){
+  if(btn){ if(btn.disabled) return; btn.disabled=true; btn.style.opacity='.6'; btn.textContent='Envoi…'; }
   try{
     var upd=isProp?{switch_proposer_ok:true}:{switch_acceptor_ok:true};
     var {error}=await sb.from('exchange_requests').update(upd).eq('id',id);
     if(error)throw error;
+    _markExchangeOk(id,upd);
     toast('Switch validé — le gestionnaire appliquera le changement.');
     loadQShifts();
-  }catch(e){toast('Erreur : '+e.message,true);}
+  }catch(e){
+    if(btn){ btn.disabled=false; btn.style.opacity=''; btn.textContent='J’accepte le switch'; }
+    toast('Erreur : '+e.message,true);
+  }
 }
 async function refuseSwitch(id,isProp){
   if(!confirm('Refuser le switch ?')) return;
