@@ -283,6 +283,10 @@ button{font-family:inherit;}
     </div>
     <div class="pwd-err" id="pin-err" style="margin-bottom:10px;display:none;">Mot de passe incorrect — réessayez</div>
     <button class="pwd-btn" onclick="doLogin()" style="width:100%;">Se connecter</button>
+    <div id="pin-help" style="margin-top:12px;text-align:center;font-size:12.5px;">
+      <a href="#" id="pin-help-link" onclick="requestPwdHelp();return false;" style="color:var(--t3);text-decoration:underline;">Mot de passe oublié ? Prévenir le gestionnaire</a>
+      <div id="pin-help-msg" style="display:none;margin-top:8px;color:var(--t2);line-height:1.4;"></div>
+    </div>
   </div>
 </div>
 
@@ -566,6 +570,7 @@ function selectDoc(id){
   document.getElementById('lm-role-modal').textContent=shortRole(d.role);
   document.getElementById('pin-inp').value='';
   document.getElementById('pin-err').style.display='none';
+  setPwdHelpMode('forgot');
   document.getElementById('login-modal-bg').classList.add('show');
   setTimeout(()=>document.getElementById('pin-inp').focus(),80);
 }
@@ -600,9 +605,17 @@ async function doLogin(){
   var _vp=await sb.rpc('verify_pin',{p_doctor_id:doc.id,p_hospital:CFG.hospital,p_pin:pwd});
   if(_vp&&_vp.error){var eN=document.getElementById('pin-err');eN.textContent='Erreur réseau — réessayez.';eN.style.display='block';return;}
   var _vs=_vp?_vp.data:null;
-  if(_vs==='no_pin'){window._loginDoc=doc;showPwdSetup(false);return;}
+  // [2026-09-22] Plus de création libre d'un mot de passe : le premier venu pouvait prendre le compte.
+  // Le gestionnaire attribue un mot de passe temporaire (fiche médecin), que le serveur vérifie.
+  if(_vs==='no_pin'){
+    var eN2=document.getElementById('pin-err');
+    eN2.textContent="Aucun mot de passe n'a encore été attribué à votre compte.";
+    eN2.style.display='block';
+    setPwdHelpMode('first');
+    return;
+  }
   if(_vs==='ok'||_vs==='ok_temp'){
-    if(_vs==='ok_temp'){window._loginDoc=doc;showPwdSetup(true);return;}
+    if(_vs==='ok_temp'){window._loginDoc=doc;window._loginTempPwd=pwd;showPwdSetup(true);return;}
     _pwdAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     document.getElementById('login-modal-bg').classList.remove('show');
@@ -705,6 +718,29 @@ function updateStrengthBar(pwd,barId,lblId){
   lbl.textContent=labels[Math.min(score,6)];lbl.style.color=colors[Math.min(score,6)];
 }
 
+// ── MOT DE PASSE OUBLIÉ / PAS ENCORE DE MOT DE PASSE (2026-09-22) ─────────────
+// Ne réinitialise rien : prévient les gestionnaires par e-mail (destinataires lus côté serveur).
+var _pwdHelpReason='forgot';
+function setPwdHelpMode(reason){
+  _pwdHelpReason=reason==='first'?'first':'forgot';
+  var a=document.getElementById('pin-help-link'), m=document.getElementById('pin-help-msg');
+  if(a){ a.style.display=''; a.textContent=_pwdHelpReason==='first'?'Demander un mot de passe au gestionnaire':'Mot de passe oublié ? Prévenir le gestionnaire'; }
+  if(m){ m.style.display='none'; m.textContent=''; }
+}
+async function requestPwdHelp(){
+  var doc=selectedDoc; if(!doc) return;
+  var a=document.getElementById('pin-help-link'), m=document.getElementById('pin-help-msg');
+  if(m){ m.style.display='block'; m.textContent='Envoi…'; }
+  try{
+    var r=await fetch(CFG.url+'/functions/v1/update-pin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},
+      body:JSON.stringify({action:'help_request',doctor_id:doc.id,hospital_id:CFG.hospital,reason:_pwdHelpReason})});
+    var d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Erreur serveur');
+    if(a) a.style.display='none';
+    if(m) m.textContent='✓ '+(d.message||'Le gestionnaire a été prévenu.')+' Aucun mot de passe n\'a été modifié.';
+  }catch(e){ if(m) m.textContent='Envoi impossible ('+e.message+'). Contactez directement le gestionnaire.'; }
+}
+
 // ── PREMIER LOGIN / SETUP MOT DE PASSE ──────────────────────────────────────
 function showPwdSetup(isFirstLogin){
   const doc=window._loginDoc||selectedDoc;if(!doc)return;
@@ -748,10 +784,10 @@ async function submitPwdSetup(){
   if(validErr){errEl.textContent=validErr;errEl.style.display='block';return;}
   if(newPwd!==confirm){errEl.textContent='Les mots de passe ne correspondent pas.';errEl.style.display='block';return;}
   try{
-    const _r=await fetch(CFG.url+'/functions/v1/update-pin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},body:JSON.stringify({action:'set_pwd',doctor_id:doc.id,new_pin:newPwd})});
+    const _r=await fetch(CFG.url+'/functions/v1/update-pin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},body:JSON.stringify({action:'set_pwd',doctor_id:doc.id,current_pin:window._loginTempPwd||'',new_pin:newPwd})});
     const _d=await _r.json();
     if(!_r.ok)throw new Error(_d.error||'Erreur serveur');
-    doc.has_pin=true;doc.pin_set=true;
+    doc.has_pin=true;doc.pin_set=true;window._loginTempPwd=null;
     const idx=doctors.findIndex(d=>d.id===doc.id);
     if(idx>=0){doctors[idx].has_pin=true;doctors[idx].pin_set=true;}
     closePwdSetup();
