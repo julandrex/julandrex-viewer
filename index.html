@@ -1634,7 +1634,7 @@ function renderCalPerso(){
             var autre=null; for(var dq=0;dq<doctors.length;dq++){ var dd=doctors[dq];
               var cible=(part.role==='t'?part.sh.docId2:did);
               if(dd.local_id==cible||dd.id==cible){ autre=dd; break; } }
-            myPosts.push({id:po.id,name:'½ '+po.name,color:po.color,section:po.section,overnight:po.overnight,
+            myPosts.push({id:po.id,name:po.name,_split:true,color:po.color,section:po.section,overnight:po.overnight,
               start:mien[0],end:mien[1],
               full:po.full+' — partagé avec '+(autre?autre.firstname.charAt(0)+'. '+autre.lastname:'un collègue')
                    +' · votre part : '+vMyHours(part,0)+' h'});
@@ -1695,7 +1695,16 @@ function renderCalPerso(){
       cell.style.background=p0.color+'33';
       dspan.style.color=p0.color+'cc';
       var cspan=document.createElement('span'); cspan.className='cp-code';
-      cspan.style.color=p0.color; cspan.textContent=sc; cell.appendChild(cspan);
+      cspan.style.color=p0.color; cspan.textContent=sc;
+      if(p0._split){   // [2026-09-22] poste SCINDÉ : marque bien visible au-dessus du poste
+        cspan.textContent='';
+        var bd=document.createElement('span');
+        bd.textContent='½ partagé';
+        bd.style.cssText='display:block;font-size:8px;font-weight:800;letter-spacing:.3px;line-height:1.1;opacity:.95;';
+        var nm=document.createElement('span'); nm.textContent=sc; nm.style.cssText='display:block;line-height:1.1;';
+        cspan.appendChild(bd); cspan.appendChild(nm);
+      }
+      cell.appendChild(cspan);
       if(p0._exc){
         cspan.style.fontSize='11px';
         cell.title=excDetail;
@@ -1733,6 +1742,19 @@ function renderCalPerso(){
       s1.className='cp-sc';
       s1.style.cssText='position:absolute;bottom:4px;right:5px;text-align:right;color:'+p1.color+';';
       s1.textContent=sc1;
+      if(p0._split){
+        var b0=document.createElement('span');
+        b0.textContent='½';
+        // le coin haut-gauche porte deja le numero du jour : on pose le badge juste a cote
+        b0.style.cssText='position:absolute;top:2px;left:17px;font-size:9px;font-weight:800;line-height:1;padding:1px 3px;border-radius:4px;color:'+p0.color+';background:'+p0.color+'33;border:1px solid '+p0.color+'88;';
+        cell.appendChild(b0);
+      }
+      if(p1._split){
+        var b1=document.createElement('span');
+        b1.textContent='½';
+        b1.style.cssText='position:absolute;bottom:16px;right:4px;font-size:9px;font-weight:800;line-height:1;padding:1px 3px;border-radius:4px;color:'+p1.color+';background:'+p1.color+'33;border:1px solid '+p1.color+'88;';
+        cell.appendChild(b1);
+      }
       cell.appendChild(s0);cell.appendChild(s1);
       // [2026-09-22] Infobulle détaillée : le médecin doit voir ses HORAIRES, surtout sur un poste scindé
       cell.title=myPosts.map(function(p){return p._exc?p.full+' · '+p.hours+' h':p.full+' · '+p.start+'–'+p.end;}).join('\n');
