@@ -156,7 +156,7 @@ button{font-family:inherit;}
 #tb-dropdown{min-width:250px!important;padding:8px!important;}
 #tb-dropdown .tb-dd-item{border:1px solid var(--b);background:var(--bg2);padding:12px 14px;margin:0 0 7px;border-radius:10px;font-size:15px;}
 #tb-dropdown .tb-dd-item:hover{background:var(--bg3);}
-#tb-dropdown #notif-btn,#tb-dropdown #rappel24-btn{border:none;background:none;padding:11px 14px;margin:0;font-size:15px;}
+#tb-dropdown #notif-btn,#tb-dropdown #rappel24-btn,#tb-dropdown #email-btn{border:none;background:none;padding:11px 14px;margin:0;font-size:15px;}
 #tb-dropdown .tb-dd-danger{color:#f87171;border-color:rgba(248,113,113,.45);margin-bottom:0;}
 .upd-dot{display:inline-block;min-width:16px;height:16px;line-height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;text-align:center;margin-left:6px;vertical-align:middle;}
 #tb-menu-btn{position:relative;}
@@ -330,6 +330,13 @@ button{font-family:inherit;}
           <span id="notif-lbl">Notif.</span>
         </button>
 <button id="rappel24-btn" onclick="toggleRappel24()"><span class="r24-bar" id="rappel24-bar"></span> Rappel 24h</button>
+        <!-- [2026-09-23] E-mails d'information au choix du médecin (les e-mails d'accès restent toujours envoyés) -->
+        <button id="email-btn" onclick="toggleEmailPref()" class="tb-dd-item" style="display:none;align-items:center;gap:7px;" title="E-mails d'information (échanges, desiderata, planning)">
+          <span id="email-pill" style="display:inline-flex;align-items:center;width:34px;height:18px;border-radius:9px;background:#4b5563;padding:0 2px;transition:background .25s;flex-shrink:0;position:relative;">
+            <span id="email-dot" style="width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:transform .25s;transform:translateX(0);"></span>
+          </span>
+          <span>E-mails</span>
+        </button>
         <div style="border-top:1px solid var(--b);margin:5px 0;"></div>
 <button onclick="showChangePassword()" class="tb-dd-item">&#x1F510; Changer mon mot de passe</button>
         <button onclick="logout();closeTbMenu()" class="tb-dd-item tb-dd-danger">→ Déconnexion</button>
@@ -1704,6 +1711,7 @@ function loadQShifts(pYear,pMo){
   }).catch(function(e){console.warn("loadQShifts err",e);});
 }
 function showMain(){
+  setTimeout(loadEmailPref,800); // [2026-09-23] préférence « E-mails »
   document.getElementById('scr-login').style.display='none';
   document.getElementById('scr-main').style.display='flex';
   document.title='Planning — '+me.firstname+' '+me.lastname;
@@ -3093,6 +3101,27 @@ async function initNotifBtn() {
   }
 }
 
+// [2026-09-23] Préférence « E-mails » (en base, par médecin ; activée par défaut)
+function renderEmailPref(on){
+  var b=document.getElementById('email-btn'), p=document.getElementById('email-pill'), d=document.getElementById('email-dot');
+  if(!b||!p||!d) return;
+  b.style.display='flex';
+  p.style.background=on?'#22c55e':'#4b5563';
+  d.style.transform=on?'translateX(16px)':'translateX(0)';
+  b.title=on?'E-mails d\'information activés — cliquer pour les désactiver':'E-mails d\'information désactivés — cliquer pour les activer';
+  window._emailPref=!!on;
+}
+function loadEmailPref(){
+  if(!me||!_jlxTok()) return;
+  sb.rpc('viewer_email_pref',{p_token:_jlxTok()}).then(function(r){ if(!r.error&&r.data!=null) renderEmailPref(r.data); else if(r.error) _reqErr(r.error); });
+}
+async function toggleEmailPref(){
+  var nv=!window._emailPref;
+  var r=await sb.rpc('viewer_email_pref',{p_token:_jlxTok(),p_value:nv});
+  if(r.error){ _reqErr(r.error); toast('Erreur : '+r.error.message,true); return; }
+  renderEmailPref(r.data);
+  toast(r.data?'✉️ E-mails d\'information activés':'✉️ E-mails d\'information désactivés (les e-mails de mot de passe restent envoyés)',3500);
+}
 function updateNotifBtn(state) {
   const btn  = document.getElementById('notif-btn');
   const pill = document.getElementById('notif-pill');
