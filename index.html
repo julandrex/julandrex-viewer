@@ -1374,27 +1374,34 @@ function _sigDesid(r){ return (r.status==='pending'?'P':'D')+':'+(r.requests||[]
 function _exStatus(r){ if(r.status!=='archived') return r.status; return r.confirmed_at?'confirmed':r.cancelled_at?'cancelled':'archived'; }
 function _sigExch(r){ return [_exStatus(r),r.acceptor_id||'',r.switch_proposer_ok,r.switch_acceptor_ok,r.j1_proposer_ok,r.j1_acceptor_ok,(r.refusal_log||[]).length,r.cancel_reason||'',r.reviewer_note||''].join('|'); }
 var _updState={d:[],x:[]};
-var _EX_COLS='id,status,proposer_id,acceptor_id,target_doctor_id,confirmed_at,cancelled_at,switch_proposer_ok,switch_acceptor_ok,j1_proposer_ok,j1_acceptor_ok,refusal_log,cancel_reason,reviewer_note,hidden_by_proposer';
+var _EX_COLS='id,status,proposer_id,acceptor_id,target_doctor_id,accepted_at,confirmed_at,cancelled_at,switch_proposer_ok,switch_acceptor_ok,j1_proposer_ok,j1_acceptor_ok,refusal_log,cancel_reason,reviewer_note,hidden_by_proposer';
 function _myExchFilter(q){ return q.eq('hospital_id',CFG.hospital).or('proposer_id.eq.'+me.id+',acceptor_id.eq.'+me.id+',target_doctor_id.eq.'+me.id); }
 async function jlxCheckUpdates(){
   if(!me||typeof sb==='undefined'||!sb) return;
   try{
-    var rd=await sb.from('desiderata_requests').select('id,status,requests,reviewer_note').eq('hospital_id',CFG.hospital).eq('doctor_id',me.id);
+    var rd=await sb.from('desiderata_requests').select('id,status,requests,reviewer_note,reviewed_at').eq('hospital_id',CFG.hospital).eq('doctor_id',me.id);
     var rx=await _myExchFilter(sb.from('exchange_requests').select(_EX_COLS));
     if(rd.error||rx.error) return;
-    var dCur={}, xCur={}, xRows={};
-    (rd.data||[]).forEach(function(r){ dCur[r.id]=_sigDesid(r); });
+    var dCur={}, xCur={}, xRows={}, dRows={};
+    (rd.data||[]).forEach(function(r){ dCur[r.id]=_sigDesid(r); dRows[r.id]=r; });
     (rx.data||[]).forEach(function(r){ if(r.proposer_id===me.id&&r.hidden_by_proposer) return; xCur[r.id]=_sigExch(r); xRows[r.id]=r; });
     var seen=_updLoad();
-    if(!seen){ _updSave({d:dCur,x:xCur}); _updState={d:[],x:[],dCur:dCur,xCur:xCur}; jlxRenderBadges(); return; }  // 1re fois : rien à signaler
+    // [2026-09-23] Constaté : une fiche envoyée puis refusée AVANT la vérification suivante était mémorisée d'emblée
+    // comme « vue » (état refusé) → aucune pastille. Désormais, une fiche/un échange vu pour la 1re fois est
+    // signalé s'il est DÉJÀ décidé. Tout premier passage : on signale les décisions des 48 dernières heures.
+    var recent=function(){ var t=0; for(var i=0;i<arguments.length;i++){ var v=arguments[i]&&Date.parse(arguments[i]); if(v>t) t=v; } return t&&(Date.now()-t)<48*3600*1000; };
+    var first=!seen;
+    var dNewFlag=function(r){ return r.status!=='pending'&&(!first||recent(r.reviewed_at)); };
+    var xNewFlag=function(r){ return (r.proposer_id!==me.id||_exStatus(r)!=='open')&&(!first||recent(r.created_at,r.accepted_at,r.confirmed_at,r.cancelled_at)); };
+    if(first) seen={d:{},x:{}};
     seen.d=seen.d||{}; seen.x=seen.x||{};
-    var dCh=Object.keys(dCur).filter(function(id){ return (id in seen.d)&&seen.d[id]!==dCur[id]; });
-    // Échange nouveau : signalé s'il vient d'un AUTRE médecin (demande qui m'est adressée) ; les miens sont mémorisés sans pastille
-    var xCh=Object.keys(xCur).filter(function(id){ return (id in seen.x)?seen.x[id]!==xCur[id]:xRows[id].proposer_id!==me.id; });
+    var dCh=Object.keys(dCur).filter(function(id){ return (id in seen.d)?seen.d[id]!==dCur[id]:dNewFlag(dRows[id]); });
+    // Échange nouveau : signalé s'il vient d'un AUTRE médecin, ou si le mien n'est déjà plus « ouvert »
+    var xCh=Object.keys(xCur).filter(function(id){ return (id in seen.x)?seen.x[id]!==xCur[id]:xNewFlag(xRows[id]); });
     var chg=false;
-    Object.keys(dCur).forEach(function(id){ if(!(id in seen.d)){ seen.d[id]=dCur[id]; chg=true; } });
+    Object.keys(dCur).forEach(function(id){ if(!(id in seen.d)&&dCh.indexOf(id)<0){ seen.d[id]=dCur[id]; chg=true; } });
     Object.keys(xCur).forEach(function(id){ if(!(id in seen.x)&&xCh.indexOf(id)<0){ seen.x[id]=xCur[id]; chg=true; } });
-    if(chg) _updSave(seen);
+    if(chg||first) _updSave(seen);
     _updState={d:dCh,x:xCh,dCur:dCur,xCur:xCur}; jlxRenderBadges();
   }catch(e){ console.warn('jlxCheckUpdates',e); }
 }
