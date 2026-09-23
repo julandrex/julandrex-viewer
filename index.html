@@ -292,7 +292,6 @@ button{font-family:inherit;}
         <a href="#" id="pin-help-link" onclick="requestPwdHelp();return false;" style="color:var(--t3);text-decoration:underline;">Mot de passe oublié ? Prévenir le gestionnaire</a>
         <div id="pin-help-msg" style="display:none;margin-top:8px;color:var(--t2);line-height:1.4;"></div>
       </div>
-      <div style="margin-top:18px;font-size:12px;color:var(--t3);line-height:1.5;text-align:center;">Identifiant : initiale du prénom + nom, en minuscules, sans accent ni espace.<br>Ex. Giuseppe Sorce → <b>gsorce</b> · Anne-Sophie Moreau → <b>asmoreau</b></div>
     </form>
     <div class="doc-grid" id="doc-grid" style="display:none;"></div>
   </div>
@@ -878,7 +877,7 @@ async function requestPwdHelp(){
   var _lg=((document.getElementById('login-id')||{}).value||'').trim().toLowerCase();
   if(!_lg){ if(m){ m.style.display='block'; m.textContent='Entrez d\'abord votre identifiant ci-dessus.'; } return; }
   var doc=selectedDoc&&selectedDoc.login===_lg?selectedDoc:doctors.find(function(d){return (d.login||'').toLowerCase()===_lg;});
-  if(!doc){ if(a) a.style.display='none'; if(m){ m.style.display='block'; m.textContent='✓ Si cet identifiant existe, le gestionnaire a été prévenu. Vérifiez-le sinon (initiale du prénom + nom).'; } return; }
+  if(!doc){ if(a) a.style.display='none'; if(m){ m.style.display='block'; m.textContent='✓ Si cet identifiant existe, le gestionnaire a été prévenu.'; } return; }
   if(m){ m.style.display='block'; m.textContent='Envoi…'; }
   try{
     var r=await fetch(CFG.url+'/functions/v1/update-pin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},
