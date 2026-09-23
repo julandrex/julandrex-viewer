@@ -1540,14 +1540,17 @@ function closeMesDemandes(){
   document.getElementById('demandes-bg').style.display='none';
 }
 
-function copyCalUrl(){
+// [2026-09-23] Lien PERSONNEL et SECRET (avant : l'id du médecin suffisait, et le lien ne marchait plus).
+// Le serveur le crée au premier appel et le garde ensuite ; l'abonnement se met à jour tout seul (toutes les 6 h).
+async function copyCalUrl(){
   if(!me) return;
-  const base='https://zzqbcjtrtisexyokezaq.supabase.co/functions/v1/ical';
-  const url=base+'?doc='+me.id+'&pin='+(me.pin||'')+'&h='+CFG.hospital;
+  const r=await sb.rpc('viewer_ical_link',{p_token:_jlxTok()});
+  if(r.error||!r.data){ if(/jlx_session/.test((r.error&&r.error.message)||'')) _jlxSessionLost(); else toast('Lien de calendrier indisponible — réessayez.',true); return; }
+  const url='https://zzqbcjtrtisexyokezaq.supabase.co/functions/v1/ical?t='+r.data;
   const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
   if(isIOS){
-    // Sur iOS : ouvrir l'URL déclenche l'ajout au calendrier natif
-    window.location.href=url;
+    // Sur iOS : webcal:// ouvre un ABONNEMENT dans Calendrier (mis à jour automatiquement), pas un import unique
+    window.location.href=url.replace(/^https:/,'webcal:');
   } else {
     navigator.clipboard.writeText(url).then(()=>{
       const btn=document.getElementById('cal-btn');
