@@ -1094,14 +1094,7 @@ function desidPickType(t){
   if(t==='ip'){
     // Peupler le sélecteur de postes via desidGetPosts (même source que poste particulier)
     const postSel=document.getElementById('desid-ip-post-sel');
-    if(postSel&&postSel.options.length<=1){
-      const postNames=desidGetPosts();
-      postNames.forEach(function(pn){
-        const opt=document.createElement('option');
-        opt.value=pn; opt.textContent=pn;
-        postSel.appendChild(opt);
-      });
-    }
+    if(postSel&&postSel.options.length<=1) desidFillPostSelect(postSel);
     // Forcer mode single-day dans le calendrier (comme le type poste particulier)
     _desidMulti=false;
   }
@@ -1116,14 +1109,34 @@ function desidPickType(t){
   if(fi)fi.style.display=t==='f'?'block':'none';
   if(ps){
     if(t==='p'){
-      ps.innerHTML='<option value="">-- Choisir un poste --</option>';
-      desidGetPosts().forEach(function(pn){var o=document.createElement('option');o.value=pn;o.textContent=pn;ps.appendChild(o);});
+      desidFillPostSelect(ps);
       ps.style.display='block';
     }else ps.style.display='none';
   }
   desidUpdAdd();
 }
 
+// [2026-09-23] Desiderata par SECTION : en plus d'un poste précis, le médecin peut viser toute une section.
+// La valeur envoyée est « Section Journée / Soirée / Nuit » (lue telle quelle par le gestionnaire).
+var _DESID_SECTIONS=[['jour','Journée'],['soir','Soirée'],['nuit','Nuit']];
+function desidGetSections(){
+  const src=(planning&&planning.posts)?planning.posts:[];
+  return _DESID_SECTIONS.map(function(s){
+    var names=[],seen={};
+    src.filter(function(p){return p.section===s[0];}).forEach(function(p){ if(!seen[p.name]){seen[p.name]=true;names.push(p.name);} });
+    return {value:'Section '+s[1],label:'Section '+s[1]+(names.length?' ('+names.join(', ')+')':''),n:names.length};
+  }).filter(function(s){return s.n>0;});
+}
+function desidFillPostSelect(sel){
+  if(!sel) return;
+  sel.innerHTML='<option value="">-- Choisir un poste ou une section --</option>';
+  var g1=document.createElement('optgroup'); g1.label='Toute une section';
+  desidGetSections().forEach(function(s){ var o=document.createElement('option'); o.value=s.value; o.textContent=s.label; g1.appendChild(o); });
+  if(g1.children.length) sel.appendChild(g1);
+  var g2=document.createElement('optgroup'); g2.label='Un poste précis';
+  desidGetPosts().forEach(function(pn){ var o=document.createElement('option'); o.value=pn; o.textContent=pn; g2.appendChild(o); });
+  sel.appendChild(g2);
+}
 function desidGetPosts(){
   const src=(planning&&planning.posts)?planning.posts:[];
   if(!src.length)return[];
@@ -1174,7 +1187,7 @@ function desidAddRequest(){
   if(window._desidCurType==='ip'){
     if(!_desidD1){alert('Sélectionnez un jour dans le calendrier.');return;}
     const pn=document.getElementById('desid-ip-post-sel').value;
-    if(!pn){alert('Choisissez un poste.');return;}
+    if(!pn){alert('Choisissez un poste ou une section.');return;}
     const _ipd=_desidD1;
     const dk=_ipd.getFullYear()+'-'+String(_ipd.getMonth()+1).padStart(2,'0')+'-'+String(_ipd.getDate()).padStart(2,'0');
     const label='🚫 '+pn+' le '+_desidD1.toLocaleDateString('fr-BE',{day:'2-digit',month:'short'});
