@@ -151,7 +151,9 @@ button{font-family:inherit;}
 .tb-dd-item:hover{background:var(--bg2);}
 .upd-dot{display:inline-block;min-width:16px;height:16px;line-height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;text-align:center;margin-left:6px;vertical-align:middle;}
 #tb-menu-btn{position:relative;}
-#tb-menu-btn .upd-dot{position:absolute;top:-6px;right:-6px;margin:0;}
+/* [2026-09-23] Pastille accrochée au CONTENEUR du bouton : l'effet d'onde (.jx-ripple-host) met overflow:hidden
+   sur le bouton, ce qui coupait la pastille posée en débord de son coin. */
+#tb-menu-wrap>.upd-dot{position:absolute;top:-7px;right:-7px;margin:0;z-index:5;pointer-events:none;box-shadow:0 0 0 2px var(--bg1);}
 .x-ini{display:inline-block;min-width:26px;padding:1px 6px;border-radius:6px;font-size:11px;font-weight:700;text-align:center;background:var(--bg3);color:var(--t1);}
 
 /* ── OFFLINE / ERROR BANNERS ─── */
@@ -1529,9 +1531,10 @@ function jlxMarkSeenRows(kind,rows){
 }
 function jlxRenderBadges(){
   var nd=(_updState.d||[]).length, nx=(_updState.x||[]).length;
-  var put=function(id,n){ var b=document.getElementById(id); if(!b) return; var s=b.querySelector('.upd-dot');
+  var put=function(id,n){ var b=document.getElementById(id); if(!b) return; var s=b.querySelector(':scope>.upd-dot');
     if(!n){ if(s) s.remove(); return; } if(!s){ s=document.createElement('span'); s.className='upd-dot'; b.appendChild(s); } s.textContent=n; s.title=n+' demande(s) mise(s) à jour'; };
-  put('demandes-btn',nd); put('echanges-btn',nx); put('tb-menu-btn',nd+nx);
+  put('demandes-btn',nd); put('echanges-btn',nx); put('tb-menu-wrap',nd+nx);
+  var old=document.querySelector('#tb-menu-btn .upd-dot'); if(old) old.remove();
 }
 document.addEventListener('visibilitychange',function(){ if(!document.hidden&&me) jlxCheckUpdates(); });
 setInterval(function(){ if(me&&!document.hidden) jlxCheckUpdates(); },90000);
