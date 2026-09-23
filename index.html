@@ -149,6 +149,10 @@ button{font-family:inherit;}
 
 .tb-dd-item{display:block;width:100%;text-align:left;background:none;border:none;color:var(--t1);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;}
 .tb-dd-item:hover{background:var(--bg2);}
+.upd-dot{display:inline-block;min-width:16px;height:16px;line-height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;text-align:center;margin-left:6px;vertical-align:middle;}
+#tb-menu-btn{position:relative;}
+#tb-menu-btn .upd-dot{position:absolute;top:-6px;right:-6px;margin:0;}
+.x-ini{display:inline-block;min-width:26px;padding:1px 6px;border-radius:6px;font-size:11px;font-weight:700;text-align:center;background:var(--bg3);color:var(--t1);}
 
 /* ── OFFLINE / ERROR BANNERS ─── */
 .offline-banner{display:flex;align-items:center;gap:10px;background:rgba(230,126,34,.1);border:1px solid #e67e22;border-radius:10px;padding:10px 14px;margin:8px 8px 0;font-size:13px;color:#e67e22;}
@@ -534,9 +538,10 @@ async function init(){
 async function loadDoctors(){
   try{
     const _tmo=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Impossible de charger les médecins (10s). Vérifiez votre connexion.')),10000));
-    const {data,error}=await Promise.race([sb.from('doctors_public').select('id,local_id,firstname,lastname,role,color,pin_set,has_pin,weekly_hours').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname'),_tmo]);
+    const {data,error}=await Promise.race([sb.from('doctors_public').select('id,local_id,firstname,lastname,role,color,pin_set,has_pin,weekly_hours,initials').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname'),_tmo]);
     if(error)throw error;
     doctors=data||[];
+    window._docIni={}; doctors.forEach(function(d){ if(d.initials) window._docIni[d.id]=d.initials; });
     renderLoginDocs();
   }catch(e){
     document.getElementById('doc-grid').innerHTML=`<div class="ld" style="color:var(--err);">Connexion impossible : ${e.message}</div>`;
@@ -1295,6 +1300,7 @@ async function openMesDemandes(){
       return (TLAB[it.type]||esc(it.type))+' : '+ds+(it.detail?' — '+esc(it.detail):'')+mark;
     };
     const BORDER={pending:'#fbbf24',validated:'#22c55e',accepted:'#22c55e',partial:'#f59e0b',archived:'var(--t3)'};
+    const _chgD=new Set(_updState.d||[]); jlxMarkSeenRows('d',data);   // [2026-09-23] l'ouverture vaut « vu »
     const Q=['T1','T2','T3','T4'];
     list.innerHTML=data.map(r=>{
       const cgs=(r.conges||[]).map(c=>`☀️ Congé : ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}`).join('<br>');
@@ -1304,7 +1310,7 @@ async function openMesDemandes(){
       const note=r.reviewer_note?`<div style="font-size:11px;color:var(--t2);margin-top:6px;">📝 Note du gestionnaire : ${esc(r.reviewer_note)}</div>`:'';
       return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:10px;border-left:3px solid ${BORDER[r.status]||'#ef4444'};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:13px;font-weight:700;">${Q[(r.quarter||1)-1]} ${r.year}</span>
+          <span style="font-size:13px;font-weight:700;">${Q[(r.quarter||1)-1]} ${r.year}${_chgD.has(r.id)?' <span class="upd-dot" style="margin-left:6px;">nouveau statut</span>':''}</span>
           ${stBadge(r.status)}
         </div>
         <div style="font-size:12px;color:var(--t2);line-height:1.8;">${lines||'<i>Aucun détail</i>'}</div>
@@ -1317,6 +1323,94 @@ async function openMesDemandes(){
     list.innerHTML=`<div style="color:var(--err);padding:10px;">Erreur : ${e.message}</div>`;
   }
 }
+
+// ── [2026-09-23] SUIVI DES CHANGEMENTS DE STATUT ─────────────────────────────────────────────────────
+// Pastille rouge sur ☰, « Mes demandes » et « Mes échanges » dès qu'une demande change de statut (décision du
+// gestionnaire, acceptation, refus, switch…), jusqu'à ce que le médecin ouvre l'onglet concerné. L'état « déjà
+// vu » est gardé dans ce navigateur (localStorage). Vérifié à la connexion, au retour sur l'appli et toutes les 90 s.
+// Initiales : même règle que l'appli du gestionnaire (docInitialsMap) — celles de la fiche priment, puis celles des
+// chefs/adjoints, sinon initiale de chaque partie du prénom + de chaque mot du nom ; homonymes → lettres suivantes du nom.
+var _SUP_INI={'DEGESVES':'SD','STECKX':'ES','BERTRAND':'XB','BUSCH':'IB','VAN BRUSSEL':'EVB'};
+function _iniNoAcc(t){ return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function _iniLast(d){ return String(d.lastname||'').replace(/\s+SENIOR$/i,''); }
+function _iniWho(d){ return _iniNoAcc(_iniLast(d)+'|'+(d.firstname||'')).toUpperCase(); }
+function _baseIni(d){
+  return _iniNoAcc(String(d.firstname||'').replace(/\?/g,'').split(/[\s-]+/).filter(Boolean).map(function(t){return t[0];}).join('')
+    +_iniLast(d).split(/\s+/).filter(Boolean).map(function(t){return t[0];}).join('')).toUpperCase();
+}
+function _iniMap(list){
+  var map={}, m0=window._docIni||{};
+  list.forEach(function(d){ var v=String(m0[d.id]||'').trim(); if(v) map[d.id]=v; });
+  list.forEach(function(d){ if(map[d.id]) return; var c=_SUP_INI[String(d.lastname||'').toUpperCase()]; if(c) map[d.id]=c; });
+  var lnOf=function(d){ return _iniNoAcc(_iniLast(d)).replace(/[^A-Za-z]/g,''); };
+  var groups={};
+  list.filter(function(d){return !map[d.id];}).forEach(function(d){ var b=_baseIni(d); (groups[b]=groups[b]||[]).push(d); });
+  Object.keys(groups).forEach(function(b){ var l=groups[b];
+    var persons=new Set(l.map(_iniWho));
+    var fixedClash=list.some(function(o){ return map[o.id]&&map[o.id].toUpperCase()===b&&!persons.has(_iniWho(o)); });
+    l.forEach(function(d){
+      var twin=list.find(function(o){ return o!==d&&map[o.id]&&_iniWho(o)===_iniWho(d); }); if(twin){ map[d.id]=map[twin.id]; return; }
+      if(persons.size<2&&!fixedClash){ map[d.id]=b; return; }
+      var ln=lnOf(d), k=2, ini=b+ln.slice(1,k).toLowerCase();
+      var clash=function(v){ return list.some(function(o){ return _iniWho(o)!==_iniWho(d)&&((map[o.id]||'')===v
+        ||(!map[o.id]&&_baseIni(o)===b&&lnOf(o).slice(0,k).toUpperCase()===ln.slice(0,k).toUpperCase())); }); };
+      while(k<ln.length&&clash(ini)){ k++; ini=b+ln.slice(1,k).toLowerCase(); }
+      map[d.id]=ini;
+    });
+  });
+  return map;
+}
+var _iniCache=null, _iniCacheKey='';
+function docIni(id){
+  var key=(doctors||[]).length+':'+Object.keys(window._docIni||{}).length;
+  if(!_iniCache||_iniCacheKey!==key){ _iniCache=_iniMap(doctors||[]); _iniCacheKey=key; }
+  return _iniCache[id]||'?';
+}
+function docFull(id){ var d=(doctors||[]).find(function(x){return x.id==id;}); return d?(d.firstname+' '+d.lastname):''; }
+function _updKey(){ return 'jlx_seen_'+CFG.hospital+'_'+(me&&me.id); }
+function _updLoad(){ try{ return JSON.parse(localStorage.getItem(_updKey())||'null'); }catch(e){ return null; } }
+function _updSave(o){ try{ localStorage.setItem(_updKey(),JSON.stringify(o)); }catch(e){} }
+function _sigDesid(r){ return (r.status==='pending'?'P':'D')+':'+(r.requests||[]).map(function(i){return i.status||'';}).join(',')+':'+(r.reviewer_note||''); }
+function _exStatus(r){ if(r.status!=='archived') return r.status; return r.confirmed_at?'confirmed':r.cancelled_at?'cancelled':'archived'; }
+function _sigExch(r){ return [_exStatus(r),r.acceptor_id||'',r.switch_proposer_ok,r.switch_acceptor_ok,r.j1_proposer_ok,r.j1_acceptor_ok,(r.refusal_log||[]).length,r.cancel_reason||'',r.reviewer_note||''].join('|'); }
+var _updState={d:[],x:[]};
+var _EX_COLS='id,status,proposer_id,acceptor_id,target_doctor_id,confirmed_at,cancelled_at,switch_proposer_ok,switch_acceptor_ok,j1_proposer_ok,j1_acceptor_ok,refusal_log,cancel_reason,reviewer_note,hidden_by_proposer';
+function _myExchFilter(q){ return q.eq('hospital_id',CFG.hospital).or('proposer_id.eq.'+me.id+',acceptor_id.eq.'+me.id+',target_doctor_id.eq.'+me.id); }
+async function jlxCheckUpdates(){
+  if(!me||typeof sb==='undefined'||!sb) return;
+  try{
+    var rd=await sb.from('desiderata_requests').select('id,status,requests,reviewer_note').eq('hospital_id',CFG.hospital).eq('doctor_id',me.id);
+    var rx=await _myExchFilter(sb.from('exchange_requests').select(_EX_COLS));
+    if(rd.error||rx.error) return;
+    var dCur={}, xCur={}, xRows={};
+    (rd.data||[]).forEach(function(r){ dCur[r.id]=_sigDesid(r); });
+    (rx.data||[]).forEach(function(r){ if(r.proposer_id===me.id&&r.hidden_by_proposer) return; xCur[r.id]=_sigExch(r); xRows[r.id]=r; });
+    var seen=_updLoad();
+    if(!seen){ _updSave({d:dCur,x:xCur}); _updState={d:[],x:[],dCur:dCur,xCur:xCur}; jlxRenderBadges(); return; }  // 1re fois : rien à signaler
+    seen.d=seen.d||{}; seen.x=seen.x||{};
+    var dCh=Object.keys(dCur).filter(function(id){ return (id in seen.d)&&seen.d[id]!==dCur[id]; });
+    // Échange nouveau : signalé s'il vient d'un AUTRE médecin (demande qui m'est adressée) ; les miens sont mémorisés sans pastille
+    var xCh=Object.keys(xCur).filter(function(id){ return (id in seen.x)?seen.x[id]!==xCur[id]:xRows[id].proposer_id!==me.id; });
+    var chg=false;
+    Object.keys(dCur).forEach(function(id){ if(!(id in seen.d)){ seen.d[id]=dCur[id]; chg=true; } });
+    Object.keys(xCur).forEach(function(id){ if(!(id in seen.x)&&xCh.indexOf(id)<0){ seen.x[id]=xCur[id]; chg=true; } });
+    if(chg) _updSave(seen);
+    _updState={d:dCh,x:xCh,dCur:dCur,xCur:xCur}; jlxRenderBadges();
+  }catch(e){ console.warn('jlxCheckUpdates',e); }
+}
+function jlxMarkSeenRows(kind,rows){
+  var seen=_updLoad()||{d:{},x:{}}; seen[kind]=seen[kind]||{};
+  (rows||[]).forEach(function(r){ seen[kind][r.id]=kind==='d'?_sigDesid(r):_sigExch(r); });
+  _updSave(seen); _updState[kind]=[]; jlxRenderBadges();
+}
+function jlxRenderBadges(){
+  var nd=(_updState.d||[]).length, nx=(_updState.x||[]).length;
+  var put=function(id,n){ var b=document.getElementById(id); if(!b) return; var s=b.querySelector('.upd-dot');
+    if(!n){ if(s) s.remove(); return; } if(!s){ s=document.createElement('span'); s.className='upd-dot'; b.appendChild(s); } s.textContent=n; s.title=n+' demande(s) mise(s) à jour'; };
+  put('demandes-btn',nd); put('echanges-btn',nx); put('tb-menu-btn',nd+nx);
+}
+document.addEventListener('visibilitychange',function(){ if(!document.hidden&&me) jlxCheckUpdates(); });
+setInterval(function(){ if(me&&!document.hidden) jlxCheckUpdates(); },90000);
 
 function closeMesDemandes(){
   document.getElementById('demandes-bg').style.display='none';
@@ -1408,6 +1502,7 @@ function showMain(){
   loadAll();
   loadQShifts();
   loadMyDesids();
+  jlxCheckUpdates();
   subscribeRT();
   initSession();
   logAccess('login','');
@@ -2638,43 +2733,66 @@ async function openMesEchanges(){
   const list=document.getElementById('mesechanges-list');
   list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">⏳ Chargement...</div>';
   try{
-    const {data,error}=await sb.from('exchange_requests')
-      .select('*').eq('hospital_id',CFG.hospital).eq('proposer_id',me.id).eq('hidden_by_proposer',false)
-      .order('created_at',{ascending:false});
-    if(error) throw error;
-    if(!data||!data.length){
-      list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">Aucune demande d\'échange en cours.</div>';
-      return;
+    if(!window._docIni||!Object.keys(window._docIni).length){
+      try{ const r0=await sb.from('doctors_public').select('id,initials').eq('hospital_id',CFG.hospital);
+        window._docIni={}; (r0.data||[]).forEach(function(d){ if(d.initials) window._docIni[d.id]=d.initials; }); }catch(e){}
     }
-    const fmtD=dk=>{const p=dk.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
-    list.innerHTML=data.map(r=>{
-      const post=planning?.posts?.find(p=>p.id===r.proposer_post);
-      const postName=post?.full||post?.name||r.proposer_post;
-      const acc=r.acceptor_id?doctors.find(d=>d.id===r.acceptor_id):null;
-      const accName=acc?acc.firstname+' '+acc.lastname:null;
-      // Badge statut
-      let badge='',color='';
-      if(r.status==='open'){
-        badge='⏳ En attente de réponse';color='#f59e0b';
-      } else if(r.status==='accepted'){
-        badge='✅ Acceptée par '+(accName||'un médecin');color='#22c55e';
-      } else if(r.status==='confirmed'){
-        badge='✔ Validée par le gestionnaire';color='#22c55e';
-      } else if(r.status==='cancelled'){
-        badge='✗ Annulée par le gestionnaire';color='#ef4444';
-      }
-      const borderColor=r.status==='open'?'#f59e0b':r.status==='cancelled'?'#ef4444':'#22c55e';
-      return `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid ${borderColor};">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:13px;font-weight:700;">📅 ${fmtD(r.proposer_date)} — ${postName}</span>
-          <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:6px;background:${borderColor}22;color:${color};">${badge}</span>
-        </div>
-        ${r.message?`<div style="font-size:11px;color:var(--t3);font-style:italic;margin-bottom:6px;">"${r.message}"</div>`:''}
-        ${r.status==='open'?`<button onclick="cancelX('${r.id}');closeMesEchanges();" style="background:transparent;border:1px solid var(--b);color:var(--t3);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">Annuler</button>`:''}
-      </div>`;
+    // [2026-09-23] Journal complet : échanges que j'ai proposés, acceptés, ou qui me sont adressés
+    const {data,error}=await _myExchFilter(sb.from('exchange_requests').select('*')).order('created_at',{ascending:false});
+    if(error) throw error;
+    const rows=(data||[]).filter(function(r){ return !(r.proposer_id===me.id&&r.hidden_by_proposer); });
+    const chg=new Set(_updState.x||[]); jlxMarkSeenRows('x',rows);
+    if(!rows.length){ list.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px;">Aucun échange.</div>'; return; }
+    const esc=function(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); };
+    const fmtD=function(dk){ const p=String(dk||'').split('-'); return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:esc(dk); };
+    const fmtT=function(s){ return new Date(s).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); };
+    const pn=function(pid){ const p=planning&&planning.posts&&planning.posts.find(function(x){return x.id===pid;}); return esc(p?(p.full||p.name):pid); };
+    const who=function(id){ if(id==null) return '?'; if(id===me.id) return 'vous'; return '<span class="x-ini" title="'+esc(docFull(id))+'">'+esc(docIni(id))+'</span>'; };
+    list.innerHTML=rows.map(function(r){
+      const mine=r.proposer_id===me.id, st=_exStatus(r);
+      const other=mine?(r.acceptor_id||r.target_doctor_id):r.proposer_id;
+      let badge,color;
+      if(st==='open'){ badge=mine?(r.target_doctor_id?'⏳ En attente de réponse':'⏳ Ouverte à tous'):'📩 Proposée à vous'; color='#f59e0b'; }
+      else if(st==='accepted'){ badge=mine?'✅ Acceptée — attente du gestionnaire':'✅ Acceptée par vous — attente du gestionnaire'; color='#22c55e'; }
+      else if(st==='confirmed'){ badge='✔ Validée par le gestionnaire'; color='#22c55e'; }
+      else if(st==='cancelled'){ badge='✗ Annulée'; color='#ef4444'; }
+      else if(st==='archived'){ badge='🗄 Archivée par le gestionnaire'; color='#94a3b8'; }
+      else { badge=esc(st); color='#94a3b8'; }
+      if(r.status==='archived'&&st!=='archived') badge+=' · archivée';
+      const border=st==='open'?'#f59e0b':st==='cancelled'?'#ef4444':st==='archived'?'#64748b':'#22c55e';
+      // Nature de l'échange
+      let nature=mine?'Vous cédez <b>'+pn(r.proposer_post)+'</b>'+(r.proposer_post2?' + <b>'+pn(r.proposer_post2)+'</b>':'')
+                     :who(r.proposer_id)+' vous cède <b>'+pn(r.proposer_post)+'</b>'+(r.proposer_post2?' + <b>'+pn(r.proposer_post2)+'</b>':'');
+      if(r.switch_proposer_post) nature+=mine?' · en échange, vous prenez <b>'+pn(r.switch_proposer_post)+'</b>':' · en échange, vous lui cédez <b>'+pn(r.switch_proposer_post)+'</b>';
+      if(r.j1_date) nature+='<br>Switch J+1 le '+fmtD(r.j1_date)+' : '+pn(r.j1_proposer_post)+(r.j1_acceptor_posts&&r.j1_acceptor_posts.length?' ↔ '+r.j1_acceptor_posts.map(pn).join(', '):'');
+      // Journal daté
+      const ev=[];
+      if(r.created_at) ev.push([r.created_at,'Demande créée par '+who(r.proposer_id)+(r.target_doctor_id?' (adressée à '+who(r.target_doctor_id)+')':'')]);
+      if(r.accepted_at&&r.acceptor_id) ev.push([r.accepted_at,'Acceptée par '+who(r.acceptor_id)]);
+      (Array.isArray(r.refusal_log)?r.refusal_log:[]).forEach(function(l){ if(!l||!l.at) return;
+        const by=l.by_id!=null?who(l.by_id):(l.by==='gestionnaire'?'le gestionnaire':esc(l.by||''));
+        ev.push([l.at,esc(l.detail||'')+(by?' <span style="color:var(--t3);">('+by+')</span>':'')]); });
+      if(r.confirmed_at) ev.push([r.confirmed_at,'Validée par le gestionnaire']);
+      if(r.cancelled_at) ev.push([r.cancelled_at,'Annulée']);
+      if(r.archived_at) ev.push([r.archived_at,'Archivée par le gestionnaire']);
+      ev.sort(function(a,b){ return new Date(a[0])-new Date(b[0]); });
+      const journal=ev.length?'<div style="margin-top:8px;border-top:1px solid var(--b);padding-top:6px;font-size:11px;color:var(--t2);line-height:1.6;">'
+        +ev.map(function(e){ return '<div>• <span style="color:var(--t3);">'+fmtT(e[0])+'</span> — '+e[1]+'</div>'; }).join('')+'</div>':'';
+      const motif=r.cancel_reason||r.reviewer_note;
+      return '<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid '+border+';">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap;">'
+        +'<span style="font-size:13px;font-weight:700;">📅 '+fmtD(r.proposer_date)+' — '+pn(r.proposer_post)+(chg.has(r.id)?' <span class="upd-dot">mis à jour</span>':'')+'</span>'
+        +'<span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:6px;background:'+border+'22;color:'+color+';">'+badge+'</span></div>'
+        +'<div style="font-size:12px;color:var(--t1);line-height:1.6;">'+(other!=null?'Avec '+who(other)+' '+(other!==me.id?'<span style="color:var(--t3);">'+esc(docFull(other))+'</span>':'')+'<br>':'')+nature+'</div>'
+        +(r.message?'<div style="font-size:11px;color:var(--t3);font-style:italic;margin-top:6px;">💬 « '+esc(r.message)+' »</div>':'')
+        +(r.reply_message?'<div style="font-size:11px;color:var(--t3);font-style:italic;margin-top:4px;">↩ « '+esc(r.reply_message)+' »</div>':'')
+        +(motif?'<div style="font-size:11px;color:#f87171;margin-top:6px;">📝 Motif du gestionnaire : '+esc(motif)+'</div>':'')
+        +journal
+        +(mine&&st==='open'?'<button onclick="cancelX(\''+r.id+'\');closeMesEchanges();" style="margin-top:8px;background:transparent;border:1px solid var(--b);color:var(--t3);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">Annuler</button>':'')
+        +'</div>';
     }).join('');
   }catch(e){
-    list.innerHTML=`<div style="color:var(--err);padding:10px;">Erreur : ${e.message}</div>`;
+    list.innerHTML='<div style="color:var(--err);padding:10px;">Erreur : '+String(e.message||e)+'</div>';
   }
 }
 async function clearMesEchanges(){
@@ -3049,7 +3167,7 @@ async function rejectX(id){
 <div id="mesechanges-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;overflow-y:auto;" onclick="if(event.target===this)closeMesEchanges()">
   <div style="background:var(--bg1);border-radius:14px;max-width:520px;margin:30px auto;padding:20px;box-sizing:border-box;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-size:15px;font-weight:700;">🔄 Mes demandes d'échange</div>
+      <div style="font-size:15px;font-weight:700;">🔄 Mes échanges</div>
       <button onclick="clearMesEchanges()" title="Supprimer les échanges terminés" style="background:none;border:1px solid var(--t3);color:var(--t3);font-size:11px;padding:3px 8px;border-radius:5px;cursor:pointer;margin-right:8px;">🗑 Vider</button><button onclick="closeMesEchanges()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
     </div>
     <div id="mesechanges-list"></div>
