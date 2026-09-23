@@ -291,7 +291,7 @@ button{font-family:inherit;}
       <div class="pwd-err" id="pin-err" style="margin-bottom:10px;display:none;"></div>
       <button type="submit" class="pwd-btn" style="width:100%;">Se connecter</button>
       <div id="pin-help" style="margin-top:12px;text-align:center;font-size:12.5px;">
-        <a href="#" id="pin-help-link" onclick="requestPwdHelp();return false;" style="color:var(--t3);text-decoration:underline;">Mot de passe oublié ? Prévenir le gestionnaire</a>
+        <a href="#" id="pin-help-link" onclick="requestPwdHelp();return false;" style="color:var(--t3);text-decoration:underline;">Mot de passe oublié ?</a>
         <div id="pin-help-msg" style="display:none;margin-top:8px;color:var(--t2);line-height:1.4;"></div>
       </div>
     </form>
@@ -534,6 +534,9 @@ async function init(){
   }
   sb=supabase.createClient(CFG.url,CFG.key);
   _installReqShim();
+  // [2026-09-23] Lien « mot de passe oublié » reçu par e-mail (usage unique, 1 heure)
+  const _rst=new URLSearchParams(location.search).get('reset');
+  if(_rst){ try{ history.replaceState(null,'',location.pathname); }catch(e){} setTimeout(function(){ startPwdReset(_rst); },300); }
   const saved=sessionStorage.getItem('jlx_me');
   // [2026-09-13] Pas de reprise automatique si la session a expiré (un simple rafraîchissement contournait le code)
   const _last=+sessionStorage.getItem('jlx_last')||0;
@@ -897,7 +900,7 @@ var _pwdHelpReason='forgot';
 function setPwdHelpMode(reason){
   _pwdHelpReason=reason==='first'?'first':'forgot';
   var a=document.getElementById('pin-help-link'), m=document.getElementById('pin-help-msg');
-  if(a){ a.style.display=''; a.textContent=_pwdHelpReason==='first'?'Demander un mot de passe au gestionnaire':'Mot de passe oublié ? Prévenir le gestionnaire'; }
+  if(a){ a.style.display=''; a.textContent=_pwdHelpReason==='first'?'Recevoir un lien pour créer mon mot de passe':'Mot de passe oublié ?'; }
   if(m){ m.style.display='none'; m.textContent=''; }
 }
 async function requestPwdHelp(){
@@ -911,7 +914,7 @@ async function requestPwdHelp(){
     var d=await r.json();
     if(!r.ok) throw new Error(d.error||'Erreur serveur');
     if(a) a.style.display='none';
-    if(m) m.textContent='✓ Si cet identifiant existe, le gestionnaire a été prévenu. Aucun mot de passe n\'a été modifié.';
+    if(m) m.textContent='✓ Si cet identifiant existe, un e-mail a été envoyé à l\'adresse enregistrée. Aucun mot de passe n\'a été modifié.';
   }catch(e){ if(m) m.textContent='Envoi impossible ('+e.message+'). Contactez directement le gestionnaire.'; }
 }
 
@@ -928,7 +931,11 @@ function showPwdSetup(isFirstLogin){
   const title=document.getElementById('pws-title');
   const sub=document.getElementById('pws-sub');
   const cancelWrap=document.getElementById('pws-cancel-wrap');
-  if(isFirstLogin){
+  if(isFirstLogin==='reset'){
+    title.textContent='🔐 Nouveau mot de passe';
+    sub.innerHTML='Bonjour <strong>'+(doc.firstname||'')+'</strong>, choisissez votre nouveau mot de passe'+(doc.login?' (identifiant : <strong>'+doc.login+'</strong>)':'')+'.';
+    cancelWrap.style.display='block';
+  }else if(isFirstLogin){
     title.textContent='🔐 Première connexion';
     sub.innerHTML='Bonjour <strong>'+doc.firstname+'</strong>, vous vous connectez pour la première fois.<br>Définissez votre mot de passe personnel pour continuer.';
     cancelWrap.style.display='none';
@@ -945,7 +952,21 @@ function showPwdSetup(isFirstLogin){
   ov.style.display='flex';
   setTimeout(()=>document.getElementById('pws-new').focus(),100);
 }
+async function startPwdReset(tok){
+  let r=null; try{ r=await sb.rpc('viewer_pwd_reset_check',{p_token:tok}); }catch(e){}
+  const st=r&&!r.error&&r.data?r.data.status:null;
+  if(st!=='ok'){
+    const msg="Ce lien n'est plus valable (expiré ou déjà utilisé). Refaites une demande avec « Mot de passe oublié ».";
+    const pe=document.getElementById('pin-err');
+    if(pe&&document.getElementById('scr-login').style.display!=='none'){ pe.textContent=msg; pe.style.display='block'; } else alert(msg);
+    return;
+  }
+  window._resetToken=tok;
+  window._loginDoc={firstname:r.data.firstname||'',lastname:r.data.lastname||'',login:r.data.login||''};
+  showPwdSetup('reset');
+}
 function closePwdSetup(){
+  window._resetToken=null;
   const ov=document.getElementById('pwd-setup-overlay');
   if(ov)ov.style.display='none';
 }
@@ -957,6 +978,23 @@ async function submitPwdSetup(){
   const validErr=validatePasswordStrength(newPwd,doc.firstname,doc.lastname);
   if(validErr){errEl.textContent=validErr;errEl.style.display='block';return;}
   if(newPwd!==confirm){errEl.textContent='Les mots de passe ne correspondent pas.';errEl.style.display='block';return;}
+  if(window._resetToken){
+    try{
+      const rr=await sb.rpc('viewer_pwd_reset_apply',{p_token:window._resetToken,p_new_pwd:newPwd});
+      const s=rr&&!rr.error&&rr.data?rr.data.status:null;
+      if(s==='weak'){ errEl.textContent='Mot de passe trop faible : 12 caractères et 3 types au moins.'; errEl.style.display='block'; return; }
+      if(s!=='ok'){ window._resetToken=null; errEl.textContent="Ce lien n'est plus valable (expiré ou déjà utilisé). Refaites une demande avec « Mot de passe oublié »."; errEl.style.display='block'; return; }
+      window._resetToken=null;
+      _jlxSetTok(rr.data.token);
+      closePwdSetup();
+      try{ localStorage.setItem('jlx_login_'+CFG.hospital,(rr.data.doctor&&rr.data.doctor.login)||''); }catch(e){}
+      _pwdAttempts=0; me=Object.assign({},rr.data.doctor);
+      sessionStorage.setItem('jlx_me',JSON.stringify(me));
+      showMain();
+      setTimeout(function(){ toast('✅ Nouveau mot de passe enregistré.'); },600);
+    }catch(e){ errEl.textContent='Erreur : '+(e.message||e); errEl.style.display='block'; }
+    return;
+  }
   try{
     const _r=await fetch(CFG.url+'/functions/v1/update-pin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},body:JSON.stringify({action:'set_pwd',doctor_id:doc.id,current_pin:window._loginTempPwd||'',new_pin:newPwd})});
     const _d=await _r.json();
