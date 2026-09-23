@@ -276,32 +276,31 @@ button{font-family:inherit;}
   <div class="logo">📋 Julandrex</div>
   <div class="logo-sub">Planning des urgences — CHR Citadelle</div>
   <div class="login-box">
-    <div class="step-title">Sélectionnez votre nom</div>
-    <div class="doc-grid" id="doc-grid"><div class="ld"><div class="sp"></div>Chargement...</div></div>
-    
+    <!-- [2026-09-23] Connexion par identifiant : la liste des médecins n'est plus affichée -->
+    <form id="login-form" onsubmit="doLogin();return false;" autocomplete="on" style="max-width:360px;margin:0 auto;">
+      <div class="step-title">Connexion</div>
+      <label for="login-id" style="display:block;font-size:12.5px;color:var(--t2);margin:0 0 5px 2px;">Identifiant</label>
+      <input class="pwd-inp" id="login-id" name="username" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="ex. gsorce" style="width:100%;margin-bottom:12px;box-sizing:border-box;">
+      <label for="pin-inp" style="display:block;font-size:12.5px;color:var(--t2);margin:0 0 5px 2px;">Mot de passe</label>
+      <div style="position:relative;margin-bottom:10px;">
+        <input class="pwd-inp" id="pin-inp" name="password" type="password" placeholder="Votre mot de passe" autocomplete="current-password" style="width:100%;box-sizing:border-box;">
+        <button type="button" onclick="togglePwdVis('pin-inp',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:0;">👁</button>
+      </div>
+      <div class="pwd-err" id="pin-err" style="margin-bottom:10px;display:none;"></div>
+      <button type="submit" class="pwd-btn" style="width:100%;">Se connecter</button>
+      <div id="pin-help" style="margin-top:12px;text-align:center;font-size:12.5px;">
+        <a href="#" id="pin-help-link" onclick="requestPwdHelp();return false;" style="color:var(--t3);text-decoration:underline;">Mot de passe oublié ? Prévenir le gestionnaire</a>
+        <div id="pin-help-msg" style="display:none;margin-top:8px;color:var(--t2);line-height:1.4;"></div>
+      </div>
+      <div style="margin-top:18px;font-size:12px;color:var(--t3);line-height:1.5;text-align:center;">Identifiant : initiale du prénom + nom, en minuscules, sans accent ni espace.<br>Ex. Giuseppe Sorce → <b>gsorce</b> · Anne-Sophie Moreau → <b>asmoreau</b></div>
+    </form>
+    <div class="doc-grid" id="doc-grid" style="display:none;"></div>
   </div>
 </div>
 
 
-<!-- LOGIN MODAL -->
-<div id="login-modal-bg" onclick="if(event.target===this)closeLoginModal()">
-  <div id="login-modal">
-    <button class="lm-close" onclick="closeLoginModal()">&#x2715;</button>
-    <div class="lm-av" id="lm-av"></div>
-    <div class="lm-name" id="lm-name"></div>
-    <div class="lm-sub" id="lm-role-modal"></div>
-    <div style="position:relative;margin-bottom:10px;">
-      <input class="pwd-inp" id="pin-inp" type="password" placeholder="Votre mot de passe" autocomplete="current-password" style="width:100%;">
-      <button type="button" onclick="togglePwdVis('pin-inp',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:0;">👁</button>
-    </div>
-    <div class="pwd-err" id="pin-err" style="margin-bottom:10px;display:none;">Mot de passe incorrect — réessayez</div>
-    <button class="pwd-btn" onclick="doLogin()" style="width:100%;">Se connecter</button>
-    <div id="pin-help" style="margin-top:12px;text-align:center;font-size:12.5px;">
-      <a href="#" id="pin-help-link" onclick="requestPwdHelp();return false;" style="color:var(--t3);text-decoration:underline;">Mot de passe oublié ? Prévenir le gestionnaire</a>
-      <div id="pin-help-msg" style="display:none;margin-top:8px;color:var(--t2);line-height:1.4;"></div>
-    </div>
-  </div>
-</div>
+<!-- LOGIN MODAL : remplacée le 23/09/2026 par le formulaire identifiant + mot de passe -->
+<div id="login-modal-bg" style="display:none;"></div>
 
 <!-- MAIN -->
 <div id="scr-main">
@@ -653,7 +652,7 @@ function _installReqShim(){
 async function loadDoctors(){
   try{
     const _tmo=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Impossible de charger les médecins (10s). Vérifiez votre connexion.')),10000));
-    const {data,error}=await Promise.race([sb.from('doctors_public').select('id,local_id,firstname,lastname,role,color,pin_set,has_pin,weekly_hours,initials').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname'),_tmo]);
+    const {data,error}=await Promise.race([sb.from('doctors_public').select('id,local_id,firstname,lastname,role,color,pin_set,has_pin,weekly_hours,initials,login').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname'),_tmo]);
     if(error)throw error;
     doctors=data||[];
     window._docIni={}; doctors.forEach(function(d){ if(d.initials) window._docIni[d.id]=d.initials; });
@@ -664,6 +663,16 @@ async function loadDoctors(){
 }
 
 function renderLoginDocs(){
+  // [2026-09-23] Plus de grille : on pré-remplit l'identifiant (lien e-mail ?doc=ID, sinon dernier identifiant utilisé)
+  const _li=document.getElementById('login-id');
+  if(_li&&!_li.value){
+    const _q=new URLSearchParams(window.location.search).get('doc');
+    const _d=_q?doctors.find(d=>d.id===parseInt(_q)):null;
+    let _last=''; try{ _last=localStorage.getItem('jlx_login_'+CFG.hospital)||''; }catch(e){}
+    _li.value=(_d&&_d.login)||_last;
+  }
+  setTimeout(function(){ const f=document.getElementById(_li&&_li.value?'pin-inp':'login-id'); if(f&&document.getElementById('scr-login').style.display!=='none') f.focus(); },60);
+  return;
   const g=document.getElementById('doc-grid');
   if(!doctors.length){g.innerHTML='<div class="ld">Aucun médecin trouvé. Le planning n\'a pas encore été publié.</div>';return;}
   g.innerHTML=doctors.map((d,i)=>`
@@ -713,18 +722,25 @@ function togglePwdVis(inputId,btn){
   btn.textContent=el.type==='password'?'👁':'🙈';
 }
 async function doLogin(){
-  var doc=selectedDoc;if(!doc)return;
   var now=Date.now();
+  var _lgEl=document.getElementById('login-id'), _pe=document.getElementById('pin-err');
+  var _lg=(_lgEl&&_lgEl.value||'').trim().toLowerCase();
+  if(!_lg){ _pe.textContent='Entrez votre identifiant.'; _pe.style.display='block'; _lgEl.focus(); return; }
   if(now<_pwdLockedUntil){
     var errEl=document.getElementById('pin-err');
     errEl.textContent='Trop de tentatives. Patientez '+Math.ceil((_pwdLockedUntil-now)/1000)+'s.';
     errEl.style.display='block';return;
   }
   var pwd=document.getElementById('pin-inp').value;
-  if(!pwd){return;}
-  var _vp=await sb.rpc('viewer_login',{p_doctor_id:doc.id,p_hospital:CFG.hospital,p_pin:pwd});
+  if(!pwd){ _pe.textContent='Entrez votre mot de passe.'; _pe.style.display='block'; document.getElementById('pin-inp').focus(); return; }
+  var _vp=await sb.rpc('viewer_login_by_login',{p_hospital:CFG.hospital,p_login:_lg,p_pin:pwd});
   if(_vp&&_vp.error){var eN=document.getElementById('pin-err');eN.textContent='Erreur réseau — réessayez.';eN.style.display='block';return;}
   var _vs=_vp&&_vp.data?_vp.data.status:null;
+  // Le médecin est identifié par le serveur (et seulement si le mot de passe est juste, ou s'il n'en a pas encore)
+  var _rd=_vp&&_vp.data&&_vp.data.doctor;
+  var doc=_rd?Object.assign({},doctors.find(function(d){return d.id===_rd.id;})||{},_rd):null;
+  selectedDoc=doc;
+  if(_vs==='ok'||_vs==='ok_temp'||_vs==='no_pin'){ try{ localStorage.setItem('jlx_login_'+CFG.hospital,_lg); }catch(e){} }
   if(_vs==='locked'){var eL=document.getElementById('pin-err');eL.textContent='Trop de tentatives erronées : compte bloqué 15 minutes.';eL.style.display='block';document.getElementById('pin-inp').value='';return;}
   if(_vs==='ok') _jlxSetTok(_vp.data.token);
   // [2026-09-22] Plus de création libre d'un mot de passe : le premier venu pouvait prendre le compte.
@@ -750,7 +766,7 @@ async function doLogin(){
       errEl.textContent='5 tentatives échouées. Bloqué 30 secondes.';
       logAccess('pwd_lockout','');
     }else{
-      errEl.textContent='Mot de passe incorrect ('+_pwdAttempts+'/'+PWD_MAX_ATTEMPTS+')';
+      errEl.textContent='Identifiant ou mot de passe incorrect ('+_pwdAttempts+'/'+PWD_MAX_ATTEMPTS+')';
     }
     errEl.style.display='block';
     document.getElementById('pin-inp').value='';
@@ -759,7 +775,7 @@ async function doLogin(){
 }
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&document.getElementById('login-modal-bg').classList.contains('show'))doLogin();
+  // (Entrée sur l'écran de connexion : géré par le formulaire)
   if(e.key==='Enter'&&document.getElementById('pwd-setup-overlay')?.style.display==='flex'){
     var activeBtn=document.querySelector('#pwd-setup-overlay button.pwd-btn');
     if(activeBtn) activeBtn.click();
@@ -787,7 +803,9 @@ function logout(){
   document.getElementById('echanges-btn').style.display='none';
   // [2026-09-23] Après une reprise de session (rechargement), la liste des médecins n'avait jamais été chargée :
   // l'écran de connexion restait sur « Chargement… ».
-  if(!document.querySelector('#doc-grid .doc-card')) loadDoctors();
+  var _pi=document.getElementById('pin-inp'); if(_pi) _pi.value='';
+  var _pe2=document.getElementById('pin-err'); if(_pe2) _pe2.style.display='none';
+  loadDoctors();
 }
 
 // ── SESSION EXPIRY : reprise par mot de passe ────────────────────────────────
@@ -856,8 +874,11 @@ function setPwdHelpMode(reason){
   if(m){ m.style.display='none'; m.textContent=''; }
 }
 async function requestPwdHelp(){
-  var doc=selectedDoc; if(!doc) return;
   var a=document.getElementById('pin-help-link'), m=document.getElementById('pin-help-msg');
+  var _lg=((document.getElementById('login-id')||{}).value||'').trim().toLowerCase();
+  if(!_lg){ if(m){ m.style.display='block'; m.textContent='Entrez d\'abord votre identifiant ci-dessus.'; } return; }
+  var doc=selectedDoc&&selectedDoc.login===_lg?selectedDoc:doctors.find(function(d){return (d.login||'').toLowerCase()===_lg;});
+  if(!doc){ if(a) a.style.display='none'; if(m){ m.style.display='block'; m.textContent='✓ Si cet identifiant existe, le gestionnaire a été prévenu. Vérifiez-le sinon (initiale du prénom + nom).'; } return; }
   if(m){ m.style.display='block'; m.textContent='Envoi…'; }
   try{
     var r=await fetch(CFG.url+'/functions/v1/update-pin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},
