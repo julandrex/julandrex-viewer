@@ -623,6 +623,19 @@ _ReqQ.prototype={
     }catch(e){ return {data:null,error:{message:e.message||String(e)}}; }
   }
 };
+// [2026-09-23] send-push / send-notification exigent désormais le jeton de session du médecin (Citadelle) :
+// il est ajouté ici à tous les appels, sans toucher à chacun d'eux.
+(function(){
+  var _f=window.fetch;
+  window.fetch=function(u,o){
+    try{
+      if(typeof u==='string'&&/\/functions\/v1\/(send-push|send-notification)/.test(u)&&o&&typeof o.body==='string'){
+        var b=JSON.parse(o.body); b.session_token=_jlxTok(); o=Object.assign({},o,{body:JSON.stringify(b)});
+      }
+    }catch(e){}
+    return _f.apply(this,[u,o]);
+  };
+})();
 function _installReqShim(){
   var orig=sb.from.bind(sb);
   sb.from=function(t){ return _REQ_RPC[t]?new _ReqQ(t):orig(t); };
@@ -2778,19 +2791,11 @@ async function submitExchange(){
       hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
       data:{proposer_name:me.firstname+' '+me.lastname,post_name:post?.full||post?.name||mPost,date:mDate,message:document.getElementById('m-msg').value.trim()||null}
     };
-    const _sendNotif=(email,name,docId)=>fetch(CFG.url+'/functions/v1/send-notification',{
+    // [2026-09-23] Le serveur trouve lui-même les adresses (ciblé : ce médecin ; ouvert : tous les collègues)
+    fetch(CFG.url+'/functions/v1/send-notification',{
       method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
-      body:JSON.stringify({..._notifData,to_email:email,to_name:name,doctor_id:docId})
+      body:JSON.stringify(targetDocId?{..._notifData,doctor_id:targetDocId}:{..._notifData,broadcast:true})
     }).catch(()=>{});
-    if(targetDocId){
-      // Échange ciblé → notifier uniquement ce médecin
-      sb.from('doctors').select('id,email,firstname,lastname').eq('id',targetDocId).maybeSingle()
-        .then(({data:d})=>{ if(d?.email) _sendNotif(d.email,d.firstname+' '+d.lastname,d.id); });
-    } else {
-      // Échange ouvert à tous → notifier tous les médecins actifs avec un email
-      sb.from('doctors').select('id,email,firstname,lastname').eq('active',true).eq('hospital_id',CFG.hospital).not('email','is',null)
-        .then(({data:docs})=>{ (docs||[]).filter(d=>d.email&&d.id!==me.id).forEach(d=>_sendNotif(d.email,d.firstname+' '+d.lastname,d.id)); });
-    }
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
