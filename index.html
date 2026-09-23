@@ -2974,15 +2974,10 @@ async function initNotifBtn() {
       if (sub) {
         updateNotifBtn('subscribed');
         // Sauvegarder en base si absent (cas reconnexion)
-        const hospital = CFG && CFG.hospital ? CFG.hospital : 'citadelle';
-        const doctorId = me && me.id ? String(me.id) : null;
-        if (doctorId) {
-          sb.from('push_subscriptions').upsert({
-            doctor_id: doctorId, hospital,
-            subscription: sub.toJSON(), endpoint: sub.endpoint,
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'endpoint' }).then(({error}) => {
-            if (error) console.warn('initNotifBtn upsert:', error.message);
+        // [2026-09-23] Enregistré par le serveur : le médecin vient du jeton de session, plus de la clé publique
+        if (me && _jlxTok()) {
+          sb.rpc('viewer_push_save', { p_token: _jlxTok(), p_subscription: sub.toJSON() }).then(({error}) => {
+            if (error) console.warn('initNotifBtn enregistrement:', error.message);
           });
         }
       } else { updateNotifBtn('unsubscribed'); }
@@ -3105,16 +3100,8 @@ async function subscribeToPush(reg) {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
     // Sauvegarder en base
-    const hospital = CFG.hospital || 'citadelle';
-    const doctorId = me && me.id ? String(me.id) : 'unknown';
-    const { error: upsertErr } = await sb.from('push_subscriptions').upsert({
-      doctor_id: doctorId,
-      hospital: hospital,
-      subscription: sub.toJSON(),
-      endpoint: sub.endpoint,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'endpoint' });
-    if (upsertErr) console.error('push_subscriptions upsert error:', upsertErr);
+    const { error: upsertErr } = await sb.rpc('viewer_push_save', { p_token: _jlxTok(), p_subscription: sub.toJSON() });
+    if (upsertErr) { console.error('viewer_push_save:', upsertErr); throw new Error(upsertErr.message); }
     updateNotifBtn('subscribed');
     toast('🔔 Notifications activées !', 3000);
   } catch(e) {
@@ -3126,7 +3113,7 @@ async function subscribeToPush(reg) {
 async function unsubscribeFromPush(sub, reg) {
   try {
     await sub.unsubscribe();
-    await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+    await sb.rpc('viewer_push_delete', { p_endpoint: sub.endpoint });
     updateNotifBtn('unsubscribed');
     toast('🔕 Notifications désactivées', 3000);
   } catch(e) {
