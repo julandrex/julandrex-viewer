@@ -524,10 +524,11 @@ async function init(){
     return;
   }
   sb=supabase.createClient(CFG.url,CFG.key);
+  _installReqShim();
   const saved=sessionStorage.getItem('jlx_me');
   // [2026-09-13] Pas de reprise automatique si la session a expiré (un simple rafraîchissement contournait le code)
   const _last=+sessionStorage.getItem('jlx_last')||0;
-  if(saved&&Date.now()-_last<SESS_TIMEOUT){try{me=JSON.parse(saved);showMain();return;}catch(e){}}
+  if(saved&&_jlxTok()&&Date.now()-_last<SESS_TIMEOUT){try{me=JSON.parse(saved);showMain();return;}catch(e){}}
   sessionStorage.removeItem('jlx_me');
   await loadDoctors();
 }
@@ -535,6 +536,98 @@ async function init(){
 // ══════════════════════════════════════════════════════════
 // AUTH
 // ══════════════════════════════════════════════════════════
+// [2026-09-23] SÉCURITÉ — Les demandes (échanges, desiderata) de Citadelle ne sont plus lisibles ni modifiables
+// avec la clé publique. Le viewer passe par des fonctions serveur (viewer_exch_*, viewer_desid_*) qui vérifient
+// un jeton de session émis à la connexion (viewer_login) et les droits du médecin ligne par ligne.
+// Cette couche imite sb.from(...) pour ces deux tables : les appels existants restent inchangés.
+function _jlxTok(){ try{ return sessionStorage.getItem('jlx_tok')||''; }catch(e){ return ''; } }
+function _jlxSetTok(t){ try{ if(t) sessionStorage.setItem('jlx_tok',t); else sessionStorage.removeItem('jlx_tok'); }catch(e){} }
+function _jlxDropTok(){ var t=_jlxTok(); _jlxSetTok(null); if(t&&sb) sb.rpc('viewer_logout',{p_token:t}).then(function(){},function(){}); }
+var _jlxLostShown=false;
+function _jlxSessionLost(){
+  if(_jlxLostShown||!me) return; _jlxLostShown=true;
+  _jlxSetTok(null);
+  setTimeout(function(){
+    // Fenêtres ouvertes (Mes échanges, Mes demandes…) fermées : sinon elles restent par-dessus l'écran de connexion
+    document.querySelectorAll('[id$="-bg"]').forEach(function(e){ if(e.id!=='login-modal-bg') e.style.display='none'; });
+    var xp=document.getElementById('exch-panel'); if(xp) xp.classList.remove('show');
+    alert('Votre session a expiré. Reconnectez-vous.'); _jlxLostShown=false; try{ logout(); }catch(e){}
+  },0);
+}
+var _REQ_RPC={exchange_requests:{list:'viewer_exch_list',insert:'viewer_exch_insert'},
+              desiderata_requests:{list:'viewer_desid_list',insert:'viewer_desid_submit'}};
+var _reqListCache={};
+function _reqList(t){
+  var c=_reqListCache[t]; if(c&&Date.now()-c.at<1500) return c.p;
+  var p=sb.rpc(_REQ_RPC[t].list,{p_token:_jlxTok()}).then(function(r){ if(r.error) delete _reqListCache[t]; return r; });
+  _reqListCache[t]={at:Date.now(),p:p}; return p;
+}
+function _reqErr(e){ if(e&&/jlx_session/.test(e.message||'')) _jlxSessionLost(); return e; }
+function _ReqQ(t){ this.t=t; this.f=[]; this.op='select'; this.ord=[]; this.mode=''; this.ret=false; this.lim=0; this.id=null; this.expect=null; }
+_ReqQ.prototype={
+  select:function(){ if(this.op!=='select') this.ret=true; return this; },
+  eq:function(k,v){ this.f.push(function(r){ return r[k]==null?v==null:String(r[k])===String(v); });
+    if(k==='status') this.expect=v; if(k==='id') this.id=v; return this; },
+  neq:function(k,v){ this.f.push(function(r){ return String(r[k])!==String(v); }); return this; },
+  in:function(k,a){ var s=(a||[]).map(String); this.f.push(function(r){ return s.indexOf(String(r[k]))>=0; }); return this; },
+  or:function(expr){
+    var cs=String(expr).split(',').map(function(c){ var p=c.split('.'); return {k:p[0],op:p[1],v:p.slice(2).join('.')}; });
+    this.f.push(function(r){ return cs.some(function(c){ return c.op==='eq'&&String(r[c.k])===c.v; }); }); return this; },
+  order:function(k,o){ this.ord.push({k:k,asc:!(o&&o.ascending===false)}); return this; },
+  limit:function(n){ this.lim=n; return this; },
+  single:function(){ this.mode='single'; return this; },
+  maybeSingle:function(){ this.mode='maybe'; return this; },
+  insert:function(row){ this.op='insert'; this.row=row; return this; },
+  update:function(p){ this.op='update'; this.patch=p; return this; },
+  then:function(ok,ko){ return this._run().then(ok,ko); },
+  catch:function(ko){ return this._run().catch(ko); },
+  _filt:function(rows){
+    var f=this.f, o=this.ord;
+    rows=(rows||[]).filter(function(r){ return f.every(function(fn){ return fn(r); }); });
+    if(o.length) rows.sort(function(a,b){ for(var i=0;i<o.length;i++){ var x=a[o[i].k],y=b[o[i].k];
+      if(x==y) continue; if(x==null) return 1; if(y==null) return -1; return (x<y?-1:1)*(o[i].asc?1:-1); } return 0; });
+    return this.lim?rows.slice(0,this.lim):rows;
+  },
+  _out:function(rows){
+    if(this.mode==='single') return rows.length===1?{data:rows[0],error:null}:{data:null,error:{message:'Demande introuvable.'}};
+    if(this.mode==='maybe') return {data:rows[0]||null,error:null};
+    return {data:rows,error:null};
+  },
+  _run:async function(){
+    var t=this.t;
+    if(!_jlxTok()){ _jlxSessionLost(); return {data:null,error:{message:'Session expirée — reconnectez-vous.'}}; }
+    try{
+      if(this.op==='insert'){
+        var ri=await sb.rpc(_REQ_RPC[t].insert,{p_token:_jlxTok(),p_row:this.row});
+        delete _reqListCache[t];
+        if(ri.error) return {data:null,error:_reqErr(ri.error)};
+        return {data:this.ret?[ri.data]:null,error:null};
+      }
+      if(this.op==='update'){
+        if(t!=='exchange_requests') return {data:null,error:{message:'Modification non autorisée.'}};
+        var ids, expect=null;
+        if(this.id!=null){ ids=[this.id]; expect=this.expect; }
+        else{ var lr0=await _reqList(t); if(lr0.error) return {data:null,error:_reqErr(lr0.error)}; ids=this._filt(lr0.data).map(function(r){ return r.id; }); }
+        var out=[];
+        for(var i=0;i<ids.length;i++){
+          var ru=await sb.rpc('viewer_exch_update',{p_token:_jlxTok(),p_id:ids[i],p_patch:this.patch,p_expect:expect});
+          if(ru.error){ delete _reqListCache[t]; return {data:null,error:_reqErr(ru.error)}; }
+          out=out.concat(ru.data||[]);
+        }
+        delete _reqListCache[t];
+        return {data:this.ret?out:null,error:null};
+      }
+      var lr=await _reqList(t);
+      if(lr.error) return {data:null,error:_reqErr(lr.error)};
+      return this._out(this._filt(lr.data));
+    }catch(e){ return {data:null,error:{message:e.message||String(e)}}; }
+  }
+};
+function _installReqShim(){
+  var orig=sb.from.bind(sb);
+  sb.from=function(t){ return _REQ_RPC[t]?new _ReqQ(t):orig(t); };
+}
+
 async function loadDoctors(){
   try{
     const _tmo=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Impossible de charger les médecins (10s). Vérifiez votre connexion.')),10000));
@@ -607,9 +700,11 @@ async function doLogin(){
   }
   var pwd=document.getElementById('pin-inp').value;
   if(!pwd){return;}
-  var _vp=await sb.rpc('verify_pin',{p_doctor_id:doc.id,p_hospital:CFG.hospital,p_pin:pwd});
+  var _vp=await sb.rpc('viewer_login',{p_doctor_id:doc.id,p_hospital:CFG.hospital,p_pin:pwd});
   if(_vp&&_vp.error){var eN=document.getElementById('pin-err');eN.textContent='Erreur réseau — réessayez.';eN.style.display='block';return;}
-  var _vs=_vp?_vp.data:null;
+  var _vs=_vp&&_vp.data?_vp.data.status:null;
+  if(_vs==='locked'){var eL=document.getElementById('pin-err');eL.textContent='Trop de tentatives erronées : compte bloqué 15 minutes.';eL.style.display='block';document.getElementById('pin-inp').value='';return;}
+  if(_vs==='ok') _jlxSetTok(_vp.data.token);
   // [2026-09-22] Plus de création libre d'un mot de passe : le premier venu pouvait prendre le compte.
   // Le gestionnaire attribue un mot de passe temporaire (fiche médecin), que le serveur vérifie.
   if(_vs==='no_pin'){
@@ -657,6 +752,7 @@ function logout(){
   clearTimeout(_sessTimer);
   _sessActive=false;
   sessionStorage.removeItem('jlx_me');
+  _jlxDropTok(); _exchSnap=null;
   me=null;planning=null;
   if(rtChannel){sb.removeChannel(rtChannel);rtChannel=null;}
   document.getElementById('scr-main').style.display='none';
@@ -667,6 +763,9 @@ function logout(){
   document.getElementById('desid-btn').style.display='none';
   document.getElementById('demandes-btn').style.display='none';
   document.getElementById('echanges-btn').style.display='none';
+  // [2026-09-23] Après une reprise de session (rechargement), la liste des médecins n'avait jamais été chargée :
+  // l'écran de connexion restait sur « Chargement… ».
+  if(!document.querySelector('#doc-grid .doc-card')) loadDoctors();
 }
 
 // ── SESSION EXPIRY : reprise par mot de passe ────────────────────────────────
@@ -674,8 +773,10 @@ async function onSessPwdSubmit(){
   const inp=document.getElementById('sess-pin-inp');
   const errEl=document.getElementById('sess-pin-err');
   if(!inp||!me)return;
-  const _vp=await sb.rpc('verify_pin',{p_doctor_id:me.id,p_hospital:CFG.hospital,p_pin:inp.value});
-  if(_vp&&!_vp.error&&(_vp.data==='ok'||_vp.data==='ok_temp')){
+  const _vp=await sb.rpc('viewer_login',{p_doctor_id:me.id,p_hospital:CFG.hospital,p_pin:inp.value});
+  const _st=_vp&&!_vp.error&&_vp.data?_vp.data.status:null;
+  if(_st==='ok'){
+    _jlxSetTok(_vp.data.token);
     inp.value='';errEl.textContent='';
     // [2026-09-13] Retirer la classe (le style forcé empêchait l'écran de réapparaître au verrouillage suivant)
     var _ov=document.getElementById('session-overlay');_ov.classList.remove('show');_ov.style.display='';
@@ -683,7 +784,7 @@ async function onSessPwdSubmit(){
     _sessActive=true;resetSessTimer();
     logAccess('session_resume','');
   }else{
-    errEl.textContent='Mot de passe incorrect — réessayez.';
+    errEl.textContent=_st==='locked'?'Trop de tentatives erronées : compte bloqué 15 minutes.':'Mot de passe incorrect — réessayez.';
     inp.value='';inp.focus();
   }
 }
@@ -793,6 +894,9 @@ async function submitPwdSetup(){
     const _d=await _r.json();
     if(!_r.ok)throw new Error(_d.error||'Erreur serveur');
     doc.has_pin=true;doc.pin_set=true;window._loginTempPwd=null;
+    const _lg=await sb.rpc('viewer_login',{p_doctor_id:doc.id,p_hospital:CFG.hospital,p_pin:newPwd});
+    if(!_lg||_lg.error||!_lg.data||_lg.data.status!=='ok') throw new Error('mot de passe enregistré, mais la connexion a échoué — reconnectez-vous.');
+    _jlxSetTok(_lg.data.token);
     const idx=doctors.findIndex(d=>d.id===doc.id);
     if(idx>=0){doctors[idx].has_pin=true;doctors[idx].pin_set=true;}
     closePwdSetup();
@@ -1568,24 +1672,46 @@ async function loadAll(){
 // ══════════════════════════════════════════════════════════
 // REALTIME
 // ══════════════════════════════════════════════════════════
+var _exchSnap=null, _exchPolling=false;
+function _exchSig(r){ return [r.status,r.acceptor_id,r.j1_date,r.j1_proposer_ok,r.j1_acceptor_ok,r.switch_proposer_ok,r.switch_acceptor_ok,
+  r.confirmed_at,r.cancelled_at,r.archived_at,JSON.stringify(r.refusal_log||[])].join('|'); }
+async function _exchPoll(){
+  if(!me||document.hidden||!_jlxTok()||_exchPolling) return;
+  _exchPolling=true;
+  try{
+    var r=await sb.from('exchange_requests').select('*');
+    if(r.error||!r.data) return;
+    var snap={}; r.data.forEach(function(x){ snap[x.id]={sig:_exchSig(x),st:x.status}; });
+    var prev=_exchSnap; _exchSnap=snap;
+    if(!prev) return;  // premier relevé : référence
+    var evs=[];
+    r.data.forEach(function(x){
+      if(!prev[x.id]) evs.push({ev:'INSERT',n:x,was:null});
+      else if(prev[x.id].sig!==snap[x.id].sig) evs.push({ev:'UPDATE',n:x,was:prev[x.id].st});
+    });
+    if(!evs.length) return;
+    schedulePlanningChecks([1500,6000]); // un échange appliqué republie le mois juste avant
+    exchanges=r.data.filter(function(x){ return x.status!=='cancelled'; })
+      .sort(function(a,b){ return String(b.created_at||'').localeCompare(String(a.created_at||'')); });
+    renderBadge();
+    if(document.getElementById('exch-panel').classList.contains('show'))renderPanel();
+    evs.forEach(function(e){
+      var n=e.n, chg=e.was!==n.status;
+      if(e.ev==='INSERT'&&n.proposer_id!==me.id&&(n.target_doctor_id==null||n.target_doctor_id===me.id)) toast('📬 Nouvelle demande d\'échange !');
+      if(e.ev==='UPDATE'&&chg&&n.proposer_id===me.id&&n.status==='accepted') toast('✅ Votre échange a été accepté !');
+      if(e.ev==='UPDATE'&&chg&&n.status==='pending_j1'&&(n.proposer_id===me.id||n.acceptor_id===me.id)) toast('Un switch J+1 a été proposé par le gestionnaire !');
+      if(e.ev==='UPDATE'&&chg&&n.acceptor_id===me.id&&n.status==='confirmed') toast('✅ Échange confirmé !');
+    });
+  }finally{ _exchPolling=false; }
+}
+setInterval(_exchPoll,20000);
+document.addEventListener('visibilitychange',function(){ if(!document.hidden) _exchPoll(); });
 function subscribeRT(){
   if(rtChannel){sb.removeChannel(rtChannel);rtChannel=null;}
+  // [2026-09-23] Les échanges de Citadelle ne sont plus diffusés en temps réel à la clé publique :
+  // relevé toutes les 20 s par _exchPoll (mêmes notifications à l'écran qu'avant).
+  _exchSnap=null; _exchPoll();
   rtChannel=sb.channel('jlx_exchanges_'+CFG.hospital)
-    .on('postgres_changes',{event:'*',schema:'public',table:'exchange_requests'},payload=>{
-      schedulePlanningChecks([1500,6000]); // un échange appliqué republie le mois juste avant
-      sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false})
-        .then(({data})=>{
-          exchanges=data||[];
-          renderBadge();
-          if(document.getElementById('exch-panel').classList.contains('show'))renderPanel();
-          const ev=payload.eventType;
-          const n=payload.new||{};
-          if(ev==='INSERT'&&n.proposer_id!==me.id&&(n.target_doctor_id==null||n.target_doctor_id===me.id)) toast('📬 Nouvelle demande d\'échange !');
-          if(ev==='UPDATE'&&n.proposer_id===me.id&&n.status==='accepted') toast('✅ Votre échange a été accepté !');
-          if(ev==='UPDATE'&&n.status==='pending_j1'&&(n.proposer_id===me.id||n.acceptor_id===me.id)) toast('Un switch J+1 a été proposé par le gestionnaire !');
-          if(ev==='UPDATE'&&n.acceptor_id===me.id&&n.status==='confirmed') toast('✅ Échange confirmé !');
-        });
-    })
     // Pas d'écoute planning_months : la table n'est pas dans la publication temps réel et sa
     // présence faisait échouer TOUT le canal (échanges compris). Fraîcheur du planning :
     // voir checkPlanningFresh (12/09).
@@ -2187,6 +2313,7 @@ function lockSession(){
   _sessActive=false;
   // [2026-09-13] Session verrouillée = plus de reprise automatique au rechargement (retour à l'écran de connexion)
   try{sessionStorage.removeItem('jlx_me');}catch(e){}
+  _jlxDropTok();
   var ov=document.getElementById('session-overlay');if(ov){ov.style.display='';ov.classList.add('show');}
   var inp=document.getElementById('sess-pin-inp');if(inp){inp.value='';inp.focus();}
   document.getElementById('sess-pin-err').textContent='';
