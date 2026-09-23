@@ -63,6 +63,8 @@ button{font-family:inherit;}
 .tb-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
 .tb-nm{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tb-role{font-size:10px;color:var(--t3);}
+/* [2026-09-23] Petit écran : on garde l'avatar (initiales), on masque le nom et le rôle */
+@media (max-width:560px){ .tb-doc>div:not(.tb-av){display:none;} }
 .logout-btn{background:none;border:1px solid var(--b);color:var(--t3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;flex-shrink:0;transition:all .14s;}
 .logout-btn:hover{color:var(--err);border-color:var(--err);}
 
@@ -562,7 +564,11 @@ function _jlxSessionLost(){
   },0);
 }
 var _REQ_RPC={exchange_requests:{list:'viewer_exch_list',insert:'viewer_exch_insert'},
-              desiderata_requests:{list:'viewer_desid_list',insert:'viewer_desid_submit'}};
+              desiderata_requests:{list:'viewer_desid_list',insert:'viewer_desid_submit'},
+              // [2026-09-23] Planning, médecins et configuration : plus lisibles avec la seule clé publique
+              doctors_public:{list:'viewer_doctors'},
+              planning_months:{special:true},
+              hospital_config:{special:true}};
 var _reqListCache={};
 function _reqList(t){
   var c=_reqListCache[t]; if(c&&Date.now()-c.at<1500) return c.p;
@@ -574,6 +580,7 @@ function _ReqQ(t){ this.t=t; this.f=[]; this.op='select'; this.ord=[]; this.mode
 _ReqQ.prototype={
   select:function(){ if(this.op!=='select') this.ret=true; return this; },
   eq:function(k,v){ this.f.push(function(r){ return r[k]==null?v==null:String(r[k])===String(v); });
+    (this.eqv=this.eqv||{})[k]=v;
     if(k==='status') this.expect=v; if(k==='id') this.id=v; return this; },
   neq:function(k,v){ this.f.push(function(r){ return String(r[k])!==String(v); }); return this; },
   in:function(k,a){ var s=(a||[]).map(String); this.f.push(function(r){ return s.indexOf(String(r[k]))>=0; }); return this; },
@@ -624,6 +631,18 @@ _ReqQ.prototype={
         delete _reqListCache[t];
         return {data:this.ret?out:null,error:null};
       }
+      if(t==='planning_months'){
+        var ev=this.eqv||{};
+        var rp=await sb.rpc('viewer_planning',{p_token:_jlxTok(),p_year:+ev.year,p_month:+ev.month});
+        if(rp.error) return {data:null,error:_reqErr(rp.error)};
+        return this._out(this._filt(rp.data?[Object.assign({hospital_id:CFG.hospital},rp.data)]:[]));
+      }
+      if(t==='hospital_config'){
+        var rc=await sb.rpc('viewer_config_t',{p_token:_jlxTok()});
+        if(rc.error) return {data:null,error:_reqErr(rc.error)};
+        var d0=rc.data||{};
+        return this._out(this._filt([{hospital_id:CFG.hospital,desiderata_deadlines:d0.desiderata_deadlines||{},email_gestionnaire:d0.email_gestionnaire||null}]));
+      }
       var lr=await _reqList(t);
       if(lr.error) return {data:null,error:_reqErr(lr.error)};
       return this._out(this._filt(lr.data));
@@ -646,9 +665,18 @@ _ReqQ.prototype={
 function _installReqShim(){
   var orig=sb.from.bind(sb);
   sb.from=function(t){ return _REQ_RPC[t]?new _ReqQ(t):orig(t); };
+  // [2026-09-23] viewer_config / doctor_indispos (clé publique) → versions avec jeton de session
+  var origRpc=sb.rpc.bind(sb);
+  sb.rpc=function(fn,args,opts){
+    if(fn==='viewer_config') return origRpc('viewer_config_t',{p_token:_jlxTok()},opts).then(function(r){ if(r.error) _reqErr(r.error); return r; });
+    if(fn==='doctor_indispos') return origRpc('viewer_my_indispos',{p_token:_jlxTok()},opts).then(function(r){ if(r.error) _reqErr(r.error); return r; });
+    return origRpc(fn,args,opts);
+  };
 }
 
 async function loadDoctors(){
+  // [2026-09-23] Avant la connexion, rien n'est lisible : on se contente de pré-remplir l'identifiant
+  if(!_jlxTok()){ doctors=[]; renderLoginDocs(); return; }
   try{
     const _tmo=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Impossible de charger les médecins (10s). Vérifiez votre connexion.')),10000));
     const {data,error}=await Promise.race([sb.from('doctors_public').select('id,local_id,firstname,lastname,role,color,pin_set,has_pin,weekly_hours,initials,login').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname'),_tmo]);
@@ -876,16 +904,14 @@ async function requestPwdHelp(){
   var a=document.getElementById('pin-help-link'), m=document.getElementById('pin-help-msg');
   var _lg=((document.getElementById('login-id')||{}).value||'').trim().toLowerCase();
   if(!_lg){ if(m){ m.style.display='block'; m.textContent='Entrez d\'abord votre identifiant ci-dessus.'; } return; }
-  var doc=selectedDoc&&selectedDoc.login===_lg?selectedDoc:doctors.find(function(d){return (d.login||'').toLowerCase()===_lg;});
-  if(!doc){ if(a) a.style.display='none'; if(m){ m.style.display='block'; m.textContent='✓ Si cet identifiant existe, le gestionnaire a été prévenu.'; } return; }
   if(m){ m.style.display='block'; m.textContent='Envoi…'; }
   try{
     var r=await fetch(CFG.url+'/functions/v1/update-pin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},
-      body:JSON.stringify({action:'help_request',doctor_id:doc.id,hospital_id:CFG.hospital,reason:_pwdHelpReason})});
+      body:JSON.stringify({action:'help_request',login:_lg,hospital_id:CFG.hospital,reason:_pwdHelpReason})});
     var d=await r.json();
     if(!r.ok) throw new Error(d.error||'Erreur serveur');
     if(a) a.style.display='none';
-    if(m) m.textContent='✓ '+(d.message||'Le gestionnaire a été prévenu.')+' Aucun mot de passe n\'a été modifié.';
+    if(m) m.textContent='✓ Si cet identifiant existe, le gestionnaire a été prévenu. Aucun mot de passe n\'a été modifié.';
   }catch(e){ if(m) m.textContent='Envoi impossible ('+e.message+'). Contactez directement le gestionnaire.'; }
 }
 
@@ -1777,6 +1803,8 @@ function subscribeRT(){
     })
     .subscribe();
 }
+// [2026-09-23] La configuration n'est plus diffusée en temps réel à la clé publique : relecture chaque minute
+setInterval(function(){ if(me&&!document.hidden&&_jlxTok()){ refreshExcShifts(); checkPlanningFresh(); } },60000);
 // Relit les postes exceptionnels et ne redessine que s'ils ont changé
 function refreshExcShifts(){
   if(!me||!sb) return;
