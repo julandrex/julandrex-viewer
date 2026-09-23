@@ -1644,7 +1644,7 @@ async function loadAll(){
       const _lt=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Impossible de charger le planning (10s).')),10000));
       var res=await Promise.race([Promise.all([
         sb.from('planning_months').select('shifts,posts,indispos,published_at').eq('hospital_id',CFG.hospital).eq('year',cy).eq('month',cm).maybeSingle(),
-        sb.from('doctors').select('id,local_id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital),
+        sb.from('doctors_public').select('id,local_id,firstname,lastname,role,color').eq('active',true).eq('hospital_id',CFG.hospital), // [2026-09-23] vue sans données personnelles
         sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false}),
         sb.rpc('viewer_config',{p_hospital:CFG.hospital}) // [2026-09-13] app_config n'est plus lisible en anon
       ]),_lt]);
@@ -2567,7 +2567,7 @@ async function acceptX(id){
     if(CFG.gest_email && xr){
       const post=planning?.posts?.find(p=>p.id===xr.proposer_post);
       // Récupérer le nom du proposant
-      const {data:proposer}=await sb.from('doctors').select('firstname,lastname').eq('id',xr.proposer_id).maybeSingle();
+      const {data:proposer}=await sb.from('doctors_public').select('firstname,lastname').eq('id',xr.proposer_id).maybeSingle();
       fetch(CFG.url+'/functions/v1/send-notification',{
         method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
         body:JSON.stringify({
