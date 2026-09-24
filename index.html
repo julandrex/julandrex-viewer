@@ -821,9 +821,7 @@ document.addEventListener('keydown',e=>{
 
 function logout(){
   logAccess('logout','');
-  window._r24DocId = me.local_id ?? me.id;
-  initRappel24Btn();
-  setTimeout(checkRappel24, 2000);
+  window._rappel24 = false; // [2026-09-24] préférence rechargée depuis le serveur à la prochaine connexion
   clearTimeout(_sessTimer);
   _sessActive=false;
   sessionStorage.removeItem('jlx_me');
@@ -3151,63 +3149,42 @@ function updateNotifBtn(state) {
 }
 
 /* ══ RAPPEL 24H ════════════════════════════════════════════════ */
-function r24Key(){ return 'jlx_r24_' + (window._r24DocId||''); }
-function r24DoneKey(d,pid){ return 'jlx_r24done_'+(window._r24DocId||'')+'_'+d+'_'+pid; }
-function initRappel24Btn(){ updateRappel24Btn(); }
+// [2026-09-24] Préférence « Rappel 24h » enregistrée côté serveur (doctors.rappel24, fonction
+// viewer_rappel24_pref). Le rappel est envoyé chaque jour vers 11 h par le serveur (send-reminders), même viewer
+// fermé, aux médecins qui l'ont activé ET dont l'appareil est abonné aux notifications. L'ancienne version
+// (vérification locale à l'ouverture, préférence en localStorage) n'a jamais pu fonctionner.
+window._rappel24 = false;
+function initRappel24Btn(){
+  updateRappel24Btn();
+  if(!me || !_jlxTok()) return;
+  sb.rpc('viewer_rappel24_pref',{p_token:_jlxTok()}).then(function(r){
+    if(!r.error && r.data!=null){ window._rappel24 = !!r.data; updateRappel24Btn(); } else if(r.error) _reqErr(r.error);
+  });
+}
 function updateRappel24Btn(){
-  const on = localStorage.getItem(r24Key()) === '1';
   const bar = document.getElementById('rappel24-bar');
-  if(bar) bar.className = 'r24-bar' + (on ? ' on' : '');
+  if(bar) bar.className = 'r24-bar' + (window._rappel24 ? ' on' : '');
 }
 async function toggleRappel24(){
-  const wasOn = localStorage.getItem(r24Key()) === '1';
-  if(!wasOn){
-    if(Notification.permission === 'default'){
-      const perm = await Notification.requestPermission();
-      if(perm !== 'granted'){ updateRappel24Btn(); return; }
+  const nv = !window._rappel24;
+  if(nv){
+    // Le rappel arrive par notification : cet appareil doit être abonné
+    let reg = null, sub = null;
+    try{ reg = await navigator.serviceWorker.getRegistration(); sub = reg ? await reg.pushManager.getSubscription() : null; }catch(e){}
+    if(!sub){
+      if(!reg){ toast('Notifications indisponibles sur ce navigateur — installez le viewer sur l\'écran d\'accueil.', true); return; }
+      if(!confirm('Le rappel 24h arrive par notification.\n\nActiver les notifications sur cet appareil ?')) return;
+      await subscribeToPush(reg);
+      try{ sub = await reg.pushManager.getSubscription(); }catch(e){}
+      if(!sub) return;
     }
-    if(Notification.permission === 'denied'){
-      alert('Notifications bloquées par votre navigateur. Autorisez-les dans les paramètres du site.');
-      return;
-    }
-    localStorage.setItem(r24Key(), '1');
-    await checkRappel24();
-  } else {
-    localStorage.setItem(r24Key(), '0');
   }
-  updateRappel24Btn();
+  const r = await sb.rpc('viewer_rappel24_pref',{p_token:_jlxTok(), p_value:nv});
+  if(r.error){ _reqErr(r.error); toast('Erreur : '+r.error.message, true); return; }
+  window._rappel24 = !!r.data; updateRappel24Btn();
+  toast(window._rappel24 ? '⏰ Rappel activé : la veille de chaque poste, vers 11 h' : '⏰ Rappel 24h désactivé');
 }
-async function checkRappel24(){
-  if(Notification.permission !== 'granted') return;
-  if(localStorage.getItem(r24Key()) !== '1') return;
-  const docId = window._r24DocId;
-  if(!docId) return;
-  const tomorrow = new Date(Date.now()+86400000).toISOString().slice(0,10);
-  const ym = tomorrow.slice(0,7);
-  try {
-    const { data: row } = await supabase.from('planning_months').select('data')
-      .eq('hospital_id', HOSPITAL_ID).eq('month', ym).single();
-    if(!row || !row.data) return;
-    const shifts = row.data.shifts || {};
-    const posts  = row.data.posts  || [];
-    const dayShifts = shifts[tomorrow] || {};
-    Object.entries(dayShifts).forEach(([pid, did]) => {
-      if(String(did) !== String(docId)) return;
-      const doneKey = r24DoneKey(tomorrow, pid);
-      if(localStorage.getItem(doneKey)) return;
-      const post = posts.find(pp => pp.id === pid);
-      const postName = post ? (post.name || pid) : pid;
-      const postTime = post ? (post.start || '') : '';
-      const dayStr = tomorrow.split('-').reverse().join('/');
-      new Notification('⏰ Rappel shift — Julandrex', {
-        body: 'Demain '+dayStr+' : '+postName+(postTime?' ('+postTime+')':''),
-        icon: '/julandrex-viewer/icon-192.png',
-        tag: 'r24_'+tomorrow+'_'+pid
-      });
-      localStorage.setItem(doneKey, '1');
-    });
-  } catch(e){ console.warn('[Rappel24]', e); }
-}
+function checkRappel24(){} // [2026-09-24] rappel désormais envoyé par le serveur
 
 async function toggleNotifications() {
   if (Notification.permission === 'denied') {
