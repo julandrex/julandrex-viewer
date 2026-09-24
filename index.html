@@ -270,6 +270,34 @@ button{font-family:inherit;}
   #tb-dropdown{position:fixed!important;left:8px!important;right:8px!important;top:auto!important;bottom:8px!important;max-height:80vh;overflow-y:auto;min-width:0!important;}
 }
 </style>
+<style>
+/* [2026-09-24] Écran d'acceptation des conditions d'utilisation */
+#terms-overlay{display:none;position:fixed;inset:0;background:rgba(5,12,26,.96);z-index:10000;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;}
+#terms-overlay .t-box{background:#0d2240;border-radius:16px;padding:18px 18px 14px;width:100%;max-width:640px;max-height:100%;display:flex;flex-direction:column;color:#e2e8f0;box-sizing:border-box;}
+#terms-overlay .t-title{font-size:17px;font-weight:700;margin-bottom:4px;}
+#terms-overlay .t-sub{font-size:13px;color:#94a3b8;margin-bottom:10px;line-height:1.4;}
+#terms-body{flex:1;min-height:120px;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#0a1a33;border:1px solid #1e3a5f;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5;color:#cbd5e1;}
+#terms-body h1{font-size:16px;color:#e2e8f0;margin:6px 0 2px;}
+#terms-body .t-meta{font-size:11.5px;color:#94a3b8;margin-bottom:8px;}
+#terms-body h2{font-size:14px;color:#c9983a;margin:14px 0 4px;}
+#terms-body p{margin:0 0 7px;}
+#terms-body ul{margin:3px 0 8px;padding-left:18px;}
+#terms-body li{margin-bottom:3px;}
+#terms-body .lead{background:#10284a;border-radius:8px;padding:8px 10px;margin-bottom:6px;}
+#terms-body table{width:100%;border-collapse:collapse;font-size:12px;margin:4px 0 8px;}
+#terms-body th,#terms-body td{text-align:left;vertical-align:top;padding:5px 6px;border-bottom:1px solid #1e3a5f;}
+#terms-body th{color:#e2e8f0;background:#10284a;}
+#terms-body hr{border:0;border-top:2px solid #1e3a5f;margin:18px 0 10px;}
+#terms-body .todo{background:none;}
+#terms-overlay .t-chk{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.4;margin:12px 2px 8px;cursor:pointer;}
+#terms-overlay .t-chk input{width:22px;height:22px;flex-shrink:0;margin:0;accent-color:#c9983a;}
+#terms-err{display:none;color:#fca5a5;font-size:13px;margin:0 2px 8px;}
+#terms-overlay .t-btns{display:flex;gap:10px;}
+#terms-overlay .t-btns button{flex:1;min-height:46px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;border:1px solid #1e3a5f;}
+#terms-refuse{background:transparent;color:#cbd5e1;}
+#terms-ok{background:#c9983a;color:#0f2847;border-color:#c9983a !important;}
+#terms-ok:disabled{opacity:.4;cursor:not-allowed;}
+</style>
 </head>
 <body>
 
@@ -338,7 +366,7 @@ button{font-family:inherit;}
           <span>E-mails</span>
         </button>
         <div style="border-top:1px solid var(--b);margin:5px 0;"></div>
-<button onclick="showChangePassword()" class="tb-dd-item">&#x1F510; Changer mon mot de passe</button>
+<button id="chgpwd-btn" onclick="showChangePassword()" class="tb-dd-item">&#x1F510; Changer mon mot de passe</button>
         <button onclick="logout();closeTbMenu()" class="tb-dd-item tb-dd-danger">→ Déconnexion</button>
       </div>
     </div>
@@ -353,6 +381,140 @@ button{font-family:inherit;}
   <div id="grid-area"><div class="ld"><div class="sp"></div>Chargement du planning...</div></div>
 </div>
 
+<!-- [2026-09-24] Conditions d'utilisation + notice RGPD (version 2026-09-v1) -->
+<template id="tpl-terms">
+<h1>Conditions d’utilisation</h1><div class="t-meta">Version 1 du 24 septembre 2026 · Application des médecins (« viewer ») pendant la phase de test</div><div class="lead">Julandrex est un outil de planification des gardes, conçu au sein du service des urgences du CHR Citadelle. L’application des médecins
+  permet de consulter le planning, de recevoir des rappels, de proposer des échanges de postes et de transmettre ses desiderata.
+  Elle est proposée en <b>phase de test</b> et son utilisation est <b>volontaire</b>.</div>
+
+  <h2>1. Participation volontaire</h2>
+  <p>L’utilisation de l’application est facultative. Vous pouvez arrêter à tout moment, sans justification et sans aucune
+  conséquence : il suffit de ne plus l’utiliser et, si vous le souhaitez, de demander la fermeture de votre accès au gestionnaire
+  du planning. Ne pas participer ne vous prive d’aucune information : le planning continue de vous être communiqué par le service.</p>
+
+  <h2>2. Phase de test</h2>
+  <ul>
+    <li>L’application est en cours d’évaluation. Ses fonctions peuvent évoluer, être
+      temporairement indisponibles ou être désactivées.</li>
+    <li><b>En cas de différence</b> entre l’application (ou un agenda synchronisé) et le planning validé par le gestionnaire,
+      <b>c’est le planning validé par le gestionnaire qui fait foi</b>. Vérifiez vos postes en cas de doute.</li>
+    <li>Les notifications et le « Rappel 24h » sont une aide : leur réception n’est pas garantie (téléphone éteint, réglages,
+      réseau…). Ils ne remplacent pas votre propre suivi du planning.</li>
+    <li>Vos remarques sont bienvenues : elles servent à améliorer l’outil avant toute généralisation.</li>
+  </ul>
+
+  <h2>3. Accès personnel</h2>
+  <ul>
+    <li>Votre identifiant et votre mot de passe sont <b>personnels et confidentiels</b>. Ils sont créés et, si besoin, réinitialisés
+      uniquement par le gestionnaire du planning.</li>
+    <li>Ne les communiquez à personne, y compris à un collègue. Toute action faite avec votre accès (échange, desiderata) est
+      considérée comme faite par vous.</li>
+    <li>Si vous pensez que votre mot de passe est connu d’un tiers, ou si vous perdez votre téléphone, prévenez rapidement le gestionnaire.</li>
+    <li>Le lien « Mon calendrier » est lui aussi personnel : il donne accès à vos postes sans mot de passe.</li>
+  </ul>
+
+  <h2>4. Bon usage</h2>
+  <ul>
+    <li>L’application est réservée à un <b>usage professionnel</b> lié à l’organisation du service.</li>
+    <li>Le planning affiche les postes de vos collègues. Ces informations ne doivent pas être diffusées en dehors du service.</li>
+    <li>Les messages joints aux échanges peuvent être lus par les autres médecins du service. Dans ces messages et dans les desiderata, restez courtois et factuel. <b>N’indiquez aucune information médicale</b>
+      (ni vous concernant, ni concernant un tiers) : un motif du type « raison personnelle » suffit.</li>
+    <li>Il est interdit de tenter d’accéder aux données d’un autre médecin ou de contourner les protections de l’application.</li>
+  </ul>
+
+  <h2>5. Échanges et desiderata</h2>
+  <p>Un échange proposé ou accepté dans l’application n’est définitif qu’une fois <b>validé par le gestionnaire</b>. Les desiderata
+  sont des souhaits : ils sont pris en compte autant que possible dans la construction du planning, sans garantie.</p>
+
+  <h2>6. Données personnelles</h2>
+  <p>Le traitement de vos données est décrit dans la <b>notice d’information sur la protection des données</b> ci-après, dont vous
+  prenez connaissance en même temps que ces conditions.</p>
+
+  <h2>7. Modification des conditions</h2>
+  <p>Ces conditions peuvent être modifiées, notamment à la fin de la phase de test. Toute nouvelle version vous sera présentée à la
+  connexion suivante et devra être acceptée pour continuer à utiliser l’application.</p>
+
+  <h2>8. Contact</h2>
+  <p>Questions, accès perdu, fermeture de votre accès : le <b>gestionnaire du planning</b> du service des urgences.
+  Questions sur vos données : voir la notice ci-après.</p>
+<hr>
+<h1>Protection de vos données personnelles</h1><div class="t-meta">Notice d’information (articles 13 et 14 du RGPD) · Version 1 du 24 septembre 2026</div><div class="lead"><b>En bref :</b> Julandrex traite uniquement des données professionnelles liées à l’organisation des gardes.
+  <b>Aucune donnée de patient</b> n’y figure. La base de données est hébergée <b>dans l’Union européenne</b> (Francfort). Vos données
+  ne sont ni vendues, ni utilisées à des fins publicitaires, ni utilisées pour évaluer vos performances.</div>
+
+  <h2>1. Qui est responsable ?</h2>
+  <p>Le responsable du traitement est le <b>Dr Giuseppe Sorce</b>, médecin urgentiste au CHR Citadelle, concepteur et administrateur
+  de Julandrex. Il est joignable par l’intermédiaire du gestionnaire du planning du service des urgences.</p>
+
+  <h2>2. Pourquoi vos données sont-elles traitées, et sur quelle base ?</h2>
+  <table>
+    <tr><th style="width:52%">Finalité</th><th>Base juridique (art. 6 RGPD)</th></tr>
+    <tr><td>Établir, publier et tenir à jour le planning des gardes et postes du service ; gérer les desiderata et les échanges de postes</td>
+        <td>Intérêt légitime (6.1.f) : organiser les gardes du service et assurer la continuité des soins</td></tr>
+    <tr><td>Vous donner un accès personnel et sécurisé à l’application ; tracer les connexions pour la sécurité</td>
+        <td>Intérêt légitime (6.1.f) et obligation de sécurité (art. 32 RGPD)</td></tr>
+    <tr><td>Fonctions facultatives : notifications, « Rappel 24h », e-mails d’information, abonnement calendrier</td>
+        <td>Votre choix : activées par vous seul(e), désactivables à tout moment (6.1.a)</td></tr>
+    <tr><td>Évaluer la phase de test (taux d’utilisation, problèmes rencontrés)</td>
+        <td>Intérêt légitime (6.1.f) ; statistiques globales, sans évaluation individuelle</td></tr>
+  </table>
+  <p>Votre participation au test étant volontaire, refuser ou arrêter n’a aucune conséquence sur votre situation professionnelle.</p>
+
+  <h2>3. Quelles données ?</h2>
+  <ul>
+    <li><b>Identité professionnelle</b> : nom, prénom, fonction (PH, assistant, médecin généraliste…), dates de contrat, temps de travail et objectifs d’heures ; adresse e-mail professionnelle si vous l’avez communiquée.</li>
+    <li><b>Accès</b> : identifiant ; mot de passe conservé uniquement sous forme d’empreinte chiffrée (illisible, même par le gestionnaire) ; sessions de connexion ; tentatives de connexion échouées.</li>
+    <li><b>Planning</b> : postes attribués, gardes, heures, échanges de postes et messages associés, desiderata (congés, indisponibilités, préférences, remarques).</li>
+    <li><b>Journal d’utilisation</b> : date et heure des connexions, déconnexions et consultations du planning.</li>
+    <li><b>Préférences et éléments techniques</b> : choix de notifications, de rappel et d’e-mails ; identifiant technique d’abonnement aux notifications de votre téléphone ; lien secret de votre calendrier ; acceptation de ces documents (date et version).</li>
+  </ul>
+  <p>Merci de ne saisir <b>aucune information de santé</b> dans les champs libres (desiderata, messages).</p>
+
+  <h2>4. Qui y a accès ?</h2>
+  <ul>
+    <li><b>Le gestionnaire du planning</b> et l’administrateur technique de l’outil, pour leur mission uniquement.</li>
+    <li><b>Les médecins du service</b> voient le planning du service (noms et postes), comme sur le planning affiché habituellement,
+      ainsi que les demandes d’échange de postes du service (postes concernés et messages associés). Ils ne voient ni vos desiderata,
+      ni vos préférences, ni votre journal de connexion.</li>
+    <li><b>Prestataires techniques</b> (sous-traitants), chacun pour sa seule fonction :</li>
+  </ul>
+  <table>
+    <tr><th style="width:30%">Prestataire</th><th style="width:36%">Rôle</th><th>Localisation</th></tr>
+    <tr><td>Supabase</td><td>Base de données et serveurs de l’application</td><td>Union européenne (Francfort)</td></tr>
+    <tr><td>GitHub (Microsoft)</td><td>Hébergement des pages de l’application</td><td>États-Unis : voit l’adresse IP de connexion, aucune donnée du planning</td></tr>
+    <tr><td>Google (Gmail)</td><td>Envoi des e-mails (accès, informations)</td><td>États-Unis / UE</td></tr>
+    <tr><td>Apple, Google, Mozilla</td><td>Acheminement des notifications vers votre téléphone</td><td>États-Unis / UE : contenu chiffré de bout en bout</td></tr>
+    <tr><td>jsDelivr</td><td>Distribution d’une bibliothèque technique</td><td>International : voit l’adresse IP</td></tr>
+  </table>
+  <p>Les transferts éventuels hors de l’Union européenne sont encadrés par le cadre de protection des données UE–États-Unis
+  (Data Privacy Framework) ou par les clauses contractuelles types de la Commission européenne.</p>
+
+  <h2>5. Combien de temps ?</h2>
+  <table>
+    <tr><th style="width:52%">Données</th><th>Durée de conservation</th></tr>
+    <tr><td>Plannings publiés</td><td>36 mois (gestion des litiges, contrôles sociaux)</td></tr>
+    <tr><td>Desiderata et échanges de postes</td><td>12 mois après la période concernée</td></tr>
+    <tr><td>Journal des connexions et consultations</td><td>12 mois</td></tr>
+    <tr><td>Tentatives de connexion échouées</td><td>30 jours</td></tr>
+    <tr><td>Sessions de connexion</td><td>12 heures au plus</td></tr>
+    <tr><td>Accès (identifiant, mot de passe), préférences, abonnements aux notifications, lien calendrier</td><td>Tant que votre accès est ouvert ; supprimés à sa fermeture</td></tr>
+    <tr><td>Preuve d’acceptation de ces documents</td><td>Durée de votre accès + 12 mois</td></tr>
+  </table>
+
+  <h2>6. Sécurité</h2>
+  <p>Connexions chiffrées (HTTPS), mots de passe stockés uniquement sous forme d’empreinte, blocage après 5 essais erronés,
+  sessions limitées dans le temps, droits d’accès vérifiés par le serveur pour chaque médecin, séparation stricte des données
+  de chaque hôpital, journalisation des accès.</p>
+
+  <h2>7. Vos droits</h2>
+  <p>Vous pouvez demander l’<b>accès</b> à vos données, leur <b>rectification</b>, leur <b>effacement</b>, la <b>limitation</b> de leur
+  traitement, vous y <b>opposer</b>, et recevoir celles que vous avez fournies dans un format lisible (<b>portabilité</b>).
+  Vous pouvez aussi, à tout moment, désactiver les fonctions facultatives dans le menu de l’application.<br>
+  Pour exercer ces droits, contactez le <b>gestionnaire du planning</b>.
+  Note : fermer votre accès à l’application ne vous retire pas du planning du service, qui reste nécessaire à l’organisation des soins.</p>
+  <p>Vous pouvez introduire une réclamation auprès de l’<b>Autorité de protection des données</b>, rue de la Presse 35, 1000 Bruxelles —
+  contact@apd-gba.be — www.autoriteprotectiondonnees.be.</p>
+</template>
 <!-- SESSION OVERLAY -->
 <div id="session-overlay">
   <div class="sess-box">
@@ -541,6 +703,7 @@ async function init(){
   }
   sb=supabase.createClient(CFG.url,CFG.key);
   _installReqShim();
+  _installTermsGuard(); _loadFeatures(); // [2026-09-24]
   // [2026-09-23] Lien « mot de passe oublié » reçu par e-mail (usage unique, 1 heure)
   const _rst=new URLSearchParams(location.search).get('reset');
   if(_rst){ try{ history.replaceState(null,'',location.pathname); }catch(e){} setTimeout(function(){ startPwdReset(_rst); },300); }
@@ -794,6 +957,8 @@ async function doLogin(){
     _pwdAttempts=0;me={...doc};
     sessionStorage.setItem('jlx_me',JSON.stringify(me));
     document.getElementById('login-modal-bg').classList.remove('show');
+    // [2026-09-24] Conditions d'utilisation à accepter avant d'ouvrir le planning (le serveur refuse sinon)
+    if(_vp.data.terms_required){ showTermsGate(function(){ showMain(); }); return; }
     showMain();
   }else{
     _pwdAttempts++;
@@ -899,16 +1064,96 @@ function updateStrengthBar(pwd,barId,lblId){
   lbl.textContent=labels[Math.min(score,6)];lbl.style.color=colors[Math.min(score,6)];
 }
 
+// ── [2026-09-24] INTERRUPTEURS SERVEUR + CONDITIONS D'UTILISATION ─────────────
+// Les interrupteurs sont lus sur le serveur (viewer_features, table hospital_features) : le viewer ne décide jamais seul,
+// il masque seulement ce que le serveur refuse de toute façon (update-pin, viewer_pwd_reset_*, _viewer_me).
+var _jlxFeat=null;
+var TERMS_VERSION='2026-09-v1'; // version du texte intégré (template #tpl-terms)
+function _loadFeatures(){
+  try{ sb.rpc('viewer_features',{p_hospital:CFG.hospital}).then(function(r){ if(r&&!r.error&&r.data){ _jlxFeat=r.data; _applyFeatureUI(); } }); }catch(e){}
+}
+function _applyFeatureUI(){
+  var f=_jlxFeat||{};
+  var b=document.getElementById('chgpwd-btn'); if(b) b.style.display=(f.pwd_change_by_doctor===false)?'none':'';
+  if(f.pwd_forgot_email===false) _showForgotOffMsg(typeof _pwdHelpReason!=='undefined'&&_pwdHelpReason==='first');
+}
+function _forgotOff(){ return !!(_jlxFeat&&_jlxFeat.pwd_forgot_email===false); }
+function _showForgotOffMsg(first){
+  var a=document.getElementById('pin-help-link'), m=document.getElementById('pin-help-msg');
+  if(a) a.style.display='none';
+  if(m){ m.style.display='block'; m.textContent=(first?'Pas encore de mot de passe ? ':'Mot de passe perdu ? ')+'Contactez le gestionnaire du planning.'; }
+}
+// Toute réponse « jlx_terms » du serveur (conditions non acceptées ou nouvelle version) rouvre l'écran d'acceptation
+var _termsShown=false;
+function _installTermsGuard(){
+  var orig=sb.rpc.bind(sb);
+  sb.rpc=function(){
+    return Promise.resolve(orig.apply(null,arguments)).then(function(r){
+      if(r&&r.error&&/jlx_terms/.test(r.error.message||'')&&me) showTermsGate(function(){ location.reload(); });
+      return r;
+    });
+  };
+}
+function showTermsGate(cb){
+  if(_termsShown) return;
+  _termsShown=true; window._termsCb=cb||null;
+  var ov=document.getElementById('terms-overlay');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='terms-overlay';
+    ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-labelledby','terms-title');
+    ov.innerHTML='<div class="t-box"><div class="t-title" id="terms-title">📄 Conditions d’utilisation</div>'
+      +'<div class="t-sub">Avant d’accéder à votre planning, lisez les conditions d’utilisation et la notice sur la protection de vos données (faites défiler).</div>'
+      +'<div id="terms-body" tabindex="0"></div>'
+      +'<label class="t-chk"><input type="checkbox" id="terms-chk" onchange="document.getElementById(\'terms-ok\').disabled=!this.checked">'
+      +'<span>J’ai lu et j’accepte les <b>conditions d’utilisation</b>, et j’ai pris connaissance de la <b>notice d’information sur la protection de mes données</b>.</span></label>'
+      +'<div id="terms-err" role="alert"></div>'
+      +'<div class="t-btns"><button type="button" id="terms-refuse" onclick="_termsRefuse()">Refuser</button>'
+      +'<button type="button" id="terms-ok" disabled onclick="_termsAccept()">J’accepte</button></div></div>';
+    document.body.appendChild(ov);
+  }
+  var tpl=document.getElementById('tpl-terms');
+  document.getElementById('terms-body').innerHTML=tpl?tpl.innerHTML:'';
+  document.getElementById('terms-body').scrollTop=0;
+  document.getElementById('terms-chk').checked=false;
+  document.getElementById('terms-ok').disabled=true;
+  document.getElementById('terms-err').style.display='none';
+  ov.style.display='flex';
+}
+function _termsClose(){
+  var ov=document.getElementById('terms-overlay'); if(ov) ov.style.display='none';
+  _termsShown=false; window._termsCb=null;
+}
+async function _termsAccept(){
+  var err=document.getElementById('terms-err'), btn=document.getElementById('terms-ok');
+  btn.disabled=true; err.style.display='none';
+  var r=null; try{ r=await sb.rpc('viewer_terms_accept',{p_token:_jlxTok(),p_version:TERMS_VERSION,p_user_agent:navigator.userAgent}); }catch(e){}
+  var s=r&&!r.error&&r.data?r.data.status:null;
+  if(s==='ok'||s==='not_required'){ var cb=window._termsCb; _termsClose(); if(cb) cb(); return; }
+  if(r&&r.error&&/jlx_session/.test(r.error.message||'')){ _termsClose(); _jlxSessionLost(); return; }
+  err.textContent=s==='outdated'
+    ?'Une nouvelle version des conditions est disponible : fermez complètement l’application puis rouvrez-la.'
+    :'Enregistrement impossible — vérifiez votre connexion et réessayez.';
+  err.style.display='block';
+  btn.disabled=(s==='outdated');
+}
+function _termsRefuse(){
+  _termsClose();
+  try{ logout(); }catch(e){}
+  setTimeout(function(){ toast('Sans acceptation des conditions, l’application ne peut pas s’ouvrir.'); },300);
+}
+
 // ── MOT DE PASSE OUBLIÉ / PAS ENCORE DE MOT DE PASSE (2026-09-22) ─────────────
 // Ne réinitialise rien : prévient les gestionnaires par e-mail (destinataires lus côté serveur).
 var _pwdHelpReason='forgot';
 function setPwdHelpMode(reason){
   _pwdHelpReason=reason==='first'?'first':'forgot';
+  if(_forgotOff()){ _showForgotOffMsg(_pwdHelpReason==='first'); return; } // [2026-09-24]
   var a=document.getElementById('pin-help-link'), m=document.getElementById('pin-help-msg');
   if(a){ a.style.display=''; a.textContent=_pwdHelpReason==='first'?'Recevoir un lien pour créer mon mot de passe':'Mot de passe oublié ?'; }
   if(m){ m.style.display='none'; m.textContent=''; }
 }
 async function requestPwdHelp(){
+  if(_forgotOff()){ _showForgotOffMsg(_pwdHelpReason==='first'); return; } // [2026-09-24]
   var a=document.getElementById('pin-help-link'), m=document.getElementById('pin-help-msg');
   var _lg=((document.getElementById('login-id')||{}).value||'').trim().toLowerCase();
   if(!_lg){ if(m){ m.style.display='block'; m.textContent='Entrez d\'abord votre identifiant ci-dessus.'; } return; }
@@ -961,7 +1206,7 @@ async function startPwdReset(tok){
   let r=null; try{ r=await sb.rpc('viewer_pwd_reset_check',{p_token:tok}); }catch(e){}
   const st=r&&!r.error&&r.data?r.data.status:null;
   if(st!=='ok'){
-    const msg="Ce lien n'est plus valable (expiré ou déjà utilisé). Refaites une demande avec « Mot de passe oublié ».";
+    const msg=(st==='disabled'||_forgotOff())?"Ce lien n'est plus utilisable. Mot de passe perdu ? Contactez le gestionnaire du planning.":"Ce lien n'est plus valable (expiré ou déjà utilisé). Refaites une demande avec « Mot de passe oublié ».";
     const pe=document.getElementById('pin-err');
     if(pe&&document.getElementById('scr-login').style.display!=='none'){ pe.textContent=msg; pe.style.display='block'; } else alert(msg);
     return;
@@ -1020,6 +1265,7 @@ async function submitPwdSetup(){
 
 // ── CHANGEMENT MOT DE PASSE VOLONTAIRE ──────────────────────────────────────
 function showChangePassword(){
+  if(_jlxFeat&&_jlxFeat.pwd_change_by_doctor===false){ if(typeof closeTbMenu==='function') closeTbMenu(); toast('Pour changer de mot de passe, contactez le gestionnaire du planning.'); return; } // [2026-09-24]
   if(typeof closeTbMenu==='function') closeTbMenu();
   var ov=document.getElementById('chg-pwd-overlay');
   if(!ov){
