@@ -1070,7 +1070,7 @@ function updateStrengthBar(pwd,barId,lblId){
 var _jlxFeat=null;
 var TERMS_VERSION='2026-09-v1'; // version du texte intégré (template #tpl-terms)
 function _loadFeatures(){
-  try{ sb.rpc('viewer_features',{p_hospital:CFG.hospital}).then(function(r){ if(r&&!r.error&&r.data){ _jlxFeat=r.data; _applyFeatureUI(); } }); }catch(e){}
+  try{ window._jlxFeatP=sb.rpc('viewer_features',{p_hospital:CFG.hospital}).then(function(r){ if(r&&!r.error&&r.data){ _jlxFeat=r.data; _applyFeatureUI(); } }); }catch(e){}
 }
 function _applyFeatureUI(){
   var f=_jlxFeat||{};
@@ -1203,6 +1203,7 @@ function showPwdSetup(isFirstLogin){
   setTimeout(()=>document.getElementById('pws-new').focus(),100);
 }
 async function startPwdReset(tok){
+  try{ await window._jlxFeatP; }catch(e){} // [2026-09-24] message adapté si « mot de passe oublié » est coupé
   let r=null; try{ r=await sb.rpc('viewer_pwd_reset_check',{p_token:tok}); }catch(e){}
   const st=r&&!r.error&&r.data?r.data.status:null;
   if(st!=='ok'){
