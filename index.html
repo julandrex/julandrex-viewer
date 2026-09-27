@@ -652,6 +652,11 @@ button{font-family:inherit;}
         </div>
       </div>
       <div style="margin-top:12px;border-top:0.5px solid #1e3a5f;padding-top:10px;">
+        <details style="font-size:11px;color:#94a3b8;margin-bottom:8px;"><summary style="cursor:pointer;color:#c9983a;">ℹ️ Ce que le moteur retient de vos demandes</summary>
+          <div style="line-height:1.6;margin-top:6px;">Une demande n'est prise en compte qu'<b>une fois acceptée</b> par le gestionnaire.<br>
+          ☀️ Congé · 🌙 Repos souhaité · 🎓 Formation : <b>strict</b> — aucun poste ces jours-là, ni garde de nuit la veille (elle déborderait). La soirée qui finit à minuit reste possible la veille.<br>
+          🚫 Indispo poste : <b>strict pour ce poste</b> (ou cette section) — les autres postes restent possibles.<br>
+          📌 Poste particulier : <b>préférence forte</b> — le moteur essaie de vous y placer ; si c'est impossible, le gestionnaire est prévenu. Pas garanti.</div></details>
         <div id="desid-req-empty" style="font-size:10px;color:#334155;text-align:center;padding:4px;">Aucune demande ajoutée</div>
         <div id="desid-req-items" style="display:flex;flex-wrap:wrap;"></div>
       </div>
@@ -1803,10 +1808,11 @@ async function openMesDemandes(){
     // [2026-09-12] Détail depuis r.requests (les 5 types + statut par ligne) ; conges/indispos = ancien format seulement
     const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     const TLAB={c:'☀️ Congé',r:'🌙 Repos souhaité',f:'🎓 Formation',p:'📌 Poste particulier',ip:'🚫 Indispo poste'};
-    const itemLine=it=>{
+    const itemLine=(it,_mrR)=>{
       const ds=it.date_start===it.date_end?fmtD(it.date_start):fmtD(it.date_start)+' → '+fmtD(it.date_end);
       const mark=it.status==='accepted'?' <span style="color:#22c55e;font-weight:700;">✓ acceptée</span>':it.status==='refused'?' <span style="color:#ef4444;font-weight:700;">✗ refusée</span>':'';
-      return (TLAB[it.type]||esc(it.type))+' : '+ds+(it.detail?' — '+esc(it.detail):'')+mark;
+      return (TLAB[it.type]||esc(it.type))+' : '+ds+(it.detail?' — '+esc(it.detail):'')+mark
+        +(typeof _mrLine==='function'?_mrLine(it,_mrR):''); // [2026-09-27] MOTEUR_RETIENT
     };
     const BORDER={pending:'#fbbf24',validated:'#22c55e',accepted:'#22c55e',partial:'#f59e0b',archived:'var(--t3)'};
     const _chgD=new Set(_updState.d||[]); jlxMarkSeenRows('d',data);   // [2026-09-23] l'ouverture vaut « vu »
@@ -1814,7 +1820,7 @@ async function openMesDemandes(){
     list.innerHTML=data.map(r=>{
       const cgs=(r.conges||[]).map(c=>`☀️ Congé : ${c.start===c.end?fmtD(c.start):fmtD(c.start)+' → '+fmtD(c.end)}`).join('<br>');
       const inds=(r.indispos||[]).map(i=>`🌙 Repos souhaité : ${fmtD(i.date||i.start)}`).join('<br>');
-      const lines=(r.requests&&r.requests.length)?r.requests.map(itemLine).join('<br>'):[cgs,inds].filter(Boolean).join('<br>');
+      const lines=(r.requests&&r.requests.length)?r.requests.map(function(it){return itemLine(it,r);}).join('<br>'):[cgs,inds].filter(Boolean).join('<br>');
       const rem=r.remarques?`<div style="font-size:11px;color:var(--t3);margin-top:4px;">💬 ${r.remarques}</div>`:'';
       const note=r.reviewer_note?`<div style="font-size:11px;color:var(--t2);margin-top:6px;">📝 Note du gestionnaire : ${esc(r.reviewer_note)}</div>`:'';
       return `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:10px;border-left:3px solid ${BORDER[r.status]||'#ef4444'};">
@@ -1828,6 +1834,7 @@ async function openMesDemandes(){
         <div style="font-size:10px;color:var(--t3);margin-top:6px;">Soumis le ${fmtDt(r.submitted_at||r.created_at||r.updated_at)}</div>
       </div>`;
     }).join('');
+    if(typeof _mrFill==='function') _mrFill(list); // [2026-09-27] résultats dans le planning publié
   }catch(e){
     list.innerHTML=`<div style="color:var(--err);padding:10px;">Erreur : ${e.message}</div>`;
   }
@@ -4306,6 +4313,75 @@ async function toggleDesidNone(){
   var _orig=openDesiderata;
   openDesiderata=async function(){ var r=await _orig.apply(this,arguments); try{ await desidNoneRefresh(); }catch(e){} return r; };
 })();
+</script>
+<script>
+// [2026-09-27] MOTEUR_RETIENT — lecture des desiderata par le moteur + vérification dans le planning publié
+function _mrState(it,r){
+  var st=r&&r.status;
+  if(it.status==='refused'||st==='rejected'||st==='refused') return 'refused';
+  if(it.status==='accepted') return 'accepted';
+  if(!it.status&&(st==='validated'||st==='accepted')) return 'accepted';
+  if(st==='pending') return 'pending';
+  return 'none';
+}
+function _mrLine(it,r){
+  var S=_mrState(it,r), t=it.type, txt, col='#94a3b8';
+  if(S==='pending') txt='pas encore pris en compte (en attente de validation du gestionnaire).';
+  else if(S==='refused') txt='non pris en compte (refusée).';
+  else if(S==='none') txt='non pris en compte (archivée sans décision).';
+  else if(t==='c'||t==='r'||t==='f') { txt='<b>strict</b> — aucun poste ce(s) jour(s), ni garde de nuit la veille.'; col='#cbd5e1'; }
+  else if(t==='ip') { txt='<b>strict pour ce poste</b> — les autres postes restent possibles ce jour-là.'; col='#cbd5e1'; }
+  else if(t==='p') { txt='<b>préférence forte</b> — le moteur essaie de vous y placer (pas garanti).'; col='#cbd5e1'; }
+  else txt='';
+  var ph=(S==='accepted'&&it.date_start)?'<span class="mr-res" data-t="'+t+'" data-a="'+it.date_start+'" data-b="'+(it.date_end||it.date_start)+'" data-d="'+String(it.detail||'').replace(/"/g,'&quot;')+'"></span>':'';
+  return txt?'<div style="font-size:11px;color:'+col+';margin:0 0 4px 14px;line-height:1.5;">↳ Le moteur : '+txt+' '+ph+'</div>':'';
+}
+function _mrIso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function _mrDays(a,b){ var out=[], t=new Date(a+'T12:00:00'), e=new Date(b+'T12:00:00'); for(var i=0;t<=e&&i<400;i++){ out.push(_mrIso(t)); t.setDate(t.getDate()+1); } return out; }
+function _mrPrev(dk){ var t=new Date(dk+'T12:00:00'); t.setDate(t.getDate()-1); return _mrIso(t); }
+function _mrFmt(dk){ var p=dk.split('-'); return p[2]+'/'+p[1]; }
+var _MR_MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+async function _mrFill(list){
+  var spans=[].slice.call(list.querySelectorAll('.mr-res')); if(!spans.length) return;
+  var need={};
+  spans.forEach(function(sp){ _mrDays(_mrPrev(sp.dataset.a),sp.dataset.b).forEach(function(dk){ need[dk.slice(0,7)]=1; }); });
+  var months={};
+  await Promise.all(Object.keys(need).map(async function(ym){
+    try{ var r=await sb.from('planning_months').select('shifts,posts,published_at').eq('hospital_id',CFG.hospital).eq('year',+ym.slice(0,4)).eq('month',+ym.slice(5,7)-1).maybeSingle();
+      months[ym]=(r&&!r.error&&r.data&&r.data.published_at)?r.data:null; }catch(e){ months[ym]=null; }
+  }));
+  var sh=window._sharedShifts||{};
+  function postsOf(dk){ var m=months[dk.slice(0,7)]; return m?(m.posts||[]):[]; }
+  function myPosts(dk){ var m=months[dk.slice(0,7)]; if(!m) return null; var day=(m.shifts||{})[dk]||{}, out=[];
+    Object.keys(day).forEach(function(pid){ if(vIsMe(day[pid])) out.push(pid); });
+    Object.keys(sh[dk]||{}).forEach(function(pid){ var x=sh[dk][pid]; if(x&&vIsMe(x.docId2)&&out.indexOf(pid)<0) out.push(pid); });
+    return out; }
+  function pName(dk,pid){ var p=postsOf(dk).find(function(x){return x.id===pid;}); return p?(p.name||p.id):pid; }
+  function isOvernight(dk,pid){ var p=postsOf(dk).find(function(x){return x.id===pid;}); return !!(p&&p.overnight); }
+  function resolve(dk,label){ var l=String(label||'').trim().toLowerCase(); if(!l) return null;
+    var p=postsOf(dk).find(function(x){ return [x.id,x.name,x.full].some(function(v){ return v&&String(v).trim().toLowerCase()===l; }); }); return p?p.id:null; }
+  var OK='color:#22c55e;font-weight:600;', KO='color:#ef4444;font-weight:600;', WAIT='color:#94a3b8;';
+  spans.forEach(function(sp){
+    var t=sp.dataset.t, a=sp.dataset.a, b=sp.dataset.b, days=_mrDays(a,b);
+    var unpub=days.filter(function(dk){ return !months[dk.slice(0,7)]; });
+    if(unpub.length===days.length){ var m=+a.slice(5,7)-1; sp.innerHTML='<br><span style="'+WAIT+'">⏳ Planning de '+_MR_MOIS[m]+' pas encore publié.</span>'; return; }
+    var pub=days.filter(function(dk){ return months[dk.slice(0,7)]; }), bad=[];
+    if(t==='c'||t==='r'||t==='f'){
+      pub.forEach(function(dk){ (myPosts(dk)||[]).forEach(function(pid){ bad.push(_mrFmt(dk)+' '+pName(dk,pid)); }); });
+      var v=_mrPrev(a); if(months[v.slice(0,7)]) (myPosts(v)||[]).forEach(function(pid){ if(isOvernight(v,pid)) bad.push('veille '+_mrFmt(v)+' '+pName(v,pid)+' (nuit)'); });
+      sp.innerHTML='<br>'+(bad.length?'<span style="'+KO+'">✗ Pas respecté dans le planning publié : '+bad.join(', ')+'.</span> <span style="'+WAIT+'">Parlez-en au gestionnaire (menu ☰ → Signaler).</span>'
+        :'<span style="'+OK+'">✓ Respecté dans le planning publié.</span>');
+    } else if(t==='ip'||t==='p'){
+      var dk=pub[0], pid=resolve(dk,sp.dataset.d);
+      if(!pid){ sp.innerHTML=''; return; } // section ou nom de poste non retrouvé : pas de vérification
+      var mine=myPosts(dk)||[], on=mine.indexOf(pid)>=0;
+      if(t==='ip') sp.innerHTML='<br>'+(on?'<span style="'+KO+'">✗ Pas respecté : vous êtes sur '+pName(dk,pid)+' le '+_mrFmt(dk)+'.</span>':'<span style="'+OK+'">✓ Respecté dans le planning publié.</span>');
+      else sp.innerHTML='<br>'+(on?'<span style="'+OK+'">✓ Obtenu : vous êtes sur '+pName(dk,pid)+' le '+_mrFmt(dk)+'.</span>'
+        :'<span style="color:#f59e0b;font-weight:600;">✗ Non obtenu</span> <span style="'+WAIT+'">('+(mine.length?'vous êtes sur '+mine.map(function(p){return pName(dk,p);}).join(', '):'vous êtes libre ce jour-là')+').</span>');
+    }
+    if(unpub.length&&sp.innerHTML) sp.innerHTML+=' <span style="'+WAIT+'">(une partie de la période n\'est pas encore publiée)</span>';
+  });
+}
 </script>
 </body>
  
