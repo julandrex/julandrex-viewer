@@ -2147,6 +2147,7 @@ function refreshExcShifts(){
       if(memeExc&&memeShared) return;
       window._excShifts=nx; window._sharedShifts=nsh;
       if(planning) renderCalPerso();
+      _grilleRefresh();
     }).catch(function(e){console.warn('refreshExcShifts err',e);});
 }
 // Recharge le mois affiché si sa date de publication a changé (lecture de quelques octets)
@@ -2760,7 +2761,8 @@ function renderSupervPDF(){
     ||exc(dk).some(x=>x.docId===doc.id)||indispos.some(i=>i.docId===doc.id&&dk>=i.start&&dk<=i.end&&i.type!=='pref'&&i.type!=='unavail_post'));
   const ph=docs.filter(doc=>/^PH/.test(doc.role||'')&&active(doc)).sort((a,b)=>a.id-b.id);
   const rowsA=ph.filter(d=>!isChef(d)),rowsB=SUP_CHEFS.map(c=>ph.find(d=>d.lastname.toUpperCase()===c.ln&&isChef(d))).filter(Boolean);
-  const pubDate=planning.published_at?new Date(planning.published_at).toLocaleDateString('fr-BE'):'';
+  const _pd=planning.published_at?new Date(planning.published_at):null;
+  const pubDate=_pd?_pd.toLocaleDateString('fr-BE')+'<br>à '+_pd.toLocaleTimeString('fr-BE',{hour:'2-digit',minute:'2-digit'}):'';
   let p1=`<table class="grid"><colgroup><col class="cn">${days.map(()=>'<col class="cd">').join('')}</colgroup>
     <tr><td rowspan="3" class="v1">${pubDate?'Publié le<br>'+pubDate:''}</td><td colspan="${d2}" class="title"><span>${monthLabel}</span></td></tr>
     <tr>${days.map(x=>`<td class="dl">${DL[x.dow]}</td>`).join('')}</tr>
@@ -2809,24 +2811,33 @@ function renderSupervPDF(){
 }
 // Indisponibilités récurrentes (cases jaunes) : colonne doctors_public.unavail_dow, lue une fois, à part,
 // pour que le planning s'affiche même si la colonne n'existe pas (pas de jaune dans ce cas).
-function _supLoadUnavail(){
-  if(window._supUnavail) return;
-  window._supUnavail={};
+function _supLoadUnavail(force){
+  if(window._supUnavail&&!force) return;
+  if(!window._supUnavail) window._supUnavail={};
   try{ sb.from('doctors_public').select('id,local_id,unavail_dow').eq('hospital_id',CFG.hospital).then(function(r){
     if(!r||r.error||!r.data) return;
-    r.data.forEach(function(d){ if(d.unavail_dow) window._supUnavail[d.local_id??d.id]=d.unavail_dow; });
-    _grilleRefresh();
+    var nu={}; r.data.forEach(function(d){ if(d.unavail_dow) nu[d.local_id??d.id]=d.unavail_dow; });
+    if(JSON.stringify(nu)===JSON.stringify(window._supUnavail)) return;
+    window._supUnavail=nu; _grilleRefresh();
   }); }catch(e){}
 }
+// [2026-09-27] FRAÎCHEUR ⊞ : chaque « Publier » du gestionnaire change published_at de tous les mois publiés ;
+// checkPlanningFresh le compare et recharge le mois (loadAll → _grilleRefresh). À l'ouverture, on n'attend
+// plus la vérification périodique (1 min, endormie en arrière-plan sur téléphone).
+var _grilleTimer=null;
+function _grilleSync(){ if(!me) return; _supLoadUnavail(true); refreshExcShifts(); checkPlanningFresh(); }
 function openGrille(){
   document.getElementById('grille-ov').classList.add('show');
-  _supLoadUnavail();
   renderSupervPDF();
+  _grilleSync();
+  clearInterval(_grilleTimer);
+  _grilleTimer=setInterval(function(){ if(!document.hidden) _grilleSync(); },20000);
 }
 function _grilleRefresh(){ var ov=document.getElementById('grille-ov'); if(ov&&ov.classList.contains('show')) renderSupervPDF(); }
 
 function closeGrille(){
   document.getElementById('grille-ov').classList.remove('show');
+  clearInterval(_grilleTimer); _grilleTimer=null;
 }
 
 function renderGrid(){
@@ -3428,30 +3439,21 @@ function dkStr(y,m,d){return y+'-'+('0'+(m+1)).slice(-2)+'-'+('0'+d).slice(-2);}
 
 function fmtDate(dk){const d=new Date(dk+'T12:00:00');return DS[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();}
 
-function isFerie(dk){
-  const d=new Date(dk+'T12:00:00'),y=d.getFullYear(),m=d.getMonth()+1,j=d.getDate();
-  // Jours fériés fixes
-  if((m===1&&j===1)||(m===5&&j===1)||(m===7&&j===21)||(m===8&&j===15)||(m===11&&j===1)||(m===11&&j===11)||(m===12&&j===25))return true;
-  // Pâques (algorithme de Meeus)
-  const a=y%19,b=Math.floor(y/100),c=y%100,d2=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d2-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m2=Math.floor((a+11*h+22*l)/451),month=Math.floor((h+l-7*m2+114)/31),day=(h+l-7*m2+114)%31+1;
-  const paques=new Date(y,month-1,day);
-  const lundi=new Date(paques);lundi.setDate(paques.getDate()+1);
-  const ascension=new Date(paques);ascension.setDate(paques.getDate()+39);
-  const pentecote=new Date(paques);pentecote.setDate(paques.getDate()+49);
-  const lundipent=new Date(paques);lundipent.setDate(paques.getDate()+50);
-  for(const f2 of[paques,lundi,ascension,pentecote,lundipent]){
-    if(d2===0&&f2.getFullYear()===y&&(f2.getMonth()+1)===m&&f2.getDate()===j)return true;
-  }
-  return false;
-}
+// [2026-09-27] Jours fériés = même liste que getBelgianHolidays (outil gestionnaire), via _supHolidays.
+// L'ancienne version ne reconnaissait jamais les fériés mobiles (test sur d2, toujours non nul).
+function isFerie(dk){ return _supHolidays(+dk.slice(0,4)).has(dk); }
+// Copie de postActiveOnDay (outil gestionnaire) : férié de semaine = comme un samedi.
 function isActive(post,dk){
+  if(post.dateFrom&&dk<post.dateFrom)return false;
+  if(post.dateTo&&dk>post.dateTo)return false;
   const av=post.avail||'all',dw=new Date(dk+'T12:00:00').getDay();
   const isJF=isFerie(dk);
   const we=dw===0||dw===6||isJF;
-  if(av==='all')return true;if(av==='wd')return!we;if(av==='we')return we;
-  if(av==='sat')return dw===6||isJF;if(av==='sun')return dw===0||isJF;
-  if(av.includes(','))return av.split(',').map(Number).includes(dw);
-  const n=parseInt(av);return!isNaN(n)&&dw===n;
+  if(av==='all')return true;if(av==='we')return we;if(av==='wd')return!we;
+  if(av==='sat')return dw===6||(isJF&&dw!==0);if(av==='sun')return dw===0;
+  if(av.includes(','))return!isJF&&av.split(',').map(Number).includes(dw);
+  const n=parseInt(av);if(!isNaN(n))return!isJF&&dw===n;
+  return true;
 }
 
 function ini(doc,arr){
