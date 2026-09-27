@@ -758,6 +758,10 @@ async function init(){
   // [2026-09-23] Lien « mot de passe oublié » reçu par e-mail (usage unique, 1 heure)
   const _rst=new URLSearchParams(location.search).get('reset');
   if(_rst){ try{ history.replaceState(null,'',location.pathname); }catch(e){} setTimeout(function(){ startPwdReset(_rst); },300); }
+  // [2026-09-27] VOIR_COMME — aperçu en lecture seule ouvert depuis le gestionnaire (#voir=jeton)
+  const _vcm=/[#&]voir=([0-9a-f]{64})/.exec(location.hash||'');
+  if(_vcm){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} if(await _vcStart(_vcm[1])) return; }
+  else if(_vcIs()&&_jlxTok()){ if(await _vcStart(_jlxTok())) return; }
   const saved=sessionStorage.getItem('jlx_me');
   // [2026-09-13] Pas de reprise automatique si la session a expiré (un simple rafraîchissement contournait le code)
   const _last=+sessionStorage.getItem('jlx_last')||0;
@@ -2967,6 +2971,7 @@ function onSessPinSubmit(){onSessPwdSubmit();}
 // ════════ LOGS RGPD ════════
 function logAccess(action,detail){
   if(!sb||!me)return;
+  if(_vcIs()) return; // [2026-09-27] aperçu « Voir comme » : pas de trace au nom du médecin
   try{sb.from('access_logs').insert({hospital_id:CFG.hospital,doctor_id:me.id,action:action,detail:detail||'',ts:new Date().toISOString()}).then(function(){});}catch(e){}
 }
 
@@ -3591,6 +3596,68 @@ async function clearMesEchanges(){
 
 function closeMesEchanges(){
   document.getElementById('mesechanges-bg').style.display='none';
+}
+
+// [2026-09-27] VOIR_COMME — aperçu « Voir comme ce médecin » (lecture seule)
+function _vcIs(){ try{ return sessionStorage.getItem('jlx_imp')==='1'; }catch(e){ return false; } }
+var _VC_MSG='Aperçu en lecture seule — rien n\'est enregistré.';
+var _VC_WRITE={viewer_desid_submit:1,viewer_exch_insert:1,viewer_exch_update:1,viewer_push_save:1,viewer_ical_link:1,viewer_terms_accept:1};
+var _VC_WRITE_IF_VALUE={viewer_desid_none:1,viewer_email_pref:1,viewer_rappel24_pref:1};
+function _vcGuards(){
+  if(window._vcGuarded) return; window._vcGuarded=true;
+  // Écritures arrêtées avant l'envoi (le serveur les refuse de toute façon)
+  var _rpc=sb.rpc.bind(sb);
+  sb.rpc=function(n,a){
+    if(_vcIs()&&(_VC_WRITE[n]||(_VC_WRITE_IF_VALUE[n]&&a&&a.p_value!=null)))
+      return Promise.resolve({data:null,error:{message:_VC_MSG,code:'42501'}});
+    return _rpc(n,a);
+  };
+  // Ni e-mail ni notification au nom du médecin
+  var _f=window.fetch;
+  window.fetch=function(u,o){
+    if(_vcIs()&&typeof u==='string'&&/\/functions\/v1\/(send-push|send-notification)/.test(u))
+      return Promise.resolve(new Response(JSON.stringify({error:_VC_MSG}),{status:403,headers:{'Content-Type':'application/json'}}));
+    return _f.apply(this,arguments);
+  };
+  // Inactivité : fin de l'aperçu (on ne demande pas le mot de passe du médecin)
+  if(typeof lockSession==='function'){ var _ls=lockSession; lockSession=function(){ if(_vcIs()){ _vcEnd('Aperçu terminé (inactivité).'); return; } return _ls.apply(this,arguments); }; }
+  if(typeof logout==='function'){ var _lo=logout; logout=function(){ if(_vcIs()){ _vcEnd(); return; } return _lo.apply(this,arguments); }; }
+}
+async function _vcStart(tok){
+  var r=null; try{ r=await sb.rpc('viewer_impersonation_whoami',{p_token:tok}); }catch(e){}
+  if(!r||r.error||!r.data||!r.data.doctor){
+    try{ sessionStorage.removeItem('jlx_imp'); sessionStorage.removeItem('jlx_me'); }catch(e){}
+    _jlxSetTok(null);
+    alert('Aperçu expiré ou invalide — rouvrez-le depuis le gestionnaire (fiche du médecin, bouton 👁).');
+    return false;
+  }
+  _jlxSetTok(tok);
+  try{ sessionStorage.setItem('jlx_imp','1'); sessionStorage.setItem('jlx_imp_by',r.data.by||''); sessionStorage.setItem('jlx_imp_end',r.data.expires_at||'');
+       sessionStorage.setItem('jlx_me',JSON.stringify(r.data.doctor)); sessionStorage.setItem('jlx_last',String(Date.now())); }catch(e){}
+  me=r.data.doctor;
+  _vcGuards();
+  showMain();
+  _vcBanner();
+  return true;
+}
+function _vcBanner(){
+  var b=document.getElementById('vc-banner'); if(!b){ b=document.createElement('div'); b.id='vc-banner'; document.body.appendChild(b); }
+  var end=''; try{ var e=sessionStorage.getItem('jlx_imp_end'); if(e) end=new Date(e).toLocaleTimeString('fr-BE',{hour:'2-digit',minute:'2-digit'}); }catch(x){}
+  b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:100000;background:#b45309;color:#fff;font-size:13px;line-height:1.4;padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;box-shadow:0 -2px 10px rgba(0,0,0,.4);';
+  b.innerHTML='<span style="flex:1;">👁 <b>Aperçu en lecture seule</b> — vous voyez le viewer comme <b>'+String((me&&me.firstname)||'')+' '+String((me&&me.lastname)||'')+'</b>. Rien n\'est enregistré'+(end?' · fin à '+end:'')+'.</span>'
+    +'<button type="button" onclick="_vcEnd()" style="background:#fff;color:#b45309;border:none;border-radius:8px;padding:7px 12px;font-weight:700;cursor:pointer;white-space:nowrap;">Fermer l\'aperçu</button>';
+}
+async function _vcEnd(msg){
+  // La session d'aperçu est supprimée côté serveur AVANT de fermer l'onglet (sinon la requête est coupée)
+  var t=_jlxTok();
+  if(t&&sb){ try{ await Promise.race([sb.rpc('viewer_logout',{p_token:t}),new Promise(function(r){ setTimeout(r,1500); })]); }catch(e){} }
+  _jlxSetTok(null);
+  try{ ['jlx_imp','jlx_imp_by','jlx_imp_end','jlx_me','jlx_last'].forEach(function(k){ sessionStorage.removeItem(k); }); }catch(e){}
+  me=null;
+  document.body.innerHTML='<div style="font-family:system-ui,sans-serif;color:#cbd5e1;background:#0f172a;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;">'
+    +'<div><div style="font-size:40px;">👁</div><div style="font-size:17px;font-weight:700;margin:10px 0;">'+(msg||'Aperçu fermé.')+'</div>'
+    +'<div style="font-size:13px;color:#94a3b8;">Vous pouvez fermer cet onglet. Pour un nouvel aperçu : gestionnaire → Médecins → 👁.</div></div></div>';
+  try{ window.close(); }catch(e){}
 }
 
 init();
