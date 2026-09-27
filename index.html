@@ -4358,8 +4358,12 @@ async function _mrFill(list){
     return out; }
   function pName(dk,pid){ var p=postsOf(dk).find(function(x){return x.id===pid;}); return p?(p.name||p.id):pid; }
   function isOvernight(dk,pid){ var p=postsOf(dk).find(function(x){return x.id===pid;}); return !!(p&&p.overnight); }
-  function resolve(dk,label){ var l=String(label||'').trim().toLowerCase(); if(!l) return null;
-    var p=postsOf(dk).find(function(x){ return [x.id,x.name,x.full].some(function(v){ return v&&String(v).trim().toLowerCase()===l; }); }); return p?p.id:null; }
+  // [2026-09-27] MR_SECTIONS — ensemble des postes visés : une section entière, ou TOUS les postes de ce nom (5 × U3)
+  function resolve(dk,label){ var raw=String(label||'').trim(), l=raw.toLowerCase(); if(!l) return [];
+    var sm=/^section\s*:?\s*(journ|soir|nuit|week)/i.exec(raw);
+    if(sm){ var k=sm[1].toLowerCase(), sec=k==='journ'?'jour':k==='week'?'we':k;
+      return postsOf(dk).filter(function(x){ return x.section===sec; }).map(function(x){ return x.id; }); }
+    return postsOf(dk).filter(function(x){ return [x.id,x.name,x.full].some(function(v){ return v&&String(v).trim().toLowerCase()===l; }); }).map(function(x){ return x.id; }); }
   var OK='color:#22c55e;font-weight:600;', KO='color:#ef4444;font-weight:600;', WAIT='color:#94a3b8;';
   spans.forEach(function(sp){
     var t=sp.dataset.t, a=sp.dataset.a, b=sp.dataset.b, days=_mrDays(a,b);
@@ -4372,9 +4376,9 @@ async function _mrFill(list){
       sp.innerHTML='<br>'+(bad.length?'<span style="'+KO+'">✗ Pas respecté dans le planning publié : '+bad.join(', ')+'.</span> <span style="'+WAIT+'">Parlez-en au gestionnaire (menu ☰ → Signaler).</span>'
         :'<span style="'+OK+'">✓ Respecté dans le planning publié.</span>');
     } else if(t==='ip'||t==='p'){
-      var dk=pub[0], pid=resolve(dk,sp.dataset.d);
-      if(!pid){ sp.innerHTML=''; return; } // section ou nom de poste non retrouvé : pas de vérification
-      var mine=myPosts(dk)||[], on=mine.indexOf(pid)>=0;
+      var dk=pub[0], set=resolve(dk,sp.dataset.d);
+      if(!set.length){ sp.innerHTML=''; return; } // nom de poste introuvable dans le planning publié : pas de vérification
+      var mine=myPosts(dk)||[], hit=mine.filter(function(p){ return set.indexOf(p)>=0; }), on=hit.length>0, pid=on?hit[0]:set[0];
       if(t==='ip') sp.innerHTML='<br>'+(on?'<span style="'+KO+'">✗ Pas respecté : vous êtes sur '+pName(dk,pid)+' le '+_mrFmt(dk)+'.</span>':'<span style="'+OK+'">✓ Respecté dans le planning publié.</span>');
       else sp.innerHTML='<br>'+(on?'<span style="'+OK+'">✓ Obtenu : vous êtes sur '+pName(dk,pid)+' le '+_mrFmt(dk)+'.</span>'
         :'<span style="color:#f59e0b;font-weight:600;">✗ Non obtenu</span> <span style="'+WAIT+'">('+(mine.length?'vous êtes sur '+mine.map(function(p){return pName(dk,p);}).join(', '):'vous êtes libre ce jour-là')+').</span>');
