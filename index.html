@@ -2823,7 +2823,7 @@ function renderSupervPDF(){
   html=p3;
   }
 
-  const tabs=['Grille','Jour + nuits','Soirs · WE'].map((t,i)=>`<button type="button" class="${i===_supTab?'on':''}" onclick="_supSetTab(${i})">${t}</button>`).join('');
+  const tabs=['Grille','Plateau A','Plateau B'].map((t,i)=>`<button type="button" class="${i===_supTab?'on':''}" onclick="_supSetTab(${i})">${t}</button>`).join('');
   bd.innerHTML=`<div class="sup"><div class="sup-tabs" role="tablist">${tabs}</div><div class="sup-sc">${html}</div></div>`;
 }
 // Indisponibilités récurrentes (cases jaunes) : colonne doctors_public.unavail_dow, lue une fois, à part,
