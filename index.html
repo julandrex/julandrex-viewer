@@ -408,6 +408,7 @@ button{font-family:inherit;}
           </span>
           <span>E-mails</span>
         </button>
+        <button id="signaler-btn" onclick="closeTbMenu();openSignaler()" class="tb-dd-item">💬 Signaler un problème ou une idée</button>
         <div style="border-top:1px solid var(--b);margin:5px 0;"></div>
 <button id="chgpwd-btn" onclick="showChangePassword()" class="tb-dd-item">&#x1F510; Changer mon mot de passe</button>
         <button onclick="logout();closeTbMenu()" class="tb-dd-item tb-dd-danger">→ Déconnexion</button>
@@ -4163,6 +4164,105 @@ async function msalLogin() {
   if(document.readyState!=='loading') pass(); else document.addEventListener('DOMContentLoaded',pass);
   document.addEventListener('click',function(){ setTimeout(pass,60); },true); // contenu dynamique (modales, listes)
 })();
+</script>
+<script>
+// [2026-09-27] SIGNALER — « Signaler un problème ou une idée » (send-notification v46)
+(function(){
+  var errs=[];
+  function keep(m){ try{ var d=new Date(); errs.push(('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+' '+String(m).slice(0,280)); if(errs.length>5) errs.shift(); }catch(e){} }
+  window.addEventListener('error',function(e){ keep((e.message||'Erreur')+(e.filename?' @'+String(e.filename).split('/').pop()+':'+(e.lineno||''):'')); });
+  window.addEventListener('unhandledrejection',function(e){ var r=e&&e.reason; keep('Promesse : '+(r&&r.message?r.message:String(r))); });
+  window._sigErrors=function(){ return errs.slice(); };
+})();
+var _sigKind='';
+var _SIG_KINDS={
+  bug:{ico:'🐞',lbl:'Quelque chose ne marche pas',to:'Envoyé au développeur de Julandrex.'},
+  idea:{ico:'💡',lbl:'Une idée pour l’appli',to:'Envoyé au développeur de Julandrex.'},
+  planning:{ico:'🗓',lbl:'Une remarque sur le planning ou une règle du service',to:''}
+};
+function _sigPage(){
+  var ov=document.getElementById('grille-ov');
+  if(ov&&ov.classList.contains('show')) return 'Horaire superviseurs (⊞)';
+  var L=[['mesechanges-bg','Mes échanges'],['demandes-bg','Mes demandes'],['desid-bg','Desiderata'],['mon-planning-bg','Mon planning']];
+  for(var i=0;i<L.length;i++){ var el=document.getElementById(L[i][0]); if(el&&getComputedStyle(el).display!=='none') return L[i][1]; }
+  return 'Planning du mois';
+}
+function openSignaler(){
+  if(!me){ toast('Connectez-vous d’abord.',true); return; }
+  var ov=document.getElementById('sig-ov');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='sig-ov';
+    ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+    var btns=Object.keys(_SIG_KINDS).map(function(k){ var o=_SIG_KINDS[k];
+      return '<button type="button" class="sig-k" data-k="'+k+'" onclick="_sigPick(\''+k+'\')" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#132d52;border:1px solid #2a4a75;color:#e2e8f0;border-radius:10px;padding:12px 14px;margin:0 0 8px;font-size:15px;cursor:pointer;"><span style="font-size:20px;">'+o.ico+'</span><span>'+o.lbl+'</span></button>'; }).join('');
+    ov.innerHTML='<div style="background:#0d2240;border-radius:16px;padding:22px;width:100%;max-width:440px;max-height:calc(100dvh - 32px);overflow:auto;color:#e2e8f0;box-sizing:border-box;">'
+      +'<div style="font-size:17px;font-weight:700;margin-bottom:4px;">💬 Signaler un problème ou une idée</div>'
+      +'<div style="font-size:13px;color:#94a3b8;margin-bottom:16px;">De quoi s’agit-il ?</div>'+btns
+      +'<textarea id="sig-msg" maxlength="4000" rows="5" placeholder="Décrivez ce que vous avez vu ou ce que vous proposez…" oninput="_sigUpd()" style="width:100%;box-sizing:border-box;margin-top:6px;background:#0a1a33;border:1px solid #2a4a75;border-radius:10px;color:#e2e8f0;padding:10px 12px;font-size:15px;font-family:inherit;resize:vertical;"></textarea>'
+      +'<div id="sig-to" style="font-size:13px;color:#c9983a;margin:10px 0 4px;min-height:18px;"></div>'
+      +'<div id="sig-ctx" style="font-size:12px;color:#64748b;margin-bottom:14px;"></div>'
+      +'<div id="sig-err" style="display:none;font-size:13px;color:#f87171;margin-bottom:10px;"></div>'
+      +'<div style="display:flex;gap:10px;"><button type="button" onclick="closeSignaler()" style="flex:1;background:none;border:1px solid #2a4a75;color:#94a3b8;border-radius:10px;padding:12px;font-size:15px;cursor:pointer;">Annuler</button>'
+      +'<button type="button" id="sig-send" onclick="sendSignaler()" disabled style="flex:1;background:#c9983a;border:none;color:#0f2847;border-radius:10px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;opacity:.45;">Envoyer</button></div>'
+      +'</div>';
+    ov.addEventListener('click',function(e){ if(e.target===ov) closeSignaler(); });
+    document.body.appendChild(ov);
+  }
+  _sigKind=''; document.getElementById('sig-msg').value='';
+  document.getElementById('sig-err').style.display='none';
+  document.getElementById('sig-to').textContent='';
+  ov.dataset.page=_sigPage();
+  var ml=document.getElementById('mlbl');
+  var mt=ml?ml.textContent.trim():''; ov.dataset.month=(mt&&mt!=='—')?mt:'';
+  document.getElementById('sig-ctx').textContent='Joint automatiquement : écran « '+ov.dataset.page+' »'+(ov.dataset.month?', mois affiché '+ov.dataset.month:'')+', type d’appareil.';
+  _sigMark(); _sigUpd();
+  ov.style.display='flex';
+}
+function closeSignaler(){ var ov=document.getElementById('sig-ov'); if(ov) ov.style.display='none'; }
+function _sigMark(){
+  document.querySelectorAll('#sig-ov .sig-k').forEach(function(b){
+    var on=b.getAttribute('data-k')===_sigKind;
+    b.style.borderColor=on?'#c9983a':'#2a4a75'; b.style.background=on?'#1e3a5f':'#132d52';
+  });
+}
+function _sigUpd(){
+  var ok=!!_sigKind&&document.getElementById('sig-msg').value.trim().length>=3;
+  var b=document.getElementById('sig-send'); b.disabled=!ok; b.style.opacity=ok?'1':'.45';
+}
+async function _sigPick(k){
+  _sigKind=k; _sigMark(); _sigUpd();
+  var to=document.getElementById('sig-to');
+  if(k!=='planning'){ to.textContent=_SIG_KINDS[k].to; return; }
+  to.textContent='Recherche des gestionnaires…';
+  try{
+    var r=await fetch(CFG.url+'/functions/v1/send-notification',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
+      body:JSON.stringify({type:'feedback_recipients',data:{kind:'planning'}})});
+    var j=await r.json();
+    if(_sigKind!=='planning') return;
+    to.textContent=(j&&j.names&&j.names.length)?'Envoyé à : '+j.names.join(', ')+'.':'Envoyé aux gestionnaires du planning.';
+  }catch(e){ if(_sigKind==='planning') to.textContent='Envoyé aux gestionnaires du planning.'; }
+}
+async function sendSignaler(){
+  var msg=document.getElementById('sig-msg').value.trim();
+  if(!_sigKind||msg.length<3) return;
+  var ov=document.getElementById('sig-ov'), b=document.getElementById('sig-send'), er=document.getElementById('sig-err');
+  b.disabled=true; b.textContent='Envoi…'; er.style.display='none';
+  var d=new Date();
+  var ctx={page:ov.dataset.page||'',month:ov.dataset.month||'',
+    at:d.toLocaleString('fr-BE',{timeZone:'Europe/Brussels'}),
+    screen:(window.innerWidth||0)+'×'+(window.innerHeight||0)+(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches?' · appli installée':''),
+    ua:navigator.userAgent,errors:(window._sigErrors?window._sigErrors():[])};
+  try{
+    var r=await fetch(CFG.url+'/functions/v1/send-notification',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
+      body:JSON.stringify({type:'feedback',data:{kind:_sigKind,message:msg,context:ctx}})});
+    var j=await r.json().catch(function(){return {};});
+    if(!r.ok||!j.ok){ throw new Error(j.error==='to_email manquant'?'session expirée — reconnectez-vous puis réessayez.':(j.error||('Erreur '+r.status))); }
+    closeSignaler();
+    toast(j.sent?'✅ Merci ! Votre message a été envoyé.':'✅ Message enregistré (l’e-mail n’a pas pu partir, il sera lu dans l’application).');
+  }catch(e){
+    er.textContent='Envoi impossible : '+(e.message||e); er.style.display='block';
+  }finally{ b.textContent='Envoyer'; _sigUpd(); }
+}
 </script>
 </body>
  
