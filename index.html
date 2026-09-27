@@ -210,6 +210,37 @@ button{font-family:inherit;}
 .grille-tb{height:46px;background:var(--bg2);border-bottom:1px solid var(--line2);display:flex;align-items:center;padding:0 14px;gap:10px;position:sticky;top:0;z-index:10;}
 .grille-close{background:none;border:1px solid var(--line2);color:var(--t1);border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;}
 .grille-close:hover{background:var(--bg3);}
+/* [2026-09-27] VUE PDF « Horaire superviseurs » — couleurs du PDF du gestionnaire (fond blanc, y compris en thème sombre) */
+.sup{background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;min-height:calc(100vh - 46px);padding:8px 8px 24px;}
+.sup-tabs{display:flex;gap:6px;margin:0 0 8px;overflow-x:auto;}
+.sup-tabs button{flex:0 0 auto;border:1px solid #1e3a5f;background:#fff;color:#1e3a5f;border-radius:16px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.sup-tabs button.on{background:#1e3a5f;color:#fff;}
+.sup-sc{overflow:auto;-webkit-overflow-scrolling:touch;}
+.sup table{border-collapse:collapse;table-layout:fixed;}
+.sup .grid{font-size:11px;width:calc(150px + 31 * 30px);}
+.sup .grid col.cn{width:150px;}.sup .grid col.cd{width:30px;}
+.sup .grid td{border:1px solid #444;height:24px;text-align:center;padding:0;overflow:hidden;white-space:nowrap;}
+.sup .grid .v1{background:#fff;font-size:10px;border:2px solid #000;position:sticky;left:0;z-index:2;line-height:1.3;}
+.sup .grid .title{font-size:20px;font-weight:700;border:2px solid #000;height:40px;text-align:left;}
+.sup .grid .title span{padding:0 10px;}
+.sup .grid .dl{background:#8b0000;color:#000;font-weight:700;}
+.sup .grid .dn{background:#4db8ff;font-weight:700;}
+.sup .grid .nm{background:#00a000;color:#fff;text-align:left;padding-left:4px;position:sticky;left:0;z-index:1;text-overflow:ellipsis;}
+.sup .grid .nm.me{box-shadow:inset 0 0 0 3px #1e3a5f;font-weight:700;}
+.sup .grid .sep td{height:8px;background:#fff;border-left:none;border-right:none;}
+.sup .rep{font-size:12px;width:1044px;}.sup .rep.g{width:876px;}
+.sup .rep th,.sup .rep td{border:1px solid #000;padding:2px 4px;height:26px;line-height:1.2;white-space:normal;overflow-wrap:break-word;}
+.sup .rep th{font-weight:700;text-align:center;background:#fff;}
+.sup .rep .h0{border-left:none;border-right:none;border-top:none;}
+.sup .rep .dy{font-weight:700;position:sticky;left:0;z-index:1;background:#fff;white-space:nowrap;}
+.sup .rep tr.we td{background:#ffe699;}
+.sup .rep td.pj{font-size:10px;line-height:1.1;}
+.sup-empty{background:#fff;color:#475569;padding:40px 16px;text-align:center;font-size:13px;min-height:calc(100vh - 46px);}
+/* [2026-09-27] glisser entre les mois */
+@keyframes jxSlideL{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes jxSlideR{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+#grid-area.jx-sl{animation:jxSlideL .22s ease-out}
+#grid-area.jx-sr{animation:jxSlideR .22s ease-out}
 
 .cp-sc{font-weight:800;line-height:1;white-space:nowrap;}
 @media(max-width:500px){.cp-sc{font-size:8px;}}
@@ -1075,6 +1106,7 @@ function _loadFeatures(){
 function _applyFeatureUI(){
   var f=_jlxFeat||{};
   var b=document.getElementById('chgpwd-btn'); if(b) b.style.display=(f.pwd_change_by_doctor===false)?'none':'';
+  var mp=document.getElementById('mon-planning-btn'); if(mp&&f.mon_planning_btn===false) mp.style.display='none'; // [2026-09-27]
   if(f.pwd_forgot_email===false) _showForgotOffMsg(typeof _pwdHelpReason!=='undefined'&&_pwdHelpReason==='first');
 }
 function _forgotOff(){ return !!(_jlxFeat&&_jlxFeat.pwd_forgot_email===false); }
@@ -1960,7 +1992,7 @@ function showMain(){
   document.getElementById('scr-login').style.display='none';
   document.getElementById('scr-main').style.display='flex';
   document.title='Planning — '+me.firstname+' '+me.lastname;
-  document.getElementById('mon-planning-btn').style.display='';
+  document.getElementById('mon-planning-btn').style.display=(_jlxFeat&&_jlxFeat.mon_planning_btn===false)?'none':''; // [2026-09-27] interrupteur serveur
   document.getElementById('tb-menu-wrap').style.display='';
   // Afficher tous les items du dropdown
   ['cal-btn','demandes-btn','echanges-btn','desid-btn'].forEach(id=>{
@@ -1985,7 +2017,9 @@ function showMain(){
 // ══════════════════════════════════════════════════════════
 // DATA
 // ══════════════════════════════════════════════════════════
+var _loadSeq=0; // [2026-09-27] dernier chargement demandé (changements de mois rapides au glisser)
 async function loadAll(){
+  var _ls=++_loadSeq;
   document.getElementById('grid-area').innerHTML='<div class="ld"><div class="sp"></div>Chargement...</div>';
   document.getElementById('shift-widget').innerHTML='';
   var CK='jlx_c_'+CFG.hospital+'_'+cy+'_'+cm;
@@ -1999,6 +2033,7 @@ async function loadAll(){
         sb.rpc('viewer_config',{p_hospital:CFG.hospital}) // [2026-09-13] app_config n'est plus lisible en anon
       ]),_lt]);
       var pr=res[0],dr=res[1],xr=res[2],er=res[3];
+      if(_ls!==_loadSeq) return; // un autre mois a été demandé entre-temps
       if(pr.error)throw pr.error;
       doctors=(dr.data||[]).sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname));exchanges=xr.data||[];planning=pr.data||null;
       window._excShifts=(er&&!er.error&&er.data&&er.data.exc)||{};
@@ -2012,7 +2047,9 @@ async function loadAll(){
         document.getElementById('grid-area').innerHTML='<div class="ld"><div>Planning non disponible pour ce mois.</div><div style="color:var(--t3)">Contactez le gestionnaire de planning.</div></div>';
       }else{renderCalPerso();renderShiftWidget();loadQShifts(cy,cm);}
       renderBadge();
+      _grilleRefresh();
     }catch(e){
+      if(_ls!==_loadSeq) return;
       var cached=null;
       try{var raw=localStorage.getItem(CK);if(raw)cached=JSON.parse(raw);}catch(ce){}
       if(cached){
@@ -2022,6 +2059,7 @@ async function loadAll(){
         var dt=new Date(cached.ts).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
         document.getElementById('grid-area').innerHTML='<div class="offline-banner">📵 Mode hors-ligne — données du '+dt+' (il y a '+ageStr+')</div>';
         if(planning){renderCalPerso();renderShiftWidget();loadQShifts(cy,cm);}
+        _grilleRefresh();
       }else{
         var isNet=!navigator.onLine||/fetch|network|Failed/i.test(e.message||'');
         var msg=isNet?'Impossible de joindre le serveur. Vérifiez votre connexion.':'Erreur serveur : '+e.message;
@@ -2573,14 +2611,219 @@ function renderCalPerso(){
 
 
 
+// ── [2026-09-27] VUE PDF « HORAIRE SUPERVISEURS » : le bouton ⊞ affiche le mois comme l'export
+// « Horaire superviseurs » de l'outil gestionnaire (exportSuperviseursPDF de julandrex_citadelle.html),
+// une page par onglet : 1. grille PH × jours (codes couleur), 2. répartition médicale jour + gardes nuit,
+// 3. gardes soirs/WE, chefs et adjoints, Francorchamps. Même logique, recopiée ; les données viennent
+// du mois publié (planning_months), de viewer_config (postes exceptionnels et partagés) et de doctors_public.
+// Ajouts propres au viewer : onglets, flèches de mois, ma ligne encadrée en page 1.
+var SUP_CHEFS=[{ln:'DEGESVES',ini:'SD'},{ln:'STECKX',ini:'ES'},{ln:'BERTRAND',ini:'XB',to:'2026-03-31'},{ln:'BUSCH',ini:'IB'},{ln:'VAN BRUSSEL',ini:'EVB'}];
+var SUP_CHEF_PRESENCE_RE=/admin|projet|simu/i;
+var SUP_DOUBLU_IDS=['doubl-u-ad','doubl-u-bc'];
+var _supHolCache={};
+// Jours fériés belges : copie de getBelgianHolidays (outil gestionnaire)
+function _supHolidays(year){
+  if(_supHolCache[year]) return _supHolCache[year];
+  const a=year%19,b=Math.floor(year/100),c=year%100;
+  const d2=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3);
+  const h=(19*a+b-d2-g+15)%30,i=Math.floor(c/4),k=c%4;
+  const l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+  const month=Math.floor((h+l-7*m+114)/31)-1;
+  const day=((h+l-7*m+114)%31)+1;
+  const easter=new Date(year,month,day,12,0,0);
+  const add=(d,n)=>{const r=new Date(d);r.setDate(r.getDate()+n);return r.toISOString().slice(0,10);};
+  return _supHolCache[year]=new Set([
+    `${year}-01-01`,add(easter,1),`${year}-05-01`,add(easter,39),add(easter,50),
+    `${year}-07-21`,`${year}-08-15`,`${year}-11-01`,`${year}-11-11`,`${year}-12-25`,
+  ]);
+}
+function _supDow(dk){ return new Date(dk+'T12:00:00').getDay(); }
+function _supWE(dk){ const d=_supDow(dk); return d===0||d===6||_supHolidays(+dk.slice(0,4)).has(dk); }
+// Indisponibilité récurrente : copie de isUnavailDow (outil gestionnaire)
+function _supUnavailDow(doc,dk){
+  const dow=_supDow(dk);
+  for(const entry of (doc.unavailDow||[])){
+    const d=typeof entry==='object'?entry.dow:entry;
+    const freq=typeof entry==='object'?entry.freq:'every';
+    if(d!==dow) continue;
+    if(freq==='every') return true;
+    if(freq==='alt'){
+      const dt=new Date(dk+'T12:00:00');
+      const dayN=dt.getDay()||7;
+      dt.setDate(dt.getDate()+4-dayN);
+      const jan1=new Date(dt.getFullYear(),0,1);
+      const isoWeek=Math.ceil(((dt-jan1)/86400000+1)/7);
+      if(isoWeek%2===1) return true;
+    }
+  }
+  return false;
+}
+var _supTab=0;
+function _supSetTab(i){ _supTab=i; renderSupervPDF(); }
+function renderSupervPDF(){
+  const bd=document.getElementById('grille-bd');
+  document.getElementById('grille-mlbl').textContent=MO[cm]+' '+cy;
+  if(!planning){ bd.innerHTML='<div class="sup-empty">Planning non disponible pour ce mois.</div>'; return; }
+  const y=cy,m=cm,d2=new Date(y,m+1,0).getDate(),monthLabel=`${MO[m]} ${y}`;
+  const shifts=planning.shifts||{}, indispos=Array.isArray(planning.indispos)?planning.indispos:[];
+  const exceptionalShifts=window._excShifts||{};
+  const UD=window._supUnavail||{};
+  const docs=doctors.map(d=>{ let u=UD[d.local_id??d.id]; if(typeof u==='string'){ try{ u=JSON.parse(u); }catch(e){ u=null; } }
+    return {id:d.local_id??d.id, firstname:d.firstname||'', lastname:d.lastname||'', role:d.role||'', initials:d.initials||'', unavailDow:Array.isArray(u)?u:[]}; });
+  const myId=me?(me.local_id??me.id):null;
+  const E=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const EW=s=>E(s).replace(/([+\/])/g,'$1<wbr>'); // retour à la ligne permis après « + » et « / » (écran étroit)
+  const docById=id=>docs.find(d=>d.id===id);
+  const nm=id=>{const d=docById(id);if(!d)return '';const ln=d.lastname.replace(/\s+SENIOR$/i,'');
+    return ln.toLowerCase().replace(/(^|[\s-])(\S)/g,(a,b,c)=>b+c.toUpperCase());};
+  const at=(dk,pid)=>(shifts[dk]||{})[pid];
+  const sharedOn=(dk,pid)=>vShare(dk,pid);
+  const dayEntries=dk=>{ const d=shifts[dk]||{}, r=[];
+    for(const pid in d){ const id=d[pid]; if(id==null) continue; r.push([pid,id]);
+      const sh=sharedOn(dk,pid); if(sh&&sh.docId2!==id) r.push([pid,sh.docId2]); }
+    return r; };
+  const onPost=(dk,pid,docId)=>{ const d=shifts[dk]; if(d&&d[pid]===docId) return true; const sh=sharedOn(dk,pid); return !!sh&&sh.docId2===docId; };
+  const docWorksOn=(dk,docId)=>dayEntries(dk).some(e=>e[1]===docId);
+  const SHARED_FAM=[[/^Poste A\b/i,p=>p==='a'],[/^Poste B\b/i,p=>p==='b'],[/^Poste C\b/i,p=>p==='c'],[/^Poste D\b/i,p=>p==='d'],
+    [/^U3\b/i,p=>/^u3-/.test(p)],[/^Garde SATMU WE/i,p=>p==='we-satmu'],[/^Garde SMUR WE/i,p=>/^we-smur-/.test(p)],
+    [/^Garde U3 WE/i,p=>/^we-u3-/.test(p)],[/^Garde Coord WE/i,p=>p==='we-coord']];
+  const sharedPid=(dk,e)=>{
+    const m=/\(partag[ée]+e? avec (.+)\)\s*$/i.exec(e.label||''); if(!m) return null;
+    const fam=SHARED_FAM.find(([re])=>re.test(e.label)); if(!fam) return null;
+    const who=_iniNoAcc(m[1]).toUpperCase().trim();
+    return Object.keys(shifts[dk]||{}).find(p=>fam[1](p)&&docById(at(dk,p))
+      &&_iniNoAcc(_iniLast(docById(at(dk,p)))).toUpperCase()===who)||null;
+  };
+  const exc=dk=>(exceptionalShifts[dk]||[]);
+  const isDoublU=e=>/^doublure unit/i.test(e.label||'');
+  const placedExc=(dk,e)=>isDoublU(e)||!!sharedPid(dk,e);
+  const join=(dk,pids)=>{
+    const out=pids.map(p=>{
+      const id=at(dk,p); if(id==null) return '';
+      let t=nm(id);
+      const _sh=sharedOn(dk,p); if(_sh) t+=(_sh.mode==='double'?'+':'/')+nm(_sh.docId2);
+      exc(dk).filter(e=>sharedPid(dk,e)===p).forEach(e=>{ t=/^Garde/i.test(e.label)?nm(e.docId)+'/'+t:t+'/'+nm(e.docId); });
+      return t;
+    }).filter(Boolean);
+    if(pids.some(p=>SUP_DOUBLU_IDS.includes(p))) exc(dk).filter(isDoublU).forEach(e=>out.push(nm(e.docId)));
+    return out.join('+');
+  };
+  const isFranco=l=>/francorchamps/i.test(l||'');
+  const days=[];for(let d=1;d<=d2;d++){const dk=dkStr(y,m,d);days.push({d,dk,we:_supWE(dk),dow:_supDow(dk)});}
+  const DL=['D','L','M','M','J','V','S'],DSu=['dim','lun','ma','mer','jeu','ven','sam'];
+  const chefDef=doc=>SUP_CHEFS.find(c=>c.ln===doc.lastname.toUpperCase());
+  const isChefOn=(doc,dk)=>{const c=chefDef(doc);return !!c&&(!c.from||dk>=c.from)&&(!c.to||dk<=c.to);};
+  const isChef=doc=>days.some(x=>isChefOn(doc,x.dk));
+  const chefPresence=(doc,dk)=>onPost(dk,'admin',doc.id)
+    ||exc(dk).some(x=>x.docId===doc.id&&!isFranco(x.label)&&SUP_CHEF_PRESENCE_RE.test(x.label||''));
+  // Initiales : _iniMap du viewer (même règle que docInitialsMap du gestionnaire), clé = id local
+  const INI={}, _im=_iniMap(doctors); doctors.forEach(d=>{ INI[d.local_id??d.id]=_im[d.id]; });
+  const ini=id=>INI[id]||nm(id);
+  const chefsCol=dk=>SUP_CHEFS.map(c=>docs.find(d=>d.lastname.toUpperCase()===c.ln))
+    .filter(d=>d&&isChefOn(d,dk)&&chefPresence(d,dk)).map(d=>ini(d.id)).join('+');
+  let html='';
+
+  if(_supTab===0){
+  // ── Page 1 : grille ──
+  const LET={'coord-n':'G','smur-n':'S','satmu-n':'Z','n16':'B','pm16':'E','pm14':'T','smur-j':'s','doub-smur':'s','admin':'a','circuit':'Fr',
+    'we-coord':'G','we-smur-sat':'S','we-smur-sun':'S','we-satmu':'Z','we-doublure':'D','we-e':'E','we-u3-sat':'B','we-u3-sun':'B'};
+  const ORD=['circuit','admin','smur-j','doub-smur','pm14','pm16','we-e','we-doublure','n16','we-u3-sat','we-u3-sun','coord-n','we-coord','smur-n','we-smur-sat','we-smur-sun','satmu-n','we-satmu'];
+  const COL={green:'#66ff66',dk:'#00b050',salmon:'#f4b084',blue:'#00b0f0',grey:'#999999',black:'#000000',yellow:'#ffff00',red:'#ff0000'};
+  const cell=(doc,day)=>{
+    const {dk,we}=day;
+    const pids=dayEntries(dk).filter(([,v])=>v===doc.id).map(([k])=>k);
+    const ex=exc(dk).filter(x=>x.docId===doc.id);
+    const abs=indispos.filter(i=>i.docId===doc.id&&dk>=i.start&&dk<=i.end&&!['pref','unavail_post'].includes(i.type));
+    let txt=pids.filter(p=>LET[p]).sort((a,b)=>ORD.indexOf(a)-ORD.indexOf(b)).map(p=>LET[p]).join('');
+    let bg;
+    const chefPresent=isChefOn(doc,dk)&&chefPresence(doc,dk);
+    ex.forEach(x=>{const l=(x.label||'').toLowerCase();
+      if(isFranco(l)){if(!pids.includes('circuit'))txt='Fr'+txt;}
+      else if(l.includes('admin matin'))txt='am'+txt;
+      else if(l.includes('conseil m'))txt+='/cm';
+      else if(l.includes('conseil q'))txt+='CQ';
+      else if(/^admin/.test(l)&&!pids.includes('admin'))txt='a'+txt;});
+    if(we) bg=COL.grey;
+    else if(chefPresent) bg=COL.green;
+    else if(pids.includes('n16')&&pids.length===1&&!ex.length) bg=COL.salmon;
+    else if(pids.includes('circuit')||ex.some(x=>/francorchamps|simu|projet/i.test(x.label||''))) bg=COL.dk;
+    else if(!pids.length&&ex.length&&ex.every(x=>/admin matin/i.test(x.label||''))) bg=COL.blue;
+    else if(pids.length||ex.length) bg=COL.green;
+    else if(abs.some(i=>i.type==='formation'||/formation/i.test(i.label||''))){bg=COL.blue;txt=txt||'F';}
+    else if(abs.some(i=>i.type!=='repos')) bg=COL.black;
+    else if(_supUnavailDow(doc,dk)) bg=COL.yellow;
+    else bg=COL.red;
+    const fg=(bg===COL.black||bg===COL.dk)?'#fff':'#000';
+    return `<td style="background:${bg};color:${fg}">${E(txt)}</td>`;
+  };
+  const active=doc=>(doc.unavailDow||[]).length>0||days.some(({dk})=>docWorksOn(dk,doc.id)
+    ||exc(dk).some(x=>x.docId===doc.id)||indispos.some(i=>i.docId===doc.id&&dk>=i.start&&dk<=i.end&&i.type!=='pref'&&i.type!=='unavail_post'));
+  const ph=docs.filter(doc=>/^PH/.test(doc.role||'')&&active(doc)).sort((a,b)=>a.id-b.id);
+  const rowsA=ph.filter(d=>!isChef(d)),rowsB=SUP_CHEFS.map(c=>ph.find(d=>d.lastname.toUpperCase()===c.ln&&isChef(d))).filter(Boolean);
+  const pubDate=planning.published_at?new Date(planning.published_at).toLocaleDateString('fr-BE'):'';
+  let p1=`<table class="grid"><colgroup><col class="cn">${days.map(()=>'<col class="cd">').join('')}</colgroup>
+    <tr><td rowspan="3" class="v1">${pubDate?'Publié le<br>'+pubDate:''}</td><td colspan="${d2}" class="title"><span>${monthLabel}</span></td></tr>
+    <tr>${days.map(x=>`<td class="dl">${DL[x.dow]}</td>`).join('')}</tr>
+    <tr>${days.map(x=>`<td class="dn">${x.d}</td>`).join('')}</tr>`;
+  const docRow=doc=>`<tr><td class="nm${doc.id===myId?' me':''}">${E(doc.lastname.replace(/\s+SENIOR$/i,''))} ${E(doc.firstname)}</td>${days.map(x=>cell(doc,x)).join('')}</tr>`;
+  p1+=rowsA.map(docRow).join('');
+  if(rowsB.length) p1+=`<tr class="sep"><td></td>${days.map(()=>'<td></td>').join('')}</tr>`+rowsB.map(docRow).join('');
+  p1+=`</table>`;
+  html=p1;
+  }else if(_supTab===1){
+  // ── Page 2 : répartition médicale ──
+  const nightCols=dk=>_supWE(dk)
+    ?[join(dk,['we-coord']),join(dk,['we-smur-sat','we-smur-sun']),join(dk,['we-satmu'])]
+    :[join(dk,['coord-n']),join(dk,['smur-n']),join(dk,['satmu-n'])];
+  const dayLbl=x=>`${DSu[x.dow]} ${String(x.d).padStart(2,'0')}`;
+  let p2=`<table class="rep"><colgroup><col style="width:58px"><col style="width:112px"><col style="width:104px"><col style="width:84px"><col style="width:150px"><col style="width:150px"><col style="width:110px"><col style="width:92px"><col style="width:92px"><col style="width:92px"></colgroup>
+    <tr><th colspan="7" class="h0">RÉPARTITION MÉDICALE ${monthLabel}</th><th colspan="3" class="h0">GARDES NUIT</th></tr>
+    <tr><th class="dy"></th><th>COORD JOUR</th><th>SMUR 8h-19h</th><th>SATMU JOUR</th><th>A-D</th><th>B-C</th><th>Projets</th><th>COORD.</th><th>SMUR</th><th>SATMU</th></tr>`;
+  days.forEach(x=>{const {dk,we}=x;
+    const proj=exc(dk).filter(e=>!isFranco(e.label)&&!/admin matin|conseil/i.test(e.label||'')&&!placedExc(dk,e)
+      &&!(SUP_CHEF_PRESENCE_RE.test(e.label||'')&&docById(e.docId)&&isChefOn(docById(e.docId),dk)))
+      .reduce((acc,e)=>{const g=acc.find(a=>a.l===e.label);if(g)g.w.push(ini(e.docId));else acc.push({l:e.label,w:[ini(e.docId)]});return acc;},[])
+      .map(g=>`${g.l} : ${g.w.join('+')}`).join(' ; ');
+    const cols=we?[join(dk,['we-coord']),'','','','',proj]
+      :[join(dk,['coord','doub-coord']),join(dk,['smur-j','doub-smur']),join(dk,['satmu-j']),join(dk,['a','d','doubl-u-ad']),join(dk,['b','c','doubl-u-bc']),proj];
+    p2+=`<tr${we?' class="we"':''}><td class="dy">${dayLbl(x)}</td>${cols.concat(nightCols(dk)).map((v,i)=>`<td${i===5?' class="pj"':''}>${EW(v)}</td>`).join('')}</tr>`;});
+  p2+=`</table>`;
+  html=p2;
+  }else{
+  // ── Page 3 : gardes soirs / WE ──
+  const dayLbl=x=>`${DSu[x.dow]} ${String(x.d).padStart(2,'0')}`;
+  let p3=`<table class="rep g"><colgroup><col style="width:58px"><col style="width:250px"><col style="width:96px"><col style="width:96px"><col style="width:96px"><col style="width:90px"><col style="width:90px"><col style="width:100px"></colgroup>
+    <tr><th colspan="2" class="h0">RÉPARTITION MÉDICALE ${monthLabel}</th><th colspan="5" class="h0">GARDES (NUITS – SOIRS – WEEKENDS)</th><th class="h0"></th></tr>
+    <tr><th class="dy"></th><th>Plateau B</th><th>TARD (14-22)</th><th>Extra-tard (E)</th><th>Garde U3 (B)</th><th>Doublure WE</th><th>Chef et adjoints</th><th>Francorchamps</th></tr>`;
+  days.forEach(x=>{const {dk,we}=x;
+    const _circ=dayEntries(dk).filter(([p])=>p==='circuit').map(([,v])=>v);
+    const fr=_circ.concat(exc(dk).filter(e=>isFranco(e.label)&&!_circ.includes(e.docId)).map(e=>e.docId)).filter(v=>v!=null).map(ini).join('+');
+    const cols=[join(dk,['u3-1','u3-2','u3-3','u3-4','u3-5']),join(dk,['pm14']),join(dk,['pm16','we-e']),join(dk,['n16','we-u3-sat','we-u3-sun']),join(dk,['we-doublure']),chefsCol(dk),fr];
+    p3+=`<tr${we?' class="we"':''}><td class="dy">${dayLbl(x)}</td>${cols.map(v=>`<td>${EW(v)}</td>`).join('')}</tr>`;});
+  p3+=`</table>`;
+  html=p3;
+  }
+
+  const tabs=['Grille','Jour + nuits','Soirs · WE'].map((t,i)=>`<button type="button" class="${i===_supTab?'on':''}" onclick="_supSetTab(${i})">${t}</button>`).join('');
+  bd.innerHTML=`<div class="sup"><div class="sup-tabs" role="tablist">${tabs}</div><div class="sup-sc">${html}</div></div>`;
+}
+// Indisponibilités récurrentes (cases jaunes) : colonne doctors_public.unavail_dow, lue une fois, à part,
+// pour que le planning s'affiche même si la colonne n'existe pas (pas de jaune dans ce cas).
+function _supLoadUnavail(){
+  if(window._supUnavail) return;
+  window._supUnavail={};
+  try{ sb.from('doctors_public').select('id,local_id,unavail_dow').eq('hospital_id',CFG.hospital).then(function(r){
+    if(!r||r.error||!r.data) return;
+    r.data.forEach(function(d){ if(d.unavail_dow) window._supUnavail[d.local_id??d.id]=d.unavail_dow; });
+    _grilleRefresh();
+  }); }catch(e){}
+}
 function openGrille(){
   document.getElementById('grille-ov').classList.add('show');
-  var bd=document.getElementById('grille-bd');
-  var saved=document.getElementById('grid-area').innerHTML;
-  renderGrid();
-  bd.innerHTML='<div style="overflow:auto;padding:8px;">'+document.getElementById('grid-area').innerHTML+'</div>';
-  document.getElementById('grid-area').innerHTML=saved;
+  _supLoadUnavail();
+  renderSupervPDF();
 }
+function _grilleRefresh(){ var ov=document.getElementById('grille-ov'); if(ov&&ov.classList.contains('show')) renderSupervPDF(); }
 
 function closeGrille(){
   document.getElementById('grille-ov').classList.remove('show');
@@ -3155,6 +3398,26 @@ async function submitExchange(){
 // NAV
 // ══════════════════════════════════════════════════════════
 function prevMonth(){cm--;if(cm<0){cm=11;cy--;}updateMonthLbl();loadAll();}
+// [2026-09-27] Glisser horizontalement sur le calendrier : gauche = mois suivant, droite = mois précédent.
+// Ignoré si le geste part d'une zone qui défile horizontalement, d'un champ ou de la barre du haut.
+(function(){
+  var x0=null,y0=0,t0=0;
+  function hScroll(el,stop){ for(;el&&el!==stop;el=el.parentElement){ if(el.scrollWidth>el.clientWidth+2){ var o=getComputedStyle(el).overflowX; if(o==='auto'||o==='scroll') return true; } } return false; }
+  document.addEventListener('touchstart',function(e){
+    x0=null;
+    var main=document.getElementById('scr-main');
+    if(!me||!main||main.style.display==='none'||e.touches.length!==1) return;
+    var t=e.target; if(!main.contains(t)||t.closest('.topbar,input,textarea,select,#exch-panel')||hScroll(t,main)) return;
+    x0=e.touches[0].clientX; y0=e.touches[0].clientY; t0=Date.now();
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(x0==null) return;
+    var dx=e.changedTouches[0].clientX-x0, dy=e.changedTouches[0].clientY-y0; x0=null;
+    if(Date.now()-t0>700||Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5) return;
+    var ga=document.getElementById('grid-area'); ga.classList.remove('jx-sl','jx-sr'); void ga.offsetWidth;
+    if(dx<0){ nextMonth(); ga.classList.add('jx-sl'); } else { prevMonth(); ga.classList.add('jx-sr'); }
+  },{passive:true});
+})();
 function nextMonth(){cm++;if(cm>11){cm=0;cy++;}updateMonthLbl();loadAll();}
 function updateMonthLbl(){document.getElementById('mlbl').textContent=MO[cm]+' '+cy;}
 
@@ -3691,7 +3954,7 @@ async function rejectX(id){
     err.textContent='Erreur réseau: '+e.message;
   });
 }
-</script><div class="grille-ov" id="grille-ov"><div class="grille-wrap"><div class="grille-tb"><span style="font-size:13px;font-weight:600;flex:1;">Planning complet</span><button class="grille-close" onclick="closeGrille()">✕ Fermer</button></div><div class="grille-bd" id="grille-bd"></div></div></div>
+</script><div class="grille-ov" id="grille-ov"><div class="grille-wrap"><div class="grille-tb"><button class="mnav" onclick="prevMonth()" aria-label="Mois précédent">‹</button><span id="grille-mlbl" style="font-size:13px;font-weight:600;min-width:110px;text-align:center;"></span><button class="mnav" onclick="nextMonth()" aria-label="Mois suivant">›</button><span style="flex:1;"></span><button class="grille-close" onclick="closeGrille()">✕ Fermer</button></div><div class="grille-bd" id="grille-bd"></div></div></div>
 
 
 <!--
