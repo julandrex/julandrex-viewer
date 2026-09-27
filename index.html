@@ -2763,7 +2763,9 @@ function renderSupervPDF(){
     else if(!pids.length&&ex.length&&ex.every(x=>/admin matin/i.test(x.label||''))) bg=COL.blue;
     else if(pids.length||ex.length) bg=COL.green;
     else if(abs.some(i=>i.type==='formation'||/formation/i.test(i.label||''))){bg=COL.blue;txt=txt||'F';}
-    else if(abs.some(i=>i.type!=='repos')) bg=COL.black;
+    // [2026-09-27] Jour d'indisponibilité récurrente : une absence « autre » d'un jour posée dessus (doublon de la
+    // récurrence, ex. lundis de SORCE) ne le noircit plus → jaune. Congé, maladie, formation… restent en noir.
+    else if(abs.some(i=>i.type!=='repos'&&!(i.type==='autre'&&_supUnavailDow(doc,dk)))) bg=COL.black;
     else if(_supUnavailDow(doc,dk)) bg=COL.yellow;
     else bg=COL.red;
     const fg=(bg===COL.black||bg===COL.dk)?'#fff':'#000';
