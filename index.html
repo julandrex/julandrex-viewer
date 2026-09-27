@@ -386,7 +386,7 @@ button{font-family:inherit;}
         <div class="tb-role" id="tb-role"></div>
       </div>
     </div>
-    <button class="logout-btn" id="mon-planning-btn" onclick="openMonPlanning()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">📅 Mon planning</button><button id="grille-btn" onclick="openGrille()" title="Vue planning complet" style="width:34px;height:34px;border-radius:8px;border:1px solid var(--line2);background:none;color:var(--t2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background='var(--bg3)';this.style.color='var(--t1)'" onmouseout="this.style.background='none';this.style.color='var(--t2)'">&#x229E;</button>
+    <button class="logout-btn" id="mon-planning-btn" onclick="openMonPlanning()" style="display:none;background:none;border:1px solid var(--t3);color:var(--t3);">📅 Mes postes</button><button id="grille-btn" onclick="openGrille()" title="Vue planning complet" style="width:34px;height:34px;border-radius:8px;border:1px solid var(--line2);background:none;color:var(--t2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;" onmouseover="this.style.background='var(--bg3)';this.style.color='var(--t1)'" onmouseout="this.style.background='none';this.style.color='var(--t2)'">&#x229E;</button>
     <div id="tb-menu-wrap" style="position:relative;display:none;">
       <button id="tb-menu-btn" onclick="toggleTbMenu()" style="background:var(--bg2);border:1px solid var(--b);color:var(--t1);border-radius:10px;padding:9px 15px;cursor:pointer;font-size:22px;line-height:1;min-width:48px;min-height:44px;" title="Menu">☰</button>
       <div id="tb-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg1);border:1px solid var(--b);border-radius:12px;padding:6px;z-index:200;min-width:195px;box-shadow:0 8px 28px rgba(0,0,0,.45);">
@@ -1130,7 +1130,7 @@ function _loadFeatures(){
 function _applyFeatureUI(){
   var f=_jlxFeat||{};
   var b=document.getElementById('chgpwd-btn'); if(b) b.style.display=(f.pwd_change_by_doctor===false)?'none':'';
-  var mp=document.getElementById('mon-planning-btn'); if(mp&&f.mon_planning_btn===false) mp.style.display='none'; // [2026-09-27]
+  var mp=document.getElementById('mon-planning-btn'); if(mp&&f.mon_planning_btn===false&&!(typeof _vcIs==='function'&&_vcIs())) mp.style.display='none'; // [2026-09-27]
   if(f.pwd_forgot_email===false) _showForgotOffMsg(typeof _pwdHelpReason!=='undefined'&&_pwdHelpReason==='first');
 }
 function _forgotOff(){ return !!(_jlxFeat&&_jlxFeat.pwd_forgot_email===false); }
@@ -2018,7 +2018,7 @@ function showMain(){
   document.getElementById('scr-login').style.display='none';
   document.getElementById('scr-main').style.display='flex';
   document.title='Planning — '+me.firstname+' '+me.lastname;
-  document.getElementById('mon-planning-btn').style.display=(_jlxFeat&&_jlxFeat.mon_planning_btn===false)?'none':''; // [2026-09-27] interrupteur serveur
+  document.getElementById('mon-planning-btn').style.display=(_jlxFeat&&_jlxFeat.mon_planning_btn===false&&!(typeof _vcIs==='function'&&_vcIs()))?'none':''; // [2026-09-27] interrupteur serveur (+ visible en aperçu « Voir comme »)
   document.getElementById('tb-menu-wrap').style.display='';
   // Afficher tous les items du dropdown
   ['cal-btn','demandes-btn','echanges-btn','desid-btn'].forEach(id=>{
@@ -3861,104 +3861,114 @@ function mpNextMonth() {
   renderMonPlanning();
 }
 
-async function renderMonPlanning() {
-  const titleEl = document.getElementById('mp-title');
-  const statsEl = document.getElementById('mp-stats');
-  const listEl  = document.getElementById('mp-list');
-  if (!titleEl) return;
-
-  titleEl.textContent = MO[mpM] + ' ' + mpY;
-  statsEl.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:8px;text-align:center">Chargement…</div>';
-  listEl.innerHTML = '';
-
-  // Charger le planning du mois si différent du mois courant
-  let pl = planning;
-  if (mpY !== cy || mpM !== cm) {
-    const { data: mpData } = await sb.from('planning_months')
-      .select('shifts,posts').eq('hospital_id', CFG.hospital).eq('year', mpY).eq('month', mpM).maybeSingle();
-    pl = mpData || null;
-  }
-
-  if (!pl) {
-    statsEl.innerHTML = '';
-    listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Planning non publié pour ce mois.</div>';
-    return;
-  }
-
-  const { shifts, posts } = pl;
-  const d2 = new Date(mpY, mpM + 1, 0).getDate();
-  const today = new Date().toISOString().slice(0, 10);
-  const DN = ['↓ Dim', '→ Lun', '→ Mar', '→ Mer', '→ Jeu', '→ Ven', '→ Sam'];
-  const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-
-  // Collecter mes gardes
-  const myShifts = [];
-  for (let d = 1; d <= d2; d++) {
-    const dk = dkStr(mpY, mpM, d);
-    for (const p of posts) {
-      if ((shifts[dk] || {})[p.id] === (me.local_id??me.id)) {
-        myShifts.push({ dk, post: p });
+// [2026-09-27] MES_POSTES — agenda personnel
+var _mpCache={};
+async function _mpLoad(y,m){
+  if(m<0){ m=11; y--; } if(m>11){ m=0; y++; }
+  var k=y+'-'+m; if(_mpCache[k]!==undefined) return _mpCache[k];
+  var pl=null;
+  if(y===cy&&m===cm&&planning) pl=planning;
+  else{ try{ var r=await sb.from('planning_months').select('shifts,posts,indispos,published_at').eq('hospital_id',CFG.hospital).eq('year',y).eq('month',m).maybeSingle();
+    pl=(r&&!r.error&&r.data&&r.data.posts)?r.data:null; }catch(e){} }
+  _mpCache[k]=pl; return pl;
+}
+function _mpMin(t){ var a=String(t||'0:0').split(':'); return (+a[0]||0)*60+(+a[1]||0); }
+function _mpHours(p){ var h=(_mpMin(p.end)-_mpMin(p.start))/60; if(h<=0) h+=24; return h; }
+function _mpOvernight(p){ return !!p&&_mpMin(p.end)<=_mpMin(p.start)&&p.end!=='00:00'; }
+function _mpIsGuard(p){ return !!p&&(p.section==='nuit'||p.section==='we'); }
+function _mpName(id){ var d=(doctors||[]).find(function(x){ return x.local_id==id||x.id==id; }); return d?(d.firstname+' '+d.lastname):'?'; }
+function _mpToday(){ return new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Brussels'}); }
+function _mpMine(pl,dk){
+  var out=[]; if(!pl) return out;
+  var day=(pl.shifts||{})[dk]||{}, shd=(window._sharedShifts||{})[dk]||{};
+  (pl.posts||[]).forEach(function(p){
+    var h=day[p.id], sh=shd[p.id];
+    if(h!=null&&vIsMe(h)) out.push({p:p,other:(sh&&sh.docId2!=null)?_mpName(sh.docId2):null,second:false});
+    else if(sh&&sh.docId2!=null&&vIsMe(sh.docId2)) out.push({p:p,other:h!=null?_mpName(h):null,second:true});
+  });
+  return out;
+}
+var _MP_ABS={conge:'Congé',formation:'Formation',maladie:'Maladie',cs:'Congé scientifique',autre:'Absent',repos:'Repos souhaité'};
+function _mpAbs(pl,dk){ return ((pl&&pl.indispos)||[]).filter(function(i){ return vIsMe(i.docId)&&dk>=i.start&&dk<=(i.end||i.start)&&i.type!=='pref'&&i.type!=='unavail_post'; }); }
+function _mpExc(dk){ return (((window._excShifts||{})[dk])||[]).filter(function(e){ return vIsMe(e.docId); }); }
+function _mpEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+async function _mpNextGuard(today){
+  var y=+today.slice(0,4), m=+today.slice(5,7)-1;
+  for(var k=0;k<3;k++){
+    var pl=await _mpLoad(y,m+k); if(!pl) continue;
+    var yy=m+k>11?y+1:y, mm=(m+k)%12, d2=new Date(yy,mm+1,0).getDate();
+    for(var d=1;d<=d2;d++){ var dk=dkStr(yy,mm,d); if(dk<today) continue;
+      var g=_mpMine(pl,dk).filter(function(x){ return _mpIsGuard(x.p); });
+      if(g.length){
+        var day=(pl.shifts||{})[dk]||{}, mates=[];
+        (pl.posts||[]).forEach(function(p){ if(_mpIsGuard(p)&&day[p.id]!=null&&!vIsMe(day[p.id])&&!g.some(function(x){return x.p.id===p.id;})) mates.push((p.name||p.id)+' : '+_mpName(day[p.id])); });
+        return {dk:dk,g:g,mates:mates};
       }
     }
   }
-
-  // Stats
-  const total = myShifts.length;
-  const nuits = myShifts.filter(s => s.post.section === 'nuit').length;
-  const wes = myShifts.filter(s => {
-    const dw = new Date(s.dk + 'T12:00:00').getDay();
-    return dw === 0 || dw === 6;
-  }).length;
-  const smur = myShifts.filter(s => (s.post.name || '').toLowerCase().includes('smur')).length;
-
-  statsEl.innerHTML = [
-    ['Total', total, '#4f8ef7'],
-    ['Nuits', nuits, '#9b59b6'],
-    ['WE', wes, '#e67e22'],
-    ['SMUR', smur, '#1abc9c']
-  ].map(([l, v, c]) => `<div style="background:var(--bg2);border-radius:10px;padding:10px 6px;text-align:center;">
-    <div class="jx-count" style="font-size:22px;font-weight:800;color:${c}">${v}</div>
-    <div style="font-size:11px;color:var(--t3);margin-top:2px">${l}</div>
-  </div>`).join('');
-  if(window.jxAnimateCounts){window.jxAnimateCounts(statsEl);}
-
-  if (!myShifts.length) {
-    listEl.innerHTML = '<div style="text-align:center;color:var(--t3);padding:30px">Aucune garde ce mois.</div>';
+  return null;
+}
+async function renderMonPlanning() {
+  var titleEl=document.getElementById('mp-title'), statsEl=document.getElementById('mp-stats'), listEl=document.getElementById('mp-list');
+  if(!titleEl) return;
+  titleEl.textContent=MO[mpM]+' '+mpY;
+  statsEl.innerHTML='<div style="grid-column:1/-1;color:var(--t3);font-size:12px;padding:8px;text-align:center">Chargement…</div>';
+  listEl.innerHTML='';
+  var seq=(window._mpSeq=(window._mpSeq||0)+1);
+  var today=_mpToday();
+  var pl=await _mpLoad(mpY,mpM), prev=await _mpLoad(mpY,mpM-1), nx=await _mpNextGuard(today);
+  if(seq!==window._mpSeq) return; // réponse tardive d'un autre mois
+  var DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  // Prochaine garde
+  var ng='';
+  if(nx){
+    var dt=new Date(nx.dk+'T12:00:00'), dl=Math.round((new Date(nx.dk+'T12:00:00')-new Date(today+'T12:00:00'))/864e5);
+    ng='<div style="grid-column:1/-1;background:linear-gradient(135deg,rgba(155,89,182,.18),rgba(79,142,247,.12));border:1px solid rgba(155,89,182,.45);border-radius:12px;padding:12px 14px;margin-bottom:4px;">'
+      +'<div style="font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">🌙 Prochaine garde · '+(dl===0?'aujourd\'hui':dl===1?'demain':'dans '+dl+' jours')+'</div>'
+      +'<div style="font-size:16px;font-weight:800;margin-top:4px;">'+DAYS[dt.getDay()]+' '+dt.getDate()+' '+MO[dt.getMonth()].toLowerCase()+'</div>'
+      +nx.g.map(function(x){ return '<div style="font-size:13px;margin-top:2px;">'+_mpEsc(x.p.full||x.p.name)+' · '+x.p.start+'–'+x.p.end+(x.other?' <span style="color:var(--t3);">('+(x.second?'avec ':'partagé avec ')+_mpEsc(x.other)+')</span>':'')+'</div>'; }).join('')
+      +(nx.mates.length?'<div style="font-size:11px;color:var(--t3);margin-top:6px;">De garde aussi : '+_mpEsc(nx.mates.join(' · '))+'</div>':'')
+      +'</div>';
+  } else {
+    ng='<div style="grid-column:1/-1;font-size:12px;color:var(--t3);background:var(--bg2);border-radius:10px;padding:10px 12px;">🌙 Aucune garde prévue dans les plannings publiés.</div>';
+  }
+  if(!pl){
+    statsEl.innerHTML=ng;
+    listEl.innerHTML='<div style="text-align:center;color:var(--t3);padding:30px">Planning non publié pour ce mois.</div>';
     return;
   }
-
-  listEl.innerHTML = myShifts.map(({ dk, post }, i) => {
-    const dt = new Date(dk + 'T12:00:00');
-    const isToday = dk === today;
-    const isPast = dk < today;
-    const dayName = DAYS[dt.getDay()];
-    const dayNum = dt.getDate();
-    const canExchange = !isPast;
-    const clickAttr = canExchange
-      ? `onclick="closeMonPlanning();openModal('${dk}','${post.id}')"`
-      : `onclick="showToast('Les gardes passées ne peuvent pas être échangées', 2500)"`;
-    return `<div ${clickAttr} class="jx-enter${isToday ? ' jx-glow' : ''}" style="--jx-i:${i};
-      display:flex;align-items:center;gap:12px;
-      background:var(--bg2);border-radius:10px;padding:12px 14px;
-      margin-bottom:8px;cursor:pointer;
-      border:1px solid ${isToday ? 'var(--acc)' : 'transparent'};
-      opacity:${isPast ? '0.5' : '1'};"
-      onmouseenter="this.style.background='var(--bg3,#2a3550)'"
-      onmouseleave="this.style.background='var(--bg2)'">
-      <div style="min-width:44px;text-align:center;flex-shrink:0;">
-        <div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase">${dayName}</div>
-        <div style="font-size:22px;font-weight:800;color:${isToday ? 'var(--acc)' : 'var(--t1)'};line-height:1.1">${dayNum}</div>
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${post.color || '#888'};flex-shrink:0"></span>
-          <span style="font-size:13px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${post.full || post.name}</span>
-        </div>
-        <div style="font-size:11px;color:var(--t3);margin-top:3px">${post.start}–${post.end}</div>
-      </div>
-      <div style="font-size:16px;color:${canExchange ? 'var(--acc)' : 'var(--t3)'};">${canExchange ? '🔄' : '🔒'}</div>
-    </div>`;
+  var d2=new Date(mpY,mpM+1,0).getDate(), nPostes=0, heures=0, gardes=0, weSet={}, rows=[];
+  for(var d=1;d<=d2;d++){
+    var dk=dkStr(mpY,mpM,d), dt2=new Date(dk+'T12:00:00'), dw=dt2.getDay(), we=dw===0||dw===6;
+    var mine=_mpMine(pl,dk), ab=_mpAbs(pl,dk), ex=_mpExc(dk);
+    var pk=dkStr(mpY,mpM,d-1); if(d===1){ var p0=new Date(mpY,mpM,0); pk=dkStr(p0.getFullYear(),p0.getMonth(),p0.getDate()); }
+    var rest=_mpMine(d===1?prev:pl,pk).some(function(x){ return _mpOvernight(x.p); });
+    mine.forEach(function(x){ nPostes++; heures+=_mpHours(x.p)/(x.other?2:1); if(_mpIsGuard(x.p)) gardes++; if(we) weSet[dk]=1; });
+    var isToday=dk===today, isPast=dk<today, items=[];
+    mine.forEach(function(x){
+      var click=!isPast?' onclick="closeMonPlanning();openModal(\''+dk+'\',\''+x.p.id+'\')" title="Proposer un échange"':'';
+      items.push('<div'+click+' style="display:flex;align-items:center;gap:6px;'+(!isPast?'cursor:pointer;':'')+'"><span style="width:8px;height:8px;border-radius:50%;background:'+(x.p.color||'#888')+';flex-shrink:0"></span>'
+        +'<span style="font-size:13px;font-weight:700;">'+_mpEsc(x.p.full||x.p.name)+'</span><span style="font-size:11px;color:var(--t3);">'+x.p.start+'–'+x.p.end+'</span>'
+        +(x.other?'<span style="font-size:11px;color:var(--t3);">· '+(x.second?'2e titulaire avec ':'partagé avec ')+_mpEsc(x.other)+'</span>':'')
+        +(!isPast?'<span style="margin-left:auto;font-size:13px;color:var(--acc);">🔄</span>':'')+'</div>');
+    });
+    ex.forEach(function(e){ items.push('<div style="font-size:12px;color:#f59e0b;">✦ '+_mpEsc(e.label||'Poste exceptionnel')+'</div>'); });
+    ab.forEach(function(i){ items.push('<div style="font-size:12px;color:#60a5fa;">🏖 '+_mpEsc(_MP_ABS[i.type]||i.type)+(i.openEnd?' (retour à préciser)':'')+'</div>'); });
+    if(!mine.length&&rest) items.push('<div style="font-size:12px;color:#a78bfa;">😴 Repos après garde</div>');
+    if(!items.length) items.push('<div style="font-size:12px;color:var(--t3);">Libre</div>');
+    rows.push('<div'+(isToday?' id="mp-today"':'')+' style="display:flex;gap:12px;align-items:flex-start;padding:9px 12px;border-radius:10px;margin-bottom:6px;'
+      +'background:'+(we?'rgba(230,126,34,.07)':'var(--bg2)')+';border:1px solid '+(isToday?'var(--acc)':'transparent')+';opacity:'+(isPast?'.55':'1')+';">'
+      +'<div style="min-width:40px;text-align:center;flex-shrink:0;"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase">'+DAYS[dw]+'</div>'
+      +'<div style="font-size:19px;font-weight:800;color:'+(isToday?'var(--acc)':'var(--t1)')+';line-height:1.1">'+d+'</div></div>'
+      +'<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;padding-top:2px;">'+items.join('')+'</div></div>');
+  }
+  var nWe=0; Object.keys(weSet).forEach(function(k){ var dw=new Date(k+'T12:00:00').getDay(); if(dw===6||(dw===0&&!weSet[dkStr(+k.slice(0,4),+k.slice(5,7)-1,+k.slice(8)-1)])) nWe++; });
+  statsEl.innerHTML=ng+[['Postes',nPostes,'#4f8ef7'],['Heures ≈',Math.round(heures),'#1abc9c'],['Gardes',gardes,'#9b59b6'],['Week-ends',nWe,'#e67e22']].map(function(a){
+    return '<div style="background:var(--bg2);border-radius:10px;padding:10px 6px;text-align:center;"><div class="jx-count" style="font-size:22px;font-weight:800;color:'+a[2]+'">'+a[1]+'</div><div style="font-size:11px;color:var(--t3);margin-top:2px">'+a[0]+'</div></div>';
   }).join('');
+  if(window.jxAnimateCounts){ window.jxAnimateCounts(statsEl); }
+  listEl.innerHTML=rows.join('');
+  var t=document.getElementById('mp-today'); if(t) setTimeout(function(){ t.scrollIntoView({block:'center',behavior:'smooth'}); },60);
 }
 // ========== FIN MON PLANNING ==========
 
