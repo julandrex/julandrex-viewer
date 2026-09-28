@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- © 2026 Dr Giuseppe Sorce — Julandrex. Tous droits réservés. Usage limité au service des urgences du CHR de la Citadelle
+     dans le cadre de la convention conclue avec l'Hôpital. Toute copie, modification, diffusion ou réutilisation est interdite
+     sans l'accord écrit de l'auteur. [2026-09-28] ANONYMISATION -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1850,7 +1853,7 @@ async function openMesDemandes(){
 // vu » est gardé dans ce navigateur (localStorage). Vérifié à la connexion, au retour sur l'appli et toutes les 90 s.
 // Initiales : même règle que l'appli du gestionnaire (docInitialsMap) — celles de la fiche priment, puis celles des
 // chefs/adjoints, sinon initiale de chaque partie du prénom + de chaque mot du nom ; homonymes → lettres suivantes du nom.
-var _SUP_INI={'DEGESVES':'SD','STECKX':'ES','BERTRAND':'XB','BUSCH':'IB','VAN BRUSSEL':'EVB'};
+var _SUP_INI={'31':'SD','32':'ES','2':'XB','33':'IB','34':'EVB'}; // [2026-09-28] clé = numéro de planning (local_id), plus de nom
 function _iniNoAcc(t){ return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 function _iniLast(d){ return String(d.lastname||'').replace(/\s+SENIOR$/i,''); }
 function _iniWho(d){ return _iniNoAcc(_iniLast(d)+'|'+(d.firstname||'')).toUpperCase(); }
@@ -1861,7 +1864,7 @@ function _baseIni(d){
 function _iniMap(list){
   var map={}, m0=window._docIni||{};
   list.forEach(function(d){ var v=String(m0[d.id]||'').trim(); if(v) map[d.id]=v; });
-  list.forEach(function(d){ if(map[d.id]) return; var c=_SUP_INI[String(d.lastname||'').toUpperCase()]; if(c) map[d.id]=c; });
+  list.forEach(function(d){ if(map[d.id]) return; var c=_SUP_INI[String(d.local_id!=null?d.local_id:d.id)]; if(c) map[d.id]=c; });
   var lnOf=function(d){ return _iniNoAcc(_iniLast(d)).replace(/[^A-Za-z]/g,''); };
   var groups={};
   list.filter(function(d){return !map[d.id];}).forEach(function(d){ var b=_baseIni(d); (groups[b]=groups[b]||[]).push(d); });
@@ -2644,7 +2647,8 @@ function renderCalPerso(){
 // 3. gardes soirs/WE, chefs et adjoints, Francorchamps. Même logique, recopiée ; les données viennent
 // du mois publié (planning_months), de viewer_config (postes exceptionnels et partagés) et de doctors_public.
 // Ajouts propres au viewer : onglets, flèches de mois, ma ligne encadrée en page 1.
-var SUP_CHEFS=[{ln:'DEGESVES',ini:'SD'},{ln:'STECKX',ini:'ES'},{ln:'BERTRAND',ini:'XB',to:'2026-03-31'},{ln:'BUSCH',ini:'IB'},{ln:'VAN BRUSSEL',ini:'EVB'}];
+// [2026-09-28] ANONYMISATION — chefs et adjoints identifiés par leur numéro de planning (local_id), jamais par leur nom
+var SUP_CHEFS=[{lid:31,ini:'SD'},{lid:32,ini:'ES'},{lid:2,ini:'XB',to:'2026-03-31'},{lid:33,ini:'IB'},{lid:34,ini:'EVB'}];
 var SUP_CHEF_PRESENCE_RE=/admin|projet|simu/i;
 var SUP_DOUBLU_IDS=['doubl-u-ad','doubl-u-bc'];
 var _supHolCache={};
@@ -2738,7 +2742,7 @@ function renderSupervPDF(){
   const isFranco=l=>/francorchamps/i.test(l||'');
   const days=[];for(let d=1;d<=d2;d++){const dk=dkStr(y,m,d);days.push({d,dk,we:_supWE(dk),dow:_supDow(dk)});}
   const DL=['D','L','M','M','J','V','S'],DSu=['dim','lun','ma','mer','jeu','ven','sam'];
-  const chefDef=doc=>SUP_CHEFS.find(c=>c.ln===doc.lastname.toUpperCase());
+  const chefDef=doc=>SUP_CHEFS.find(c=>c.lid==doc.id);
   const isChefOn=(doc,dk)=>{const c=chefDef(doc);return !!c&&(!c.from||dk>=c.from)&&(!c.to||dk<=c.to);};
   const isChef=doc=>days.some(x=>isChefOn(doc,x.dk));
   const chefPresence=(doc,dk)=>onPost(dk,'admin',doc.id)
@@ -2746,7 +2750,7 @@ function renderSupervPDF(){
   // Initiales : _iniMap du viewer (même règle que docInitialsMap du gestionnaire), clé = id local
   const INI={}, _im=_iniMap(doctors); doctors.forEach(d=>{ INI[d.local_id??d.id]=_im[d.id]; });
   const ini=id=>INI[id]||nm(id);
-  const chefsCol=dk=>SUP_CHEFS.map(c=>docs.find(d=>d.lastname.toUpperCase()===c.ln))
+  const chefsCol=dk=>SUP_CHEFS.map(c=>docs.find(d=>d.id==c.lid))
     .filter(d=>d&&isChefOn(d,dk)&&chefPresence(d,dk)).map(d=>ini(d.id)).join('+');
   let html='';
 
@@ -2778,7 +2782,7 @@ function renderSupervPDF(){
     else if(pids.length||ex.length) bg=COL.green;
     else if(abs.some(i=>i.type==='formation'||/formation/i.test(i.label||''))){bg=COL.blue;txt=txt||'F';}
     // [2026-09-27] Jour d'indisponibilité récurrente : une absence « autre » d'un jour posée dessus (doublon de la
-    // récurrence, ex. lundis de SORCE) ne le noircit plus → jaune. Congé, maladie, formation… restent en noir.
+    // récurrence, ex. un lundi sur deux) ne le noircit plus → jaune. Congé, maladie, formation… restent en noir.
     else if(abs.some(i=>i.type!=='repos'&&!(i.type==='autre'&&_supUnavailDow(doc,dk)))) bg=COL.black;
     else if(_supUnavailDow(doc,dk)) bg=COL.yellow;
     else bg=COL.red;
@@ -2788,7 +2792,7 @@ function renderSupervPDF(){
   const active=doc=>(doc.unavailDow||[]).length>0||days.some(({dk})=>docWorksOn(dk,doc.id)
     ||exc(dk).some(x=>x.docId===doc.id)||indispos.some(i=>i.docId===doc.id&&dk>=i.start&&dk<=i.end&&i.type!=='pref'&&i.type!=='unavail_post'));
   const ph=docs.filter(doc=>/^PH/.test(doc.role||'')&&active(doc)).sort((a,b)=>a.id-b.id);
-  const rowsA=ph.filter(d=>!isChef(d)),rowsB=SUP_CHEFS.map(c=>ph.find(d=>d.lastname.toUpperCase()===c.ln&&isChef(d))).filter(Boolean);
+  const rowsA=ph.filter(d=>!isChef(d)),rowsB=SUP_CHEFS.map(c=>ph.find(d=>d.id==c.lid&&isChef(d))).filter(Boolean);
   const _pd=planning.published_at?new Date(planning.published_at):null;
   const pubDate=_pd?_pd.toLocaleDateString('fr-BE')+'<br>à '+_pd.toLocaleTimeString('fr-BE',{hour:'2-digit',minute:'2-digit'}):'';
   let p1=`<table class="grid"><colgroup><col class="cn">${days.map(()=>'<col class="cd">').join('')}</colgroup>
