@@ -657,6 +657,7 @@ button{font-family:inherit;}
       <div style="margin-top:12px;border-top:0.5px solid #1e3a5f;padding-top:10px;">
         <details style="font-size:11px;color:#94a3b8;margin-bottom:8px;"><summary style="cursor:pointer;color:#c9983a;">ℹ️ Ce que le moteur retient de vos demandes</summary>
           <div style="line-height:1.6;margin-top:6px;">Une demande n'est prise en compte qu'<b>une fois acceptée</b> par le gestionnaire.<br>
+          🟡 Un jour d'<b>indisponibilité récurrente</b> accolé à un congé (juste avant, juste après ou entre deux jours de congé, même semaine) compte comme un jour de congé : posez-le aussi en congé (le formulaire vous le propose).<br>
           ☀️ Congé · 🌙 Repos souhaité · 🎓 Formation : <b>strict</b> — aucun poste ces jours-là, ni garde de nuit la veille (elle déborderait). La soirée qui finit à minuit reste possible la veille.<br>
           🚫 Indispo poste : <b>strict pour ce poste</b> (ou cette section) — les autres postes restent possibles.<br>
           ⛔ Indisponible toute la journée (1er choix de « Indispo poste ») : <b>strict, sans exception</b> — aucun poste ce jour-là, ni garde de nuit la veille.<br>
@@ -1428,6 +1429,7 @@ async function openDesiderata(){
   }
   bg.dataset.quarter=targetQNum;bg.dataset.year=targetQYear;
   window._desidTargetQNum=targetQNum;window._desidTargetQYear=targetQYear;
+  window._desidRecur=undefined; // [2026-09-29] jours récurrents relus à chaque ouverture
   _desidCalY=targetQYear;_desidCalM=(targetQNum-1)*3;
   desidResetType();desidRenderCal();desidRenderReqs();desidUpdPanel();
   if(targetDl){
@@ -1531,6 +1533,12 @@ function desidMkDay(dn,yr,mo,isCur,loT,hiT){
     if(isPast||isOutQtr){numSpan.style.opacity='0.25';b.style.cursor='not-allowed';}
     else{(function(y2,m2,d2){b.onclick=function(){desidClickDay(y2,m2,d2);};})(yr,mo,dn);}
   }
+  // [2026-09-29] Indisponibilité récurrente (profil) : fond jaune pâle ; la pastille reste sous les autres couleurs
+  if((isCur||isEdge)&&_desidIsRecur(dk0)){
+    if(!dColor){ b.style.background='rgba(250,204,21,.13)'; numSpan.style.color='#fde68a'; }
+    var _rc=document.createElement('span'); _rc.style.cssText='position:absolute;top:3px;left:3px;width:6px;height:6px;border-radius:50%;background:#facc15;';
+    b.appendChild(_rc); b.title=(b.title?b.title+' · ':'')+'Votre indisponibilité récurrente (profil)';
+  }
   // Jours couverts par une demande ajoutée : couleur de son type (fond teinté + barre en bas ; pastilles si plusieurs types)
   var _dcols=_desidDayReqCols(dk0);
   if(_dcols.length){
@@ -1572,6 +1580,16 @@ function desidRenderCal(){
   var rem=(off+ndays)%7,nN=rem===0?0:7-rem;
   for(var n=1;n<=nN;n++)g.appendChild(desidMkDay(n,nYr,nMo,false,loT,hiT));
   desidUpdSelInfo();
+  (function(){ // [2026-09-29] légende des jours récurrents
+    var grid=document.getElementById('desid-cal-grid'); if(!grid) return;
+    var el=document.getElementById('desid-recur-legend'), l=_desidMyRecur();
+    if(!l.length){ if(el) el.style.display='none'; return; }
+    if(!el){ el=document.createElement('div'); el.id='desid-recur-legend'; grid.parentNode.insertBefore(el,grid.nextSibling); }
+    var J=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+    var txt=l.map(function(e){ var d=typeof e==='object'?e.dow:e, f=typeof e==='object'?e.freq:'every'; return J[d]+(f==='alt'?' (une semaine sur deux)':''); }).join(', ');
+    el.style.cssText='display:flex;align-items:center;gap:6px;font-size:10.5px;color:#94a3b8;margin:6px 0 0;';
+    el.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:#facc15;flex-shrink:0;"></span><span>Votre indisponibilité récurrente (profil) : '+txt+'</span>';
+  })();
   var leg=document.getElementById('desid-history-legend');
   if(leg){
     var hasV=(window._myAbsences||[]).length>0||(window._myDesids||[]).some(function(r){return r.status==='validated'||r.status==='partial';});
@@ -1765,6 +1783,7 @@ function desidAddRequest(){
   var detail=_desidType==='f'?(fi?fi.value.trim():''):(_desidType==='p'?(ps?ps.value:''):'');
   var iso=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
   _desidReqs.push({id:++_desidRid,type:_desidType,date_start:iso(lo),date_end:iso(hi),detail:detail,status:'pending'});
+  if(_desidType==='c'){ try{ _desidRecurCheck(iso(lo),iso(hi)); }catch(e){} } // [2026-09-29] jour récurrent dans la semaine de congé
   _desidD1=null;_desidD2=null;_desidType=null;
   desidResetType();desidUpdPanel();desidRenderCal();desidRenderReqs();
 }
@@ -1780,6 +1799,74 @@ function _desidDayReqCols(dk){
 }
 function desidRemoveReq(id){_desidReqs=_desidReqs.filter(function(r){return r.id!==id;});desidRenderReqs();desidRenderCal();}
 
+// ── [2026-09-29] RECURRENT_DESID — indisponibilité récurrente du médecin connecté (profil), pour le calendrier
+function _desidMyRecur(){
+  if(window._desidRecur!==undefined) return window._desidRecur;
+  var u=null;
+  try{
+    var myId=me?(me.local_id!=null?me.local_id:me.id):null;
+    var d=(typeof doctors!=='undefined'?doctors:[]).find(function(x){ return (x.local_id!=null?x.local_id:x.id)==myId; });
+    u=d&&d.unavail_dow;
+    if(u==null&&window._supUnavail) u=window._supUnavail[myId];
+    if(typeof u==='string') u=JSON.parse(u);
+  }catch(e){ u=null; }
+  window._desidRecur=Array.isArray(u)?u:[];
+  return window._desidRecur;
+}
+// [2026-09-29] CONGE_RECURRENT — jours récurrents oubliés dans une semaine de congé
+function _desidCanAsk(dk){ // même plage que le calendrier : 1er lundi du trimestre → dimanche de sa dernière semaine, pas dans le passé
+  var t=new Date(); var today=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+  if(dk<today) return false;
+  if(!window._desidTargetQNum) return true;
+  var qS=(window._desidTargetQNum-1)*3, qY=window._desidTargetQYear, q0=new Date(qY,qS,1), q1=new Date(qY,qS+3,0);
+  var lo=new Date(q0); lo.setDate(lo.getDate()+(8-q0.getDay())%7);
+  var hi=new Date(q1); hi.setDate(hi.getDate()+(7-q1.getDay())%7);
+  return dk>=_desidIso(lo)&&dk<=_desidIso(hi);
+}
+function _desidCongeCovers(dk){
+  if((_desidReqs||[]).some(function(r){ return r.type==='c'&&dk>=r.date_start&&dk<=r.date_end; })) return true;
+  if((window._myAbsences||[]).some(function(a){ return a&&a.type==='conge'&&dk>=a.start&&dk<=(a.end||a.start); })) return true;
+  return (window._myDesids||[]).some(function(row){ return row.status!=='archived'&&row.status!=='rejected'
+    &&(row.requests||[]).some(function(r){ return r.type==='c'&&r.status!=='refused'&&dk>=r.date_start&&dk<=r.date_end; }); });
+}
+// Jours récurrents ACCOLÉS au congé, dans la même semaine (lundi–vendredi) : juste avant, juste après ou entre deux
+// jours de congé ; plusieurs jours récurrents d'affilée sont tous repris ; un férié ne coupe pas le contact.
+// Ex. (lundi et mercredi récurrents) congé jeudi–vendredi → mercredi proposé, pas le lundi (séparé par le mardi travaillé).
+function _desidRecurMissing(lo,hi){
+  if(!_desidMyRecur().length) return [];
+  var out=[], t=new Date(lo+'T12:00:00'); t.setDate(t.getDate()-((t.getDay()+6)%7)); // lundi de la 1re semaine
+  var end=new Date(hi+'T12:00:00');
+  for(var w=0;t<=end&&w<60;w++){
+    var wk=[]; for(var i=0;i<5;i++){ var d=new Date(t); d.setDate(t.getDate()+i); wk.push(_desidIso(d)); }
+    if(wk.some(function(dk){ return dk>=lo&&dk<=hi&&_desidWd(dk); })){
+      var inC=wk.map(function(dk){ return (dk>=lo&&dk<=hi)||_desidCongeCovers(dk); }); // congé (celui-ci ou un autre)
+      var voisin=function(i,pas){ for(var j=i+pas;j>=0&&j<5;j+=pas){ if(!_desidWd(wk[j])) continue; return inC[j]; } return false; };
+      for(var changed=true;changed;){
+        changed=false;
+        for(var k=0;k<5;k++){
+          var dk=wk[k];
+          if(inC[k]||!_desidWd(dk)||!_desidIsRecur(dk)||!_desidCanAsk(dk)) continue;
+          if(voisin(k,-1)||voisin(k,1)){ inC[k]=true; changed=true; if(out.indexOf(dk)<0) out.push(dk); }
+        }
+      }
+    }
+    t.setDate(t.getDate()+7);
+  }
+  return out.sort();
+}
+function _desidRecurCheck(lo,hi){
+  var miss=_desidRecurMissing(lo,hi); if(!miss.length) return;
+  var J=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+  var lbl=miss.map(function(dk){ var d=new Date(dk+'T12:00:00'); return J[d.getDay()]+' '+d.getDate()+' '+_DESID_MNS[d.getMonth()]; });
+  if(confirm('📅 Jour d\'indisponibilité récurrente dans votre semaine de congé\n\n'
+    +(miss.length>1?'Vos jours récurrents (profil) : ':'Votre jour récurrent (profil) : ')+lbl.join(', ').replace(/\.$/,'')+'.\n\n'
+    +'Un jour d\'indisponibilité récurrente accolé à votre congé (juste avant, juste après ou entre deux jours de congé) compte comme un jour de congé : il doit être posé en congé lui aussi.\n\n'
+    +'OK = ajouter '+(miss.length>1?'ces jours':'ce jour')+' en congé\nAnnuler = ne pas les ajouter')){
+    miss.forEach(function(dk){ _desidReqs.push({id:++_desidRid,type:'c',date_start:dk,date_end:dk,detail:'',status:'pending'}); });
+    toast('☀️ Congé ajouté : '+lbl.join(', '));
+  }
+}
+function _desidIsRecur(dk){ var l=_desidMyRecur(); return l.length>0&&_supUnavailDow({unavailDow:l},dk); }
 // ── [2026-09-28] CONGES_REPORTES — desiderata du T1 : congés de l'an dernier reportés, à prendre avant le 31 mars
 function _desidWd(dk){ var d=new Date(dk+'T12:00:00'),w=d.getDay(); return w!==0&&w!==6&&!_supHolidays(+dk.slice(0,4)).has(dk); }
 function _desidIso(t){ return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); }
