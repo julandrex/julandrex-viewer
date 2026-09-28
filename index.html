@@ -659,6 +659,7 @@ button{font-family:inherit;}
           <div style="line-height:1.6;margin-top:6px;">Une demande n'est prise en compte qu'<b>une fois acceptée</b> par le gestionnaire.<br>
           ☀️ Congé · 🌙 Repos souhaité · 🎓 Formation : <b>strict</b> — aucun poste ces jours-là, ni garde de nuit la veille (elle déborderait). La soirée qui finit à minuit reste possible la veille.<br>
           🚫 Indispo poste : <b>strict pour ce poste</b> (ou cette section) — les autres postes restent possibles.<br>
+          ⛔ Indisponible toute la journée (1er choix de « Indispo poste ») : <b>strict, sans exception</b> — aucun poste ce jour-là, ni garde de nuit la veille.<br>
           📌 Poste particulier : <b>préférence forte</b> — le moteur essaie de vous y placer ; si c'est impossible, le gestionnaire est prévenu. Pas garanti.</div></details>
         <div id="desid-req-empty" style="font-size:10px;color:#334155;text-align:center;padding:4px;">Aucune demande ajoutée</div>
         <div id="desid-req-items" style="display:flex;flex-wrap:wrap;"></div>
@@ -1396,11 +1397,13 @@ async function openDesiderata(){
   }catch(e){}
   // [2026-09-13] Absences réellement enregistrées (onglet Congés du gestionnaire) : le calendrier en est le miroir
   try{
-    const [ra,rc]=await Promise.all([
+    const [ra,rc,rr]=await Promise.all([
       sb.rpc('doctor_indispos',{p_hospital:CFG.hospital,p_doc_id:String(me.local_id!=null?me.local_id:me.id)}),
-      sb.rpc('viewer_config',{p_hospital:CFG.hospital})
+      sb.rpc('viewer_config',{p_hospital:CFG.hospital}),
+      sb.rpc('viewer_my_conges_reportes',{p_token:_jlxTok()}).then(function(r){ return r; },function(){ return null; }) // [2026-09-28]
     ]);
     window._myAbsences=Array.isArray(ra&&ra.data)?ra.data:[];
+    window._myReport=(rr&&!rr.error&&rr.data&&typeof rr.data==='object')?rr.data:{};
     if(rc&&!rc.error&&rc.data&&rc.data.savedAt) window._sharedSavedAt=rc.data.savedAt;
   }catch(e){window._myAbsences=window._myAbsences||[];}
   const now=new Date();
@@ -1447,8 +1450,9 @@ function desidChMo(d){
   _desidCalM+=d;
   if(_desidCalM>11){_desidCalM=0;_desidCalY++;}
   if(_desidCalM<0){_desidCalM=11;_desidCalY--;}
-  _desidD1=null;_desidD2=null;_desidType=null;
-  desidResetType();desidUpdPanel();desidRenderCal();
+  // [2026-09-28] SELECTION_MOIS — la sélection en cours (début, fin, type) survit au changement de mois :
+  // un congé peut commencer fin octobre et finir début novembre dans UNE seule demande.
+  desidUpdPanel();desidRenderCal();
 }
 
 function desidFmtDate(dt){
@@ -1467,23 +1471,22 @@ function desidMkDay(dn,yr,mo,isCur,loT,hiT){
   b.style.background=isCur?'#1a3358':'#111d30';
   b.style.color=(isWe||isHol)?(isCur?'#4a6080':'#1e2c3c'):(isCur?'#cbd5e1':'#2e4460');
   if(ndT===todT&&isCur){b.style.outline='1.5px solid #c9983a';b.style.outlineOffset='-1.5px';}
-  // Coloration permanente des jours déjà couverts par une demande ajoutée
-  var inReq=false;
-  if(typeof _desidReqs!=='undefined'){
-    for(var ri=0;ri<_desidReqs.length;ri++){
-      if(dk0>=_desidReqs[ri].date_start&&dk0<=_desidReqs[ri].date_end){inReq=true;break;}
-    }
-  }
-  if(inReq){b.style.background='#2d4a6b';b.style.color='#bcd4ee';}
-  if(loT!==null&&hiT!==null){
-    if(ndT===loT||ndT===hiT){b.style.background='#c9983a';b.style.color='#0d2240';b.style.fontWeight='700';}
-    else if(ndT>loT&&ndT<hiT){b.style.background='#7a5c1a';b.style.color='#f5d99a';}
-  }else if(_desidD1&&ndT===_desidD1.getTime()){b.style.background='#c9983a';b.style.color='#0d2240';b.style.fontWeight='700';}
   var numSpan=document.createElement('span');numSpan.textContent=String(dn);b.appendChild(numSpan);
   b.style.position='relative';
-  var isPast=isCur&&ndT<todT;
-  var isOutQtr=false;
-  if(window._desidTargetQNum){var qS=(window._desidTargetQNum-1)*3;isOutQtr=(yr!==window._desidTargetQYear)||(mo<qS||mo>qS+2);}
+  // [2026-09-28] SEMAINE_A_CHEVAL — une semaine à cheval sur deux trimestres appartient au trimestre qui se termine :
+  // plage demandable = du 1er lundi du trimestre au dimanche de la semaine de son dernier jour.
+  var isOutQtr=false, isEdge=false;
+  if(window._desidTargetQNum){
+    var qS=(window._desidTargetQNum-1)*3, qY=window._desidTargetQYear;
+    var q0=new Date(qY,qS,1), q1=new Date(qY,qS+3,0);
+    var lo=new Date(q0); lo.setDate(lo.getDate()+(8-q0.getDay())%7);        // 1er lundi du trimestre
+    var hi=new Date(q1); hi.setDate(hi.getDate()+(7-q1.getDay())%7);        // dimanche de la dernière semaine
+    var outMonth=(yr!==qY)||(mo<qS||mo>qS+2);
+    isOutQtr=ndT<lo.getTime()||ndT>hi.getTime();
+    isEdge=outMonth&&!isOutQtr;                                             // jour d'un mois voisin, dans la semaine à cheval
+    if(isEdge){ b.style.background='#1a3358'; b.style.color=(isWe||isHol)?'#4a6080':'#cbd5e1'; b.title='Semaine à cheval sur deux trimestres'; }
+  }
+  var isPast=(isCur||isEdge)&&ndT<todT;
   // Déterminer le statut du jour (archived ignoré)
   var dColor=null;
   if(isCur&&window._myDesids&&window._myDesids.length){
@@ -1527,6 +1530,27 @@ function desidMkDay(dn,yr,mo,isCur,loT,hiT){
   }else{
     if(isPast||isOutQtr){numSpan.style.opacity='0.25';b.style.cursor='not-allowed';}
     else{(function(y2,m2,d2){b.onclick=function(){desidClickDay(y2,m2,d2);};})(yr,mo,dn);}
+  }
+  // Jours couverts par une demande ajoutée : couleur de son type (fond teinté + barre en bas ; pastilles si plusieurs types)
+  var _dcols=_desidDayReqCols(dk0);
+  if(_dcols.length){
+    b.style.background=_dcols[0]+'4d'; b.style.boxShadow='inset 0 -3px 0 '+_dcols[0];
+    b.style.color='#fff'; numSpan.style.color='#fff'; numSpan.style.opacity='1'; b.style.fontWeight='700';
+    if(_dcols.length>1){
+      var dots=document.createElement('span');
+      dots.style.cssText='position:absolute;top:2px;right:2px;display:flex;gap:1px;';
+      _dcols.slice(1).forEach(function(c){ var o=document.createElement('span'); o.style.cssText='width:5px;height:5px;border-radius:50%;background:'+c+';'; dots.appendChild(o); });
+      b.appendChild(dots);
+    }
+  }
+  // [2026-09-28] SELECTION_2CLICS — dessinée en dernier (par-dessus les couleurs d'historique) :
+  // 2e clic fait → case(s) or pleine(s) ; 1er clic seul → contour or pointillé, en attente du dernier jour.
+  if(loT!==null&&hiT!==null){
+    if(ndT===loT||ndT===hiT){b.style.background='#c9983a';b.style.color='#0d2240';numSpan.style.color='#0d2240';b.style.fontWeight='700';b.style.outline='none';}
+    else if(ndT>loT&&ndT<hiT){b.style.background='#7a5c1a';b.style.color='#f5d99a';numSpan.style.color='#f5d99a';}
+  }else if(_desidD1&&ndT===_desidD1.getTime()){
+    b.style.background='rgba(201,152,58,.16)';b.style.outline='2px dashed #c9983a';b.style.outlineOffset='-2px';
+    b.style.color='#f5d99a';numSpan.style.color='#f5d99a';b.style.fontWeight='700';
   }
   return b;
 }
@@ -1583,10 +1607,10 @@ function desidClickDay(yr,mo,dn){
 function desidUpdSelInfo(){
   var el=document.getElementById('desid-sel-info');if(!el)return;
   if(!_desidD1){el.textContent='Cliquez pour débuter une période.';return;}
-  if(!_desidD2){el.textContent='Cliquez sur le dernier jour.';return;}
+  if(!_desidD2){el.textContent='Cliquez sur le dernier jour — ou à nouveau sur ce jour pour une seule journée.';return;}
   var lo=_desidD1.getTime()<_desidD2.getTime()?_desidD1:_desidD2;
   var hi=_desidD1.getTime()<_desidD2.getTime()?_desidD2:_desidD1;
-  el.textContent=lo.getTime()===hi.getTime()?desidFmtDate(lo):desidFmtDate(lo)+' → '+desidFmtDate(hi);
+  el.textContent='✓ '+(lo.getTime()===hi.getTime()?desidFmtDate(lo):desidFmtDate(lo)+' → '+desidFmtDate(hi)); // [2026-09-28] sélection confirmée
 }
 
 function desidIsMulti(){return _desidD1&&_desidD2&&_desidD1.getTime()!==_desidD2.getTime();}
@@ -1645,6 +1669,16 @@ function desidPickType(t){
 // [2026-09-23] Desiderata par SECTION : en plus d'un poste précis, le médecin peut viser toute une section.
 // La valeur envoyée est « Section Journée / Soirée / Nuit » (lue telle quelle par le gestionnaire).
 var _DESID_SECTIONS=[['jour','Journée'],['soir','Soirée'],['nuit','Nuit']];
+var _DESID_ALL='Toutes les sections', _DESID_FULL_LBL='Indisponible toute la journée';
+function _desidIsFull(r){ return !!r&&((r.type==='ip'&&r.detail===_DESID_ALL)||(r.type==='r'&&r.full)); }
+// À l'envoi : la ligne « toute la journée » part comme UNE demande de type 'r' marquée full:true
+// (outil gestionnaire à jour → absence stricte 'indispo' ; ancien outil → « Repos souhaité », même blocage).
+function _desidExpand(reqs){
+  return reqs.map(function(r){
+    if(!(r.type==='ip'&&r.detail===_DESID_ALL)) return r;
+    return {id:r.id,type:'r',full:true,date_start:r.date_start,date_end:r.date_end||r.date_start,detail:_DESID_FULL_LBL,label:'⛔ '+_DESID_FULL_LBL};
+  });
+}
 function desidGetSections(){
   const src=(planning&&planning.posts)?planning.posts:[];
   return _DESID_SECTIONS.map(function(s){
@@ -1656,6 +1690,8 @@ function desidGetSections(){
 function desidFillPostSelect(sel){
   if(!sel) return;
   sel.innerHTML='<option value="">-- Choisir un poste ou une section --</option>';
+  // [2026-09-28] TOUTES_SECTIONS — indisponible toute la journée (tous les postes), en une seule demande
+  if(sel.id==='desid-ip-post-sel'){ var g0=document.createElement('optgroup'); g0.label='Toute la journée'; var oa=document.createElement('option'); oa.value=_DESID_ALL; oa.textContent='⛔ Indisponible toute la journée (tous les postes)'; g0.appendChild(oa); sel.appendChild(g0); }
   var g1=document.createElement('optgroup'); g1.label='Toute une section';
   desidGetSections().forEach(function(s){ var o=document.createElement('option'); o.value=s.value; o.textContent=s.label; g1.appendChild(o); });
   if(g1.children.length) sel.appendChild(g1);
@@ -1716,9 +1752,10 @@ function desidAddRequest(){
     if(!pn){alert('Choisissez un poste ou une section.');return;}
     const _ipd=_desidD1;
     const dk=_ipd.getFullYear()+'-'+String(_ipd.getMonth()+1).padStart(2,'0')+'-'+String(_ipd.getDate()).padStart(2,'0');
-    const label='🚫 '+pn+' le '+_desidD1.toLocaleDateString('fr-BE',{day:'2-digit',month:'short'});
-    _desidReqs.push({type:'ip',date_start:dk,date_end:dk,detail:pn,label:label});
-    desidRenderReqs();
+    const label=(pn===_DESID_ALL?'⛔ '+_DESID_FULL_LBL:'🚫 '+pn)+' le '+_desidD1.toLocaleDateString('fr-BE',{day:'2-digit',month:'short'});
+    _desidReqs.push({id:++_desidRid,type:'ip',date_start:dk,date_end:dk,detail:pn,label:label}); // [2026-09-28] id : la ✕ n'efface plus que celle-ci
+    _desidD1=null;_desidD2=null;desidResetType();desidUpdPanel(); // [2026-09-28] le jour montre aussitôt la couleur de la demande
+    desidRenderReqs();desidRenderCal();
     return;
   }
   if(!_desidD1||!_desidD2||!_desidType)return;
@@ -1732,9 +1769,64 @@ function desidAddRequest(){
   desidResetType();desidUpdPanel();desidRenderCal();desidRenderReqs();
 }
 
+// [2026-09-28] DEMANDES_COULEUR — une couleur par type de demande (calendrier + pastilles de la liste)
+var _DESID_TCOL={c:'#3b82f6',r:'#8b5cf6',f:'#10b981',p:'#f59e0b',ip:'#ef4444',full:'#dc2626'};
+function _desidReqKind(r){ return (typeof _desidIsFull==='function'&&_desidIsFull(r))?'full':r.type; }
+// Couleurs des demandes ajoutées couvrant ce jour, la plus « forte » d'abord
+function _desidDayReqCols(dk){
+  var order=['full','c','f','r','ip','p'], seen={};
+  (_desidReqs||[]).forEach(function(r){ if(dk>=r.date_start&&dk<=r.date_end) seen[_desidReqKind(r)]=1; });
+  return order.filter(function(k){ return seen[k]; }).map(function(k){ return _DESID_TCOL[k]; });
+}
 function desidRemoveReq(id){_desidReqs=_desidReqs.filter(function(r){return r.id!==id;});desidRenderReqs();desidRenderCal();}
 
+// ── [2026-09-28] CONGES_REPORTES — desiderata du T1 : congés de l'an dernier reportés, à prendre avant le 31 mars
+function _desidWd(dk){ var d=new Date(dk+'T12:00:00'),w=d.getDay(); return w!==0&&w!==6&&!_supHolidays(+dk.slice(0,4)).has(dk); }
+function _desidIso(t){ return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); }
+// Ajoute à « set » les jours ouvrés de [a,b] compris dans [lo,hi]
+function _desidDaysIn(a,b,lo,hi,set){
+  var s0=a>lo?a:lo, e0=(b||a)<hi?(b||a):hi; if(!s0||s0>e0) return;
+  var t=new Date(s0+'T12:00:00'), end=new Date(e0+'T12:00:00');
+  for(var i=0;t<=end&&i<800;i++){ var k=_desidIso(t); if(_desidWd(k)) set[k]=1; t.setDate(t.getDate()+1); }
+}
+function _desidReport(){
+  if(!me||window._desidTargetQNum!==1) return null;
+  var Y=window._desidTargetQYear, n=parseInt((window._myReport||{})[String(Y)],10)||0;
+  if(n<=0) return null;
+  var lo=Y+'-01-01', hi=Y+'-03-31', deja={}, form={};
+  (window._myAbsences||[]).forEach(function(a){ if(a&&a.type==='conge') _desidDaysIn(a.start,a.end,lo,hi,deja); });
+  (window._myDesids||[]).forEach(function(row){
+    if(row.status==='archived'||row.status==='rejected') return;
+    (row.requests||[]).forEach(function(r){ if(r.type==='c'&&r.status!=='refused') _desidDaysIn(r.date_start,r.date_end,lo,hi,deja); });
+  });
+  (_desidReqs||[]).forEach(function(r){ if(r.type==='c') _desidDaysIn(r.date_start,r.date_end,lo,hi,form); });
+  var tous=Object.assign({},deja,form);
+  return {n:n,Y:Y,P:Y-1,deja:Object.keys(deja).length,poses:Object.keys(tous).length};
+}
+function _desidReportRender(){
+  var card=document.querySelector('#desid-bg > div > div'); if(!card) return;
+  var el=document.getElementById('desid-report'), R=_desidReport();
+  if(!R){ if(el) el.style.display='none'; return; }
+  if(!el){ el=document.createElement('div'); el.id='desid-report'; el.setAttribute('role','alert'); card.insertBefore(el,card.children[1]||null); }
+  var ok=R.poses>=R.n, manque=R.n-R.poses;
+  el.style.cssText='display:block;margin:0 0 12px;padding:10px 12px;border-radius:9px;font-size:12px;line-height:1.55;'
+    +(ok?'background:#10301d;border:1px solid #22c55e;color:#bbf7d0;':'background:#3a1010;border:1.5px solid #ef4444;color:#fecaca;');
+  el.innerHTML='<div style="font-weight:700;font-size:13px;margin-bottom:3px;">'+(ok?'✅':'⚠️')+' Congés '+R.P+' reportés : '+R.n+' jour'+(R.n>1?'s':'')+' à prendre au 1er trimestre '+R.Y+'</div>'
+    +'Vous n\'avez pas pris tous vos congés '+R.P+'. Les '+R.n+' jour'+(R.n>1?'s':'')+' restant'+(R.n>1?'s':'')+' (nombre validé par le gestionnaire) doivent <b>obligatoirement</b> être pris <b>avant le 31 mars '+R.Y+'</b> : posez-les dans cette demande (☀️ Congé).'
+    +'<div style="margin-top:5px;">Congés posés du 1er janvier au 31 mars '+R.Y+' : <b>'+R.poses+' / '+R.n+' jour'+(R.n>1?'s':'')+'</b>'
+    +(R.deja?' <span style="opacity:.8;">(dont '+R.deja+' déjà enregistré'+(R.deja>1?'s':'')+' ou demandé'+(R.deja>1?'s':'')+')</span>':'')
+    +(ok?' — c\'est couvert.':' — il en manque <b>'+manque+'</b>.')+'</div>';
+}
+// true = on peut continuer ; sinon demande confirmation
+function _desidReportConfirm(aucune){
+  var R=_desidReport(); if(!R) return true;
+  var poses=aucune?R.deja:R.poses; if(poses>=R.n) return true;
+  return confirm('⚠️ Congés '+R.P+' reportés\n\nVous devez prendre '+R.n+' jour'+(R.n>1?'s':'')+' de congé '+R.P+' reporté'+(R.n>1?'s':'')+' au 1er trimestre '+R.Y+' (avant le 31 mars). '
+    +(aucune?'Vous n\'en avez posé que ':'Avec cette demande, vous en avez posé ')+poses+' — il en manque '+(R.n-poses)+'.\n\n'
+    +(aucune?'Déclarer quand même « aucune demande » ?':'Envoyer quand même ?'));
+}
 function desidRenderReqs(){
+  try{ _desidReportRender(); }catch(e){}
   var el=document.getElementById('desid-req-items'),em=document.getElementById('desid-req-empty');
   if(!el||!em)return;
   el.innerHTML='';em.style.display=_desidReqs.length?'none':'block';
@@ -1745,10 +1837,10 @@ function desidRenderReqs(){
     var loS=parseInt(lo[2])+' '+_DESID_MNS[parseInt(lo[1])-1];
     var hiS=parseInt(hi[2])+' '+_DESID_MNS[parseInt(hi[1])-1];
     var ds=r.date_start===r.date_end?loS:loS+' → '+hiS;
-    var label=TLABS[r.type]+(r.detail?' — '+r.detail:'');
+    var label=_desidIsFull(r)?'⛔ '+_DESID_FULL_LBL:TLABS[r.type]+(r.detail?' — '+r.detail:''); // [2026-09-28]
     var d=document.createElement('div');
     d.style.cssText='display:inline-flex;align-items:center;gap:5px;background:#152d50;border-radius:6px;padding:4px 8px;font-size:11px;margin:3px;border:0.5px solid #2a4a72;';
-    d.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:'+TCOLS[r.type]+';flex-shrink:0;display:inline-block;"></span><span style="font-weight:600;color:#e2e8f0;">'+label+'</span><span style="color:#64748b;margin-left:3px;">'+ds+'</span><span onclick="desidRemoveReq('+r.id+')" style="cursor:pointer;color:#475569;margin-left:4px;">✕</span>';
+    d.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:'+_DESID_TCOL[_desidReqKind(r)]+';flex-shrink:0;display:inline-block;"></span><span style="font-weight:600;color:#e2e8f0;">'+label+'</span><span style="color:#64748b;margin-left:3px;">'+ds+'</span><span onclick="desidRemoveReq('+r.id+')" style="cursor:pointer;color:#475569;margin-left:4px;">✕</span>';
     el.appendChild(d);
   });
 }
@@ -1757,16 +1849,18 @@ async function submitDesiderata(){
   if(!me)return;
   if(desidCheckLocked()){alert('La période de soumission des desiderata est clôturée.');return;}
   if(!_desidReqs.length){alert('Veuillez ajouter au moins une demande.');return;}
+  if(!_desidReportConfirm(false)) return; // [2026-09-28] congés reportés à prendre au T1
   const bg=document.getElementById('desid-bg');
   const quarter=parseInt(bg.dataset.quarter),year=parseInt(bg.dataset.year);
+  const _envoi=_desidExpand(_desidReqs); // [2026-09-28] « toute la journée » → une demande 'r' full:true
   const {error}=await sb.from('desiderata_requests').insert({
     hospital_id:CFG.hospital,doctor_id:me.id,
     doctor_name:me.firstname+' '+me.lastname,
-    year,quarter,requests:_desidReqs,
-    conges:_desidReqs.filter(r=>r.type==='c').map(r=>({start:r.date_start,end:r.date_end})),
-    indispos:_desidReqs.filter(r=>r.type==='r').map(r=>({date:r.date_start})),
-    prefs:_desidReqs.filter(r=>r.type==='p').map(r=>({date:r.date_start,poste:r.detail,posteName:r.detail})),
-    unavail_posts:_desidReqs.filter(r=>r.type==='ip').map(r=>({date:r.date_start,poste:r.detail,posteName:r.detail})),
+    year,quarter,requests:_envoi,
+    conges:_envoi.filter(r=>r.type==='c').map(r=>({start:r.date_start,end:r.date_end})),
+    indispos:_envoi.filter(r=>r.type==='r').map(r=>({date:r.date_start})),
+    prefs:_envoi.filter(r=>r.type==='p').map(r=>({date:r.date_start,poste:r.detail,posteName:r.detail})),
+    unavail_posts:_envoi.filter(r=>r.type==='ip').map(r=>({date:r.date_start,poste:r.detail,posteName:r.detail})),
     remarques:'',status:'pending'
   });
   if(error){alert('Erreur : '+error.message);return;}
@@ -1778,7 +1872,7 @@ async function submitDesiderata(){
         type:'desiderata_submitted',to_email:CFG.gest_email,to_name:'Gestionnaire',
         hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
         data:{doctor_name:me.firstname+' '+me.lastname,quarter:quarter,year:year,
-          requests:_desidReqs.map(function(r){return {type:r.type,date_start:r.date_start,date_end:r.date_end,detail:r.detail||''};})}
+          requests:_envoi.map(function(r){return {type:r.type,date_start:r.date_start,date_end:r.date_end,detail:r.detail||''};})}
       })
     }).catch(function(){});
   }
@@ -1818,6 +1912,7 @@ async function openMesDemandes(){
     const itemLine=(it,_mrR)=>{
       const ds=it.date_start===it.date_end?fmtD(it.date_start):fmtD(it.date_start)+' → '+fmtD(it.date_end);
       const mark=it.status==='accepted'?' <span style="color:#22c55e;font-weight:700;">✓ acceptée</span>':it.status==='refused'?' <span style="color:#ef4444;font-weight:700;">✗ refusée</span>':'';
+      if(it.type==='r'&&it.full) return '⛔ '+_DESID_FULL_LBL+' : '+ds+mark+(typeof _mrLine==='function'?_mrLine(it,_mrR):''); // [2026-09-28]
       return (TLAB[it.type]||esc(it.type))+' : '+ds+(it.detail?' — '+esc(it.detail):'')+mark
         +(typeof _mrLine==='function'?_mrLine(it,_mrR):''); // [2026-09-27] MOTEUR_RETIENT
     };
@@ -1975,6 +2070,7 @@ function loadMyDesids(){
   sb.from("desiderata_requests").select("*").eq("hospital_id",CFG.hospital).eq("doctor_id",me.id)
     .then(function(r){
       window._myDesids=r.data||[];
+      try{ _desidReportRender(); }catch(e){} // [2026-09-28] congés reportés
       renderCalPerso();
     }).catch(function(e){console.warn("loadMyDesids err",e);});
 }
@@ -2388,8 +2484,8 @@ function renderCalPerso(){
       }
     }
     if(dayInd&&!myPosts.length){
-      var iColor=dayInd.type==='conge'?'#3b82f6':dayInd.type==='formation'?'#a78bfa':dayInd.type==='maladie'?'#f87171':'#94a3b8';
-      var iCode=dayInd.type==='conge'?'Congé':dayInd.type==='formation'?'F':dayInd.type==='maladie'?'CM':'Abs';
+      var iColor=dayInd.type==='conge'?'#3b82f6':dayInd.type==='formation'?'#a78bfa':dayInd.type==='maladie'?'#f87171':dayInd.type==='indispo'?'#ef4444':'#94a3b8';
+      var iCode=dayInd.type==='conge'?'Congé':dayInd.type==='formation'?'F':dayInd.type==='maladie'?'CM':dayInd.type==='indispo'?'Indisp.':'Abs';
       cell.style.background=iColor+'33';
       var iN=document.createElement('span');
       iN.style.position='absolute';
@@ -2783,7 +2879,7 @@ function renderSupervPDF(){
     else if(abs.some(i=>i.type==='formation'||/formation/i.test(i.label||''))){bg=COL.blue;txt=txt||'F';}
     // [2026-09-27] Jour d'indisponibilité récurrente : une absence « autre » d'un jour posée dessus (doublon de la
     // récurrence, ex. un lundi sur deux) ne le noircit plus → jaune. Congé, maladie, formation… restent en noir.
-    else if(abs.some(i=>i.type!=='repos'&&!(i.type==='autre'&&_supUnavailDow(doc,dk)))) bg=COL.black;
+    else if(abs.some(i=>i.type!=='repos'&&i.type!=='indispo'&&!(i.type==='autre'&&_supUnavailDow(doc,dk)))) bg=COL.black; // [2026-09-28] indispo → rouge
     else if(_supUnavailDow(doc,dk)) bg=COL.yellow;
     else bg=COL.red;
     const fg=(bg===COL.black||bg===COL.dk)?'#fff':'#000';
@@ -3892,7 +3988,7 @@ function _mpMine(pl,dk){
   });
   return out;
 }
-var _MP_ABS={conge:'Congé',formation:'Formation',maladie:'Maladie',cs:'Congé scientifique',autre:'Absent',repos:'Repos souhaité'};
+var _MP_ABS={conge:'Congé',formation:'Formation',maladie:'Maladie',cs:'Congé scientifique',autre:'Absent',repos:'Repos souhaité',indispo:'Indisponible toute la journée'};
 function _mpAbs(pl,dk){ return ((pl&&pl.indispos)||[]).filter(function(i){ return vIsMe(i.docId)&&dk>=i.start&&dk<=(i.end||i.start)&&i.type!=='pref'&&i.type!=='unavail_post'; }); }
 function _mpExc(dk){ return (((window._excShifts||{})[dk])||[]).filter(function(e){ return vIsMe(e.docId); }); }
 function _mpEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -4379,6 +4475,7 @@ async function toggleDesidNone(){
   var y=window._desidTargetQYear, q=window._desidTargetQNum, tok=(typeof _jlxTok==='function')?_jlxTok():'';
   if(!y||!q||!tok) return;
   var val=!_desidNone;
+  if(val&&!_desidReportConfirm(true)) return; // [2026-09-28] congés reportés à prendre au T1
   if(val&&!confirm('Indiquer que vous n\'avez aucune demande pour le T'+q+' '+y+' ?\n\nLe gestionnaire saura que vous avez répondu et vous ne serez plus relancé(e). Vous pourrez toujours envoyer des desiderata ensuite.')) return;
   try{
     var r=await sb.rpc('viewer_desid_none',{p_token:tok,p_year:y,p_quarter:q,p_value:val});
@@ -4410,6 +4507,7 @@ function _mrLine(it,r){
   if(S==='pending') txt='pas encore pris en compte (en attente de validation du gestionnaire).';
   else if(S==='refused') txt='non pris en compte (refusée).';
   else if(S==='none') txt='non pris en compte (archivée sans décision).';
+  else if(t==='r'&&it.full) { txt='<b>strict</b> — aucun poste ce jour-là, ni garde de nuit la veille, sans exception.'; col='#cbd5e1'; } // [2026-09-28]
   else if(t==='c'||t==='r'||t==='f') { txt='<b>strict</b> — aucun poste ce(s) jour(s), ni garde de nuit la veille.'; col='#cbd5e1'; }
   else if(t==='ip') { txt='<b>strict pour ce poste</b> — les autres postes restent possibles ce jour-là.'; col='#cbd5e1'; }
   else if(t==='p') { txt='<b>préférence forte</b> — le moteur essaie de vous y placer (pas garanti).'; col='#cbd5e1'; }
