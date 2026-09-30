@@ -362,6 +362,10 @@ button{font-family:inherit;}
         <input class="pwd-inp" id="pin-inp" name="password" type="password" placeholder="Votre mot de passe" autocomplete="current-password" style="width:100%;box-sizing:border-box;">
         <button type="button" onclick="togglePwdVis('pin-inp',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:0;">👁</button>
       </div>
+      <label id="rm-wrap" style="display:none;margin:0 0 10px;font-size:12.5px;color:var(--t2);line-height:1.4;cursor:pointer;">
+        <span style="display:flex;align-items:center;gap:9px;"><input type="checkbox" id="rm-chk" style="width:20px;height:20px;accent-color:var(--acc);flex-shrink:0;margin:0;"><span>Se souvenir de moi sur cet appareil</span></span>
+        <span style="display:block;margin:3px 0 0 29px;font-size:11px;color:var(--t3);">Identifiant et mot de passe enregistrés (chiffrés) sur cet appareil : à réserver à votre téléphone ou ordinateur personnel.</span>
+      </label>
       <div class="pwd-err" id="pin-err" style="margin-bottom:10px;display:none;"></div>
       <button type="submit" class="pwd-btn" style="width:100%;">Se connecter</button>
       <div id="pin-help" style="margin-top:12px;text-align:center;font-size:12.5px;">
@@ -931,6 +935,7 @@ function renderLoginDocs(){
     let _last=''; try{ _last=localStorage.getItem('jlx_login_'+CFG.hospital)||''; }catch(e){}
     _li.value=(_d&&_d.login)||_last;
   }
+  try{ _rmPrefill(); }catch(e){} // [2026-09-30] mot de passe enregistré (si la case avait été cochée)
   setTimeout(function(){ const f=document.getElementById(_li&&_li.value?'pin-inp':'login-id'); if(f&&document.getElementById('scr-login').style.display!=='none') f.focus(); },60);
   return;
   const g=document.getElementById('doc-grid');
@@ -981,6 +986,66 @@ function togglePwdVis(inputId,btn){
   el.type=el.type==='password'?'text':'password';
   btn.textContent=el.type==='password'?'👁':'🙈';
 }
+// ── [2026-09-30] SE_SOUVENIR — mot de passe chiffré (AES-GCM, clé non extractable dans IndexedDB), jamais en clair
+var _RM={db:null};
+function _rmOk(){ try{ return !!(window.indexedDB&&window.crypto&&crypto.subtle&&window.isSecureContext&&window.TextEncoder); }catch(e){ return false; } }
+function _rmDb(){
+  if(_RM.db) return _RM.db;
+  _RM.db=new Promise(function(res,rej){
+    var r=indexedDB.open('jlx_rm_'+CFG.hospital,1);
+    r.onupgradeneeded=function(){ r.result.createObjectStore('s'); };
+    r.onsuccess=function(){ res(r.result); };
+    r.onerror=function(){ rej(r.error); };
+  });
+  return _RM.db;
+}
+function _rmReq(mode,fn){
+  return _rmDb().then(function(db){ return new Promise(function(res,rej){
+    var tx=db.transaction('s',mode), rq=fn(tx.objectStore('s'));
+    tx.oncomplete=function(){ res(rq&&rq.result); };
+    tx.onerror=tx.onabort=function(){ rej(tx.error); };
+  }); });
+}
+async function _rmKey(create){
+  var k=await _rmReq('readonly',function(st){ return st.get('key'); });
+  if(!k&&create){
+    k=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+    await _rmReq('readwrite',function(st){ return st.put(k,'key'); });
+  }
+  return k||null;
+}
+async function _rmSave(login,pwd){
+  var key=await _rmKey(true), iv=crypto.getRandomValues(new Uint8Array(12));
+  var ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(pwd));
+  await _rmReq('readwrite',function(st){ return st.put({login:login,iv:iv,ct:ct},'cred'); });
+}
+async function _rmLoad(){
+  var c=await _rmReq('readonly',function(st){ return st.get('cred'); }); if(!c) return null;
+  var key=await _rmKey(false); if(!key) return null;
+  var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:c.iv},key,c.ct);
+  return {login:c.login,pwd:new TextDecoder().decode(pt)};
+}
+function _rmForget(){
+  if(!_rmOk()) return Promise.resolve();
+  return _rmReq('readwrite',function(st){ st.delete('cred'); return st.delete('key'); }).catch(function(){});
+}
+// Écran de connexion : montre la case si le navigateur sait chiffrer ; remplit le mot de passe enregistré (même identifiant)
+async function _rmPrefill(){
+  var wrap=document.getElementById('rm-wrap'); if(!wrap) return;
+  if(!_rmOk()){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  try{
+    var c=await _rmLoad(), li=document.getElementById('login-id'), pi=document.getElementById('pin-inp'), chk=document.getElementById('rm-chk');
+    if(c&&li&&pi&&String(li.value||'').trim().toLowerCase()===c.login&&!pi.value){ pi.value=c.pwd; chk.checked=true; }
+  }catch(e){ _rmForget(); }
+}
+// Après la réponse du serveur : enregistre (réussite + case cochée) ou efface (tout le reste)
+function _rmOnLogin(vs,login,pwd){
+  if(!_rmOk()) return;
+  var chk=document.getElementById('rm-chk');
+  if(vs==='ok'&&chk&&chk.checked) _rmSave(login,pwd).catch(function(){});
+  else _rmForget();
+}
 async function doLogin(){
   var now=Date.now();
   var _lgEl=document.getElementById('login-id'), _pe=document.getElementById('pin-err');
@@ -1003,6 +1068,7 @@ async function doLogin(){
   if(_vs==='ok'||_vs==='ok_temp'||_vs==='no_pin'){ try{ localStorage.setItem('jlx_login_'+CFG.hospital,_lg); }catch(e){} }
   if(_vs==='locked'){var eL=document.getElementById('pin-err');eL.textContent='Trop de tentatives erronées : compte bloqué 15 minutes.';eL.style.display='block';document.getElementById('pin-inp').value='';return;}
   if(_vs==='ok') _jlxSetTok(_vp.data.token);
+  try{ _rmOnLogin(_vs,_lg,pwd); }catch(e){} // [2026-09-30] se souvenir de moi
   // [2026-09-22] Plus de création libre d'un mot de passe : le premier venu pouvait prendre le compte.
   // Le gestionnaire attribue un mot de passe temporaire (fiche médecin), que le serveur vérifie.
   if(_vs==='no_pin'){
@@ -1046,6 +1112,7 @@ document.addEventListener('keydown',e=>{
 
 function logout(){
   logAccess('logout','');
+  try{ _rmForget(); }catch(e){} // [2026-09-30] déconnexion volontaire : le mot de passe enregistré est effacé
   window._rappel24 = false; // [2026-09-24] préférence rechargée depuis le serveur à la prochaine connexion
   clearTimeout(_sessTimer);
   _sessActive=false;
