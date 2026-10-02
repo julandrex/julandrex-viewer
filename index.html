@@ -2219,6 +2219,23 @@ async function copyCalUrl(){
   }
 }
 
+// ── [2026-09-30] CONGES_DISPO — mes congés : droit individuel, reports validés, absences enregistrées (toutes années)
+function loadMyConges(){
+  if(!me||!sb||!_jlxTok()) return;
+  Promise.all([
+    sb.rpc('viewer_my_conges',{p_token:_jlxTok()}).then(function(r){ return r; },function(){ return null; }),
+    sb.rpc('doctor_indispos',{p_hospital:CFG.hospital,p_doc_id:String(me.local_id!=null?me.local_id:me.id)}).then(function(r){ return r; },function(){ return null; })
+  ]).then(function(res){
+    var a=res[0], b=res[1], prev=window._myCg||{};
+    var d=(a&&!a.error&&a.data&&typeof a.data==='object')?a.data:null;
+    window._myCg={
+      droit:d?d.droit:prev.droit,
+      report:d?(d.report||{}):(prev.report||{}),
+      abs:(b&&!b.error&&Array.isArray(b.data))?b.data:prev.abs
+    };
+    if(planning) renderCalPerso();
+  }).catch(function(e){console.warn('loadMyConges err',e);});
+}
 function loadMyDesids(){
   if(!me)return;
   sb.from("desiderata_requests").select("*").eq("hospital_id",CFG.hospital).eq("doctor_id",me.id)
@@ -2287,6 +2304,7 @@ function showMain(){
   loadAll();
   loadQShifts();
   loadMyDesids();
+  window._myCg=null; loadMyConges(); // [2026-09-30] CONGES_DISPO
   jlxCheckUpdates();
   subscribeRT();
   initSession();
@@ -2419,7 +2437,10 @@ function refreshExcShifts(){
   sb.rpc('viewer_config',{p_hospital:CFG.hospital})
     .then(function(r){
       if(r.error||!r.data) return;
-      if(r.data.savedAt) window._sharedSavedAt=r.data.savedAt;
+      if(r.data.savedAt){
+        if(window._cgSavedAt&&window._cgSavedAt!==r.data.savedAt){ loadMyConges(); setTimeout(loadMyConges,30000); } // [2026-09-30] CONGES_DISPO
+        window._cgSavedAt=r.data.savedAt; window._sharedSavedAt=r.data.savedAt;
+      }
       var nx=r.data.exc||{}, nsh=r.data.shared||{};
       var memeExc=JSON.stringify(nx)===JSON.stringify(window._excShifts||{});
       var memeShared=JSON.stringify(nsh)===JSON.stringify(window._sharedShifts||{});
@@ -2534,6 +2555,72 @@ function openPickerModal(dk,p0,p1,infoSeule){
   box.appendChild(btnBoth);
   ov.appendChild(box);
   document.body.appendChild(ov);
+}
+
+// ── [2026-10-02] PLANNING_JOUR — qui travaille ce jour-là (données déjà chargées : planning du mois, médecins,
+// partages et postes exceptionnels). Ouvert par un clic sur une case sans poste du calendrier personnel.
+var _DP_JOURS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+function openDayPlanning(dk){
+  if(!planning||!me) return;
+  var old=document.getElementById('day-plan-ov'); if(old&&old._close) old._close();
+  var ov=document.createElement('div'); ov.className='picker-ov'; ov.id='day-plan-ov';
+  var box=document.createElement('div'); box.className='picker-box'; box.style.cssText='width:min(440px,94vw);gap:4px;padding:14px 14px 10px;';
+  ov._esc=function(e){ if(e.key==='Escape') ov._close(); };
+  ov._close=function(){ document.removeEventListener('keydown',ov._esc); if(ov.parentNode) ov.parentNode.removeChild(ov); };
+  ov.addEventListener('click',function(e){ if(e.target===ov) ov._close(); });
+  document.addEventListener('keydown',ov._esc);
+  ov.appendChild(box); document.body.appendChild(ov);
+  _dayPlanRender(ov,box,dk);
+}
+function _dayPlanRender(ov,box,dk){
+  var E=function(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+  var dt=new Date(dk+'T12:00:00'), y=dt.getFullYear(), m=dt.getMonth(), d=dt.getDate(), last=new Date(y,m+1,0).getDate();
+  var docOf=function(id){ for(var i=0;i<doctors.length;i++){ var x=doctors[i]; if((x.local_id!=null?x.local_id:x.id)==id) return x; } return null; };
+  var who=function(id){ var x=docOf(id), n=x?((x.firstname||'')+' '+(x.lastname||'')).trim():'—';
+    return vIsMe(id)?'<b style="color:var(--acc);">'+E(n)+' (vous)</b>':E(n); };
+  var small=function(t){ return ' <span style="font-size:10.5px;color:var(--t3);white-space:nowrap;">'+E(t)+'</span>'; };
+  var row=function(color,title,sub,names){
+    return '<div style="display:flex;align-items:flex-start;gap:9px;padding:7px 2px;border-bottom:1px solid var(--line);">'
+      +'<span class="picker-dot" style="background:'+E(color||'#94a3b8')+';margin-top:4px;"></span>'
+      +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--t1);line-height:1.25;">'+E(title)+'</div>'
+      +(sub?'<div style="font-size:11px;color:var(--t3);">'+E(sub)+'</div>':'')+'</div>'
+      +'<div style="font-size:12.5px;color:var(--t2);text-align:right;max-width:55%;line-height:1.35;">'+names+'</div></div>'; };
+  var dayS=(planning.shifts||{})[dk]||{}, posts=planning.posts||[];
+  var SEC=[['jour','☀️ Jour'],['soir','🌆 Soir'],['nuit','🌙 Nuit'],['we','📅 Week-end']], groups={}, order=[];
+  posts.forEach(function(p){
+    if(!p||dayS[p.id]==null) return;
+    var did=dayS[p.id], sh=vShare(dk,p.id), names=who(did);
+    if(sh&&sh.mode==='split'){ var sp=vShareSpans(p,sh); names=who(did)+small(sp.t[0]+'–'+sp.t[1])+'<br>'+who(sh.docId2)+small(sp.s[0]+'–'+sp.s[1]); }
+    else if(sh){ names=who(did)+'<br>'+who(sh.docId2); }
+    var k=SEC.some(function(x){ return x[0]===p.section; })?p.section:'autre';
+    if(!groups[k]){ groups[k]=[]; order.push(k); }
+    groups[k].push(row(p.color,p.full||p.name,(p.start&&p.end)?p.start+'–'+p.end:'',names));
+  });
+  var html='';
+  SEC.concat([['autre','Autres postes']]).forEach(function(x){
+    if(!groups[x[0]]) return;
+    html+='<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin:10px 2px 0;">'+x[1]+'</div>'+groups[x[0]].join('');
+  });
+  var exc=((window._excShifts||{})[dk]||[]).filter(function(e){ return e&&e.docId!=null; });
+  if(exc.length){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin:10px 2px 0;">✳️ Postes exceptionnels</div>'
+      +exc.map(function(e){ return row(e.color||'#f59e0b',e.label||'Poste exceptionnel',(+e.hours?(+e.hours)+' h':''),who(e.docId)); }).join('');
+  }
+  if(!html) html='<div style="padding:18px 6px;text-align:center;font-size:13px;color:var(--t3);">Aucun poste publié ce jour-là.</div>';
+  var btn='background:var(--bg3);border:1px solid var(--line);color:var(--t1);border-radius:9px;width:34px;height:34px;font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;font-family:inherit;';
+  var fer=(typeof isFerie==='function')&&isFerie(dk);
+  box.innerHTML='<div style="display:flex;align-items:center;gap:6px;">'
+    +'<button type="button" data-nav="-1" aria-label="Jour précédent" style="'+btn+(d<=1?'opacity:.3;cursor:default;':'')+'">‹</button>'
+    +'<div style="flex:1;text-align:center;min-width:0;"><div class="picker-title" style="margin:0;">Planning du jour</div>'
+    +'<div style="font-size:15px;font-weight:700;color:var(--t1);">'+_DP_JOURS[dt.getDay()]+' '+d+' '+MO[m].toLowerCase()+' '+y+'</div>'
+    +(fer?'<div style="font-size:11px;color:var(--warn);">Jour férié</div>':'')+'</div>'
+    +'<button type="button" data-nav="1" aria-label="Jour suivant" style="'+btn+(d>=last?'opacity:.3;cursor:default;':'')+'">›</button>'
+    +'<button type="button" data-close aria-label="Fermer" style="'+btn+'font-size:14px;">✕</button></div>'
+    +'<div>'+html+'</div>';
+  box.querySelectorAll('[data-nav]').forEach(function(b){ b.addEventListener('click',function(){
+    var nd=d+(+b.getAttribute('data-nav')); if(nd<1||nd>last) return;
+    _dayPlanRender(ov,box,dkStr(y,m,nd)); box.scrollTop=0; }); });
+  box.querySelector('[data-close]').addEventListener('click',function(){ ov._close(); });
 }
 
 // [2026-09-22] POSTES PARTAGÉS (app_config.shared.sharedShifts via viewer_config) :
@@ -2745,6 +2832,8 @@ function renderCalPerso(){
         (function(msg){cell.addEventListener('click',function(){toast(msg);});})(excDetail);
       }
     }
+    // [2026-10-02] PLANNING_JOUR — case sans poste (jour libre, absence) : planning complet du jour
+    if(!myPosts.length){ cell.style.cursor='pointer'; (function(d2){cell.addEventListener('click',function(){openDayPlanning(d2);});})(dk); }
         grid.appendChild(cell);
   }
   ga.appendChild(grid);
@@ -2796,42 +2885,38 @@ function renderCalPerso(){
   statsDiv.appendChild(mkStat(nNuit,'Nuits','#a78bfa'));
   statsDiv.appendChild(mkStat(nWE,'Week-end','var(--warn)'));
   bottom.appendChild(statsDiv);
-  var cgEnt=me.role==="Médecin Généraliste"?0:(me.role&&me.role.indexOf("Assistant")>-1?30:40);
-  if(cgEnt>0){
-    function cgEaster(y){var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),dy=(h+l-7*m+114)%31+1;return new Date(y,mo-1,dy,12,0,0);}
-    function cgHolidays(y){var e=cgEaster(y);function add(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r.toISOString().slice(0,10);}var fixed=[y+"-01-01",y+"-05-01",y+"-07-21",y+"-08-15",y+"-11-01",y+"-11-11",y+"-12-25"];var mobile=[add(e,1),add(e,39),add(e,49),add(e,50)];var all={};fixed.concat(mobile).forEach(function(dk){all[dk]=1;});return all;}
-    function cgWd(start,end){
-      var days=0,cur=new Date(start+"T12:00:00"),eDate=new Date(end+"T12:00:00");
-      var holidays=cgHolidays(cur.getFullYear());
-      if(cur.getFullYear()!==eDate.getFullYear()){var h2=cgHolidays(eDate.getFullYear());Object.assign(holidays,h2);}
-      while(cur<=eDate){var dw=cur.getDay(),dk=cur.toISOString().slice(0,10);if(dw>=1&&dw<=5&&!holidays[dk])days++;cur.setDate(cur.getDate()+1);}
-      return days;
-    }
-    var cgInds=window._allIndispos||((planning&&planning.indispos)||[]);
-    var cgUsed=0;
-    cgInds.forEach(function(ind){
-      if((ind.docId==me.local_id||ind.docId==me.id)&&ind.type==="conge"){
-        cgUsed+=cgWd(ind.start,ind.end);
-      }
+  // [2026-09-30] CONGES_DISPO — tuile de l'année affichée, même calcul que l'onglet Congés du gestionnaire :
+  // droit individuel (fiche médecin ; sinon droit du grade) + report validé − jours posés − demandes en attente.
+  var cgGrade=me.role==="Médecin Généraliste"?0:(me.role&&me.role.indexOf("Assistant")>-1?30:40);
+  var cgMy=window._myCg||{}, cgY=cy;
+  var cgEnt=(cgMy.droit!=null&&!isNaN(+cgMy.droit))?+cgMy.droit:cgGrade;
+  var cgRep=parseInt((cgMy.report||{})[String(cgY)],10)||0;
+  if(cgEnt+cgRep>0){
+    var cgLo=cgY+"-01-01", cgHi=cgY+"-12-31", cgPos={}, cgAtt={};
+    // Absences enregistrées par le gestionnaire (toutes années) ; à défaut, celles des mois publiés
+    var cgSrc=Array.isArray(cgMy.abs)?cgMy.abs:(window._allIndispos||((planning&&planning.indispos)||[])).filter(function(ind){return ind&&(ind.docId==me.local_id||ind.docId==me.id);});
+    cgSrc.forEach(function(a){ if(a&&a.type==="conge"&&a.start) _desidDaysIn(a.start,a.end,cgLo,cgHi,cgPos); });
+    (window._myDesids||[]).forEach(function(row){
+      if(!row||row.status==="archived"||row.status==="rejected") return;
+      (row.requests||[]).forEach(function(r){ if(r&&r.type==="c"&&r.status!=="refused"&&r.date_start) _desidDaysIn(r.date_start,r.date_end,cgLo,cgHi,cgAtt); });
     });
-    var cgPending=0;
-    if(window._myDesids){
-      window._myDesids.forEach(function(req){
-        if(req.type==="c"&&req.status==="pending"){
-          cgPending+=cgWd(req.date_start,req.date_end);
-        }
-      });
-    }
-    var cgDispo=cgEnt-cgUsed-cgPending;
+    var cgUsed=Object.keys(cgPos).length;
+    var cgPending=Object.keys(cgAtt).filter(function(k){return !cgPos[k];}).length; // un jour déjà enregistré n'est pas compté deux fois
+    var cgTot=cgEnt+cgRep, cgDispo=cgTot-cgUsed-cgPending;
     var cgCard=document.createElement("div"); cgCard.className="cs-card cs-conge-card";
+    cgCard.title="Congés "+cgY+" : droit "+cgEnt+" j"+(cgRep?" + "+cgRep+" j reporté"+(cgRep>1?"s":"")+" de "+(cgY-1):"")+" − "+cgUsed+" j posé"+(cgUsed>1?"s":"")+(cgPending?" − "+cgPending+" j en attente":"")+" = "+cgDispo+" j";
     var cgTop=document.createElement("div"); cgTop.style.cssText="display:flex;align-items:baseline;gap:4px;justify-content:center;";
-    var cgVal=document.createElement("div"); cgVal.className="cs-val"; cgVal.style.color="#f59e0b"; cgVal.textContent=cgDispo;
-    var cgSuf=document.createElement("span"); cgSuf.style.cssText="font-size:11px;color:var(--t3);"; cgSuf.textContent="/"+cgEnt+"j";
+    var cgVal=document.createElement("div"); cgVal.className="cs-val"; cgVal.style.color=cgDispo<0?"#ef4444":"#f59e0b"; cgVal.textContent=cgDispo;
+    var cgSuf=document.createElement("span"); cgSuf.style.cssText="font-size:11px;color:var(--t3);"; cgSuf.textContent="/"+cgTot+"j";
     cgTop.appendChild(cgVal); cgTop.appendChild(cgSuf); cgCard.appendChild(cgTop);
-    var cgLbl=document.createElement("div"); cgLbl.className="cs-lbl"; cgLbl.textContent="Congés dispo";
+    var cgLbl=document.createElement("div"); cgLbl.className="cs-lbl"; cgLbl.textContent="Congés dispo "+cgY;
     cgCard.appendChild(cgLbl);
+    if(cgRep>0){
+      var cgRp=document.createElement("div"); cgRp.style.cssText="font-size:9px;color:#94a3b8;margin-top:2px;"; cgRp.textContent="+"+cgRep+" reporté"+(cgRep>1?"s":""); // court : une ligne sur téléphone
+      cgCard.appendChild(cgRp);
+    }
     if(cgPending>0){
-      var cgPend=document.createElement("div"); cgPend.style.cssText="font-size:9px;color:#94a3b8;margin-top:2px;"; cgPend.textContent="("+cgPending+"j en attente)";
+      var cgPend=document.createElement("div"); cgPend.style.cssText="font-size:9px;color:#94a3b8;margin-top:2px;"; cgPend.textContent=cgPending+" en attente";
       cgCard.appendChild(cgPend);
     }
     statsDiv.appendChild(cgCard);
