@@ -3728,7 +3728,7 @@ async function acceptX(id){
     // Push au proposeur
     try {
       if(xr) {
-        const _postName = planning?.posts?.find(p=>p.id===xr.proposer_post)?.full || xr.proposer_post;
+        const _postName = _cxPairTxt(xr.proposer_post,xr.proposer_post2); // [2026-10-03] ACCEPT_DEUX_POSTES
         fetch(CFG.url+'/functions/v1/send-push',{
           method:'POST',
           headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
@@ -3757,8 +3757,8 @@ async function acceptX(id){
           data:{
             acceptor_name:me.firstname+' '+me.lastname,
             proposer_name:proposer?proposer.firstname+' '+proposer.lastname:'?',
-            post_name:xr.type==='swap'?_cxPairTxt(xr.proposer_post,xr.proposer_post2,true):(post?.full||post?.name||xr.proposer_post),
-            date:xr.type==='swap'?_cxDateLbl(xr.proposer_date):xr.proposer_date,
+            post_name:(xr.type==='swap'||xr.type==='reprise'||xr.proposer_post2)?_cxPairTxt(xr.proposer_post,xr.proposer_post2,true):(post?.full||post?.name||xr.proposer_post),
+            date:(xr.type==='swap'||xr.type==='reprise')?_cxDateLbl(xr.proposer_date):xr.proposer_date,
             kind:(xr.type==='reprise'||xr.type==='swap')?xr.type:undefined,
             counter_post_name:xr.type==='swap'?_cxPairTxt(xr.counter_post,xr.counter_post2,true):undefined,
             counter_date:xr.type==='swap'?_cxDateLbl(xr.counter_date):undefined
