@@ -706,7 +706,11 @@ button{font-family:inherit;}
     </div>
     <div class="mfield" id="m-target-wrap" style="display:none;">
       <span class="mlbl">Choisir le médecin</span>
-      <select id="m-target-doc" class="mtxt" style="padding:8px;font-size:13px;"></select>
+      <select id="m-target-doc" class="mtxt" style="padding:8px;font-size:13px;" onchange="_cxRefresh()"></select>
+    </div>
+    <div class="mfield" id="m-counter-wrap" style="display:none;">
+      <span class="mlbl">En échange, je prends (facultatif)</span>
+      <div id="m-counter-list"></div>
     </div>
     <div class="mfield">
       <span class="mlbl">Message (optionnel)</span>
@@ -2599,8 +2603,10 @@ function _dayPlanRender(ov,box,dk){
     var rpAt='', rpSub=(p.start&&p.end)?p.start+'–'+p.end:'';
     // [2026-10-02] REPRISE — poste d'un collègue (non partagé, jour non passé) : toucher pour proposer de le reprendre
     if(!sh&&!vIsMe(did)&&dk>=auj&&docOf(did)){
-      var deja=(exchanges||[]).some(function(x){ return x&&x.type==='reprise'&&x.proposer_id===me.id&&x.proposer_date===dk&&x.proposer_post===p.id&&(x.status==='open'||x.status==='accepted'); });
-      if(deja) rpSub+=(rpSub?' · ':'')+'⏳ reprise demandée';
+      var deja=(exchanges||[]).some(function(x){ return x&&x.proposer_id===me.id&&(x.status==='open'||x.status==='accepted')
+        &&((x.type==='reprise'&&x.proposer_date===dk&&(x.proposer_post===p.id||x.proposer_post2===p.id))
+          ||(x.type==='swap'&&x.counter_date===dk&&(x.counter_post===p.id||x.counter_post2===p.id))); });
+      if(deja) rpSub+=(rpSub?' · ':'')+'⏳ demande en cours';
       else { rpAt=' data-rp="'+E(p.id)+'" data-rpd="'+E(did)+'"'; hasRp=true; }
     }
     groups[k].push(row(p.color,p.full||p.name,rpSub,names,rpAt));
@@ -2656,6 +2662,12 @@ function _dayPlanReprise(ov,box,dk,pid,did){
     +'<div style="font-size:12px;color:var(--t2);margin-top:2px;">Titulaire : <b style="color:var(--t1);">'+_dpE(hName)+'</b></div></div>'
     +'<div style="font-size:12.5px;color:var(--t2);line-height:1.5;margin-top:8px;">Vous proposez à <b>'+_dpE(hName)+'</b> de reprendre son poste. En cas d’accord, le gestionnaire du planning valide, puis le poste passe dans votre planning.</div>'
     +(abs?'<div style="font-size:12px;color:var(--warn);background:rgba(245,158,11,.1);border-radius:8px;padding:7px 10px;margin-top:8px;">⚠️ Vous êtes noté(e) absent(e) ce jour-là : le gestionnaire en tiendra compte.</div>':'')
+    +(function(){ // [2026-10-02] ECHANGE_CROISE — autre poste du titulaire ce jour-là
+      var day=(planning.shifts||{})[dk]||{}, o=Object.keys(day).filter(function(q){ return q!==pid&&String(day[q])===String(did)&&!vShare(dk,q); })[0];
+      if(!o) return '';
+      return '<label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12.5px;color:var(--t2);cursor:pointer;"><input type="checkbox" id="dp-rp-p2" value="'+_dpE(o)+'" style="width:18px;height:18px;accent-color:var(--acc);margin:0;">Reprendre aussi son autre poste du jour : <b style="color:var(--t1);">'+_dpE(_cxPostTxt(o,true))+'</b></label>';
+    })()
+    +(_cxOn()?'<div style="margin-top:10px;"><div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:4px;">En échange, je lui donne (facultatif)</div><div id="dp-cx-list"></div></div>':'')
     +'<textarea id="dp-rp-msg" maxlength="300" rows="2" placeholder="Message pour '+_dpE(hName)+' (facultatif)" style="width:100%;box-sizing:border-box;margin-top:10px;background:var(--bg3);border:1px solid var(--line);color:var(--t1);border-radius:9px;padding:9px 10px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>'
     +'<div id="dp-rp-err" style="display:none;font-size:12px;color:var(--err);margin-top:6px;"></div>'
     +'<div style="display:flex;gap:8px;margin-top:10px;">'
@@ -2665,33 +2677,151 @@ function _dayPlanReprise(ov,box,dk,pid,did){
   box.querySelectorAll('[data-back]').forEach(function(b){ b.addEventListener('click',function(){ _dayPlanRender(ov,box,dk); box.scrollTop=0; }); });
   box.querySelector('[data-close]').addEventListener('click',function(){ ov._close(); });
   var sendB=box.querySelector('[data-send]');
+  window._cxGive=null; // [2026-10-02] ECHANGE_CROISE — mes postes à donner en échange
+  if(_cxOn()){
+    var cl=box.querySelector('#dp-cx-list'); _cxCache={};
+    cl.innerHTML='<div style="font-size:12px;color:var(--t3);padding:4px 0;">Chargement de vos postes…</div>';
+    _cxMonths().then(function(ms){
+      if(!box.contains(cl)) return;
+      _cxRender(cl,_cxPostsOf(_cxLid(me),ms),'Vous n’avez aucun poste à venir.','Sans choix : simple proposition de reprise.',function(x){
+        window._cxGive=x; var b=box.querySelector('[data-send]'); if(b&&!b.disabled) b.textContent=x?'Proposer l’échange':'Envoyer la proposition'; });
+    });
+  }
   sendB.addEventListener('click',function(){ _dayPlanSend(ov,box,dk,p,hold,dLbl,(box.querySelector('#dp-rp-msg').value||'').trim(),sendB); });
 }
 async function _dayPlanSend(ov,box,dk,p,hold,dLbl,msg,b){
   if(b.disabled) return; b.disabled=true; b.style.opacity='.6'; b.textContent='Envoi…';
   var err=box.querySelector('#dp-rp-err'); if(err) err.style.display='none';
+  var p2el=box.querySelector('#dp-rp-p2'), p2=(p2el&&p2el.checked)?p2el.value:null, give=window._cxGive||null; // [2026-10-02] ECHANGE_CROISE
   try{
-    var res=await sb.from('exchange_requests').insert({hospital_id:CFG.hospital,proposer_id:me.id,proposer_date:dk,proposer_post:p.id,
-      type:'reprise',status:'open',target_doctor_id:hold.id,message:msg||null});
+    var res=await sb.from('exchange_requests').insert(give
+      ?{hospital_id:CFG.hospital,proposer_id:me.id,proposer_date:give.dk,proposer_post:give.pids[0],proposer_post2:give.pids[1]||null,
+        type:'swap',status:'open',target_doctor_id:hold.id,counter_date:dk,counter_post:p.id,counter_post2:p2,message:msg||null}
+      :{hospital_id:CFG.hospital,proposer_id:me.id,proposer_date:dk,proposer_post:p.id,proposer_post2:p2,
+        type:'reprise',status:'open',target_doctor_id:hold.id,message:msg||null});
     if(res&&res.error) throw res.error;
   }catch(e){
     if(err){ err.textContent=(e&&e.message)||String(e); err.style.display=''; }
-    b.disabled=false; b.style.opacity=''; b.textContent='Envoyer la proposition'; return;
+    b.disabled=false; b.style.opacity=''; b.textContent=give?'Proposer l’échange':'Envoyer la proposition'; return;
   }
   var hName=((hold.firstname||'')+' '+(hold.lastname||'')).trim(), pName=p.full||p.name||p.id;
-  toast('🙋 Proposition envoyée à '+hName+'.');
+  var takeTxt=_cxPairTxt(p.id,p2), takeTxtT=_cxPairTxt(p.id,p2,true);
+  toast((give?'⇄ Échange proposé à ':'🙋 Proposition envoyée à ')+hName+'.');
   try{ fetch(CFG.url+'/functions/v1/send-push',{method:'POST',headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
-    body:JSON.stringify({hospital:CFG.hospital,doctor_ids:[String(hold.id)],title:'🙋 Proposition de reprise',
-      message:me.firstname+' '+me.lastname+' propose de reprendre votre poste — '+pName+' ('+dLbl+')',url:'https://julandrex.github.io/julandrex-viewer/'})}).catch(function(){}); }catch(e){}
+    body:JSON.stringify({hospital:CFG.hospital,doctor_ids:[String(hold.id)],title:give?'⇄ Proposition d’échange':'🙋 Proposition de reprise',
+      message:me.firstname+' '+me.lastname+(give?' vous propose un échange : vous prenez '+_cxPairTxt(give.pids[0],give.pids[1])+' ('+_cxDateLbl(give.dk)+') contre votre '+takeTxt+' ('+dLbl+')':' propose de reprendre votre poste — '+takeTxt+' ('+dLbl+')'),url:'https://julandrex.github.io/julandrex-viewer/'})}).catch(function(){}); }catch(e){}
   try{ fetch(CFG.url+'/functions/v1/send-notification',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
     body:JSON.stringify({type:'exchange_requested',hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',doctor_id:hold.id,
-      data:{kind:'reprise',post_name:pName+(p.start&&p.end?' ('+p.start+'–'+p.end+')':''),date:dLbl,message:msg||null}})}).catch(function(){}); }catch(e){}
+      data:give?{kind:'swap',post_name:_cxPairTxt(give.pids[0],give.pids[1],true),date:_cxDateLbl(give.dk),counter_post_name:takeTxtT,counter_date:dLbl,message:msg||null}
+        :{kind:'reprise',post_name:takeTxtT,date:dLbl,message:msg||null}})}).catch(function(){}); }catch(e){}
   try{ var fr=await sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false});
     if(fr&&!fr.error){ exchanges=fr.data||[]; if(typeof renderBadge==='function') renderBadge(); } }catch(e){}
   _dayPlanRender(ov,box,dk); box.scrollTop=0;
 }
+// ── [2026-10-02] ECHANGE_CROISE — « je te donne X (jour A) contre Y (jour B) », type 'swap', une seule demande
+var _cxCache={}, _cxSel=null;
+function _cxOn(){ return !!((typeof _jlxFeat!=='undefined'&&_jlxFeat&&_jlxFeat.echange_croise===true)||(typeof _vcIs==='function'&&_vcIs())); }
+function _cxLid(d){ return d?(d.local_id!=null?d.local_id:d.id):null; }
+function _cxDateLbl(dk){ if(!dk) return ''; var t=new Date(dk+'T12:00:00'); return _DP_JOURS[t.getDay()].toLowerCase()+' '+t.getDate()+' '+MO[t.getMonth()].toLowerCase()+' '+t.getFullYear(); }
+var _cxDefs={};
+function _cxPostTxt(pid,withTime){
+  if(!pid) return '';
+  var p=((planning&&planning.posts)||[]).find(function(x){ return x.id===pid; })||_cxDefs[pid];
+  if(!p) return pid;
+  return (p.full||p.name||pid)+(withTime&&p.start&&p.end?' ('+p.start+'–'+p.end+')':'');
+}
+function _cxPairTxt(a,b,withTime){ return _cxPostTxt(a,withTime)+(b?' + '+_cxPostTxt(b,withTime):''); }
+// Plannings publiés du mois en cours et des 3 suivants (mis en cache le temps d'une fenêtre)
+function _cxMonths(){
+  var now=new Date(), reqs=[];
+  for(var i=0;i<4;i++){
+    var t=new Date(now.getFullYear(),now.getMonth()+i,1), y=t.getFullYear(), mo=t.getMonth(), k=y+'-'+mo;
+    if(_cxCache[k]===undefined) _cxCache[k]=sb.from('planning_months').select('shifts,posts,year,month').eq('hospital_id',CFG.hospital).eq('year',y).eq('month',mo).maybeSingle()
+      .then(function(r){ var d=(r&&!r.error&&r.data)?r.data:null; if(d&&d.posts) d.posts.forEach(function(p){ if(p&&p.id) _cxDefs[p.id]=p; }); return d; },function(){ return null; });
+    reqs.push(_cxCache[k]);
+  }
+  return Promise.all(reqs);
+}
+// Postes à venir d'un médecin (titulaire, postes non partagés), groupés par jour
+function _cxPostsOf(lid,months){
+  var auj=_desidIso(new Date()), out={};
+  months.forEach(function(pm){
+    if(!pm||!pm.shifts) return; var posts=pm.posts||[];
+    Object.keys(pm.shifts).forEach(function(dk){
+      if(dk<auj) return; var day=pm.shifts[dk]||{};
+      Object.keys(day).forEach(function(pid){
+        if(String(day[pid])!==String(lid)||vShare(dk,pid)) return;
+        (out[dk]=out[dk]||[]).push(posts.find(function(x){ return x.id===pid; })||{id:pid,name:pid});
+      });
+    });
+  });
+  return Object.keys(out).sort().map(function(dk){ return {dk:dk,posts:out[dk]}; });
+}
+// Liste à cocher : un seul jour, un ou deux postes ; onSel({dk,pids}) ou onSel(null)
+function _cxRender(box,list,emptyMsg,hint,onSel){
+  onSel(null);
+  if(!list.length){ box.innerHTML='<div style="font-size:12px;color:var(--t3);padding:4px 0;">'+_dpE(emptyMsg)+'</div>'; return; }
+  var html='<div style="font-size:11px;color:var(--t3);margin:0 0 4px;">'+_dpE(hint)+'</div>'
+    +'<div style="max-height:200px;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg3);border:1px solid var(--line);border-radius:10px;padding:4px;">';
+  list.forEach(function(g){
+    g.posts.forEach(function(p){
+      html+='<label data-cxdk="'+_dpE(g.dk)+'" data-cxpid="'+_dpE(p.id)+'" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;">'
+        +'<input type="checkbox" style="width:18px;height:18px;accent-color:var(--acc);margin:0;flex-shrink:0;">'
+        +'<span class="picker-dot" style="background:'+_dpE(p.color||'#94a3b8')+';width:8px;height:8px;"></span>'
+        +'<span style="font-size:12.5px;color:var(--t1);line-height:1.3;"><b>'+_dpE(fmtDate(g.dk))+'</b> · '+_dpE(p.full||p.name||p.id)
+        +(p.start&&p.end?' <span style="color:var(--t3);white-space:nowrap;">'+_dpE(p.start)+'–'+_dpE(p.end)+'</span>':'')+'</span></label>';
+    });
+  });
+  box.innerHTML=html+'</div>';
+  var sel={dk:null,pids:[]};
+  function paint(){
+    box.querySelectorAll('label[data-cxdk]').forEach(function(l){
+      var on=l.getAttribute('data-cxdk')===sel.dk&&sel.pids.indexOf(l.getAttribute('data-cxpid'))>=0;
+      l.querySelector('input').checked=on; l.style.background=on?'rgba(99,179,237,.15)':'';
+    });
+    onSel(sel.pids.length?{dk:sel.dk,pids:sel.pids.slice()}:null);
+  }
+  box.querySelectorAll('label[data-cxdk]').forEach(function(l){
+    l.querySelector('input').addEventListener('change',function(){
+      var dk=l.getAttribute('data-cxdk'), pid=l.getAttribute('data-cxpid'), i=sel.pids.indexOf(pid);
+      if(sel.dk!==dk) sel={dk:dk,pids:[pid]};
+      else if(i>=0) sel.pids.splice(i,1);
+      else { if(sel.pids.length>=2) sel.pids.shift(); sel.pids.push(pid); }
+      if(!sel.pids.length) sel.dk=null;
+      paint();
+    });
+  });
+}
+// Fenêtre d'échange : postes du médecin choisi
+function _cxRefresh(){
+  var w=document.getElementById('m-counter-wrap'); if(!w) return;
+  _cxSel=null;
+  if(!_cxOn()||mTarget!=='specific'){ w.style.display='none'; return; }
+  var sel=document.getElementById('m-target-doc'), did=sel?sel.value:null;
+  var doc=doctors.find(function(d){ return String(d.id)===String(did); });
+  if(!doc){ w.style.display='none'; return; }
+  w.style.display='';
+  var box=document.getElementById('m-counter-list');
+  box.innerHTML='<div style="font-size:12px;color:var(--t3);padding:4px 0;">Chargement des postes de '+_dpE(doc.firstname+' '+doc.lastname)+'…</div>';
+  var tok=(window._cxTok=(window._cxTok||0)+1);
+  _cxMonths().then(function(ms){
+    if(tok!==window._cxTok) return;
+    _cxRender(box,_cxPostsOf(_cxLid(doc),ms),'Aucun poste à venir pour ce médecin.','Sans choix : vous lui proposez simplement votre poste.',function(x){ _cxSel=x; });
+  });
+}
+// Mes échanges : volet « en retour » d'un échange croisé
+function _rpSuffix(r){
+  if(!r||r.type!=='swap') return '';
+  var nm=_dpE(_cxPairTxt(r.counter_post,r.counter_post2)), d=r.counter_date?fmtDate(r.counter_date):'';
+  if(me&&r.proposer_id===me.id){
+    var t=doctors.find(function(x){ return x.id===r.target_doctor_id; });
+    return '<br>Vous recevez de <b>'+(t?_dpE(t.firstname+' '+t.lastname):'?')+'</b> :<br>'+nm+' · '+d;
+  }
+  return '<br>En échange, vous donnez :<br>'+nm+' · '+d;
+}
 // Mes échanges : en-tête d'une demande de reprise
 function _rpInfo(r){
+  if(r&&r.type==='swap') return (me&&r.proposer_id===me.id)?'Vous donnez :<br>':'Vous prenez :<br>';
   if(!r||r.type!=='reprise') return '';
   var t=doctors.find(function(d){ return d.id===r.target_doctor_id; });
   var tn=t?_dpE(t.firstname+' '+t.lastname):'?';
@@ -3427,7 +3557,7 @@ function renderPanel(){
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
     const _hasRefused=Array.isArray(r.refusal_log)&&r.refusal_log.some(function(e){return e.by_id===me.id&&e.type==='exchange';});
-    if(r.status==='open'&&!isMe2&&!_hasRefused)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">${r.type==='reprise'?'✓ Accepter (je cède mon poste)':'✓ Accepter'}</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
+    if(r.status==='open'&&!isMe2&&!_hasRefused)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">${r.type==='reprise'?'✓ Accepter (je cède mon poste)':(r.type==='swap'?'✓ Accepter l’échange':'✓ Accepter')}</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
     if(r.status==='accepted')acts='<div style="color:var(--t3);font-size:11px;padding:6px 0;">⏳ En attente de confirmation du gestionnaire</div>';
     if(r.status==='pending_j1'){
@@ -3495,9 +3625,9 @@ function renderPanel(){
     return `<div class="xcard">
       <div class="xcard-hdr">
         <div style="font-size:12px;font-weight:600;">${prop?prop.firstname+' '+prop.lastname:'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
-        <span class="xbadge exch">${r.type==='reprise'?'🙋 Reprise':'🔄 Échange'}</span>
+        <span class="xbadge exch">${r.type==='reprise'?'🙋 Reprise':(r.type==='swap'?'⇄ Échange croisé':'🔄 Échange')}</span>
       </div>
-      <div class="xinfo">${_rpInfo(r)}${(function(){var m=post?post.full||post.name:r.proposer_post;if(!r.proposer_post2)return m;var p2=(planning.posts||[]).find(function(q){return q.id===r.proposer_post2;});return m+' + '+(p2?p2.full||p2.name:r.proposer_post2);}())} · ${fmtDate(r.proposer_date)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
+      <div class="xinfo">${_rpInfo(r)}${(function(){var m=post?post.full||post.name:r.proposer_post;if(!r.proposer_post2)return m;var p2=(planning.posts||[]).find(function(q){return q.id===r.proposer_post2;});return m+' + '+(p2?p2.full||p2.name:r.proposer_post2);}())} · ${fmtDate(r.proposer_date)}${_rpSuffix(r)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
       ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
@@ -3605,8 +3735,8 @@ async function acceptX(id){
           body:JSON.stringify({
             hospital: CFG.hospital,
             doctor_ids: [String(xr.proposer_id)],
-            title: xr.type==='reprise'?'✓ Reprise acceptée':'✓ Demande acceptée', // [2026-10-02] REPRISE
-            message: me.firstname+' '+me.lastname+(xr.type==='reprise'?' accepte de vous céder son poste — ':' a accepté votre demande d’échange — ')+_postName,
+            title: xr.type==='reprise'?'✓ Reprise acceptée':(xr.type==='swap'?'✓ Échange accepté':'✓ Demande acceptée'), // [2026-10-02] REPRISE + ECHANGE_CROISE
+            message: me.firstname+' '+me.lastname+(xr.type==='reprise'?' accepte de vous céder son poste — ':' a accepté votre demande d’échange — ')+_postName+(xr.type==='swap'?' contre '+_cxPairTxt(xr.counter_post,xr.counter_post2)+' ('+fmtDate(xr.counter_date)+')':''),
             url: 'https://julandrex.github.io/julandrex-viewer/'
           })
         }).catch(()=>{});
@@ -3627,9 +3757,11 @@ async function acceptX(id){
           data:{
             acceptor_name:me.firstname+' '+me.lastname,
             proposer_name:proposer?proposer.firstname+' '+proposer.lastname:'?',
-            post_name:post?.full||post?.name||xr.proposer_post,
-            date:xr.proposer_date,
-            kind:xr.type==='reprise'?'reprise':undefined
+            post_name:xr.type==='swap'?_cxPairTxt(xr.proposer_post,xr.proposer_post2,true):(post?.full||post?.name||xr.proposer_post),
+            date:xr.type==='swap'?_cxDateLbl(xr.proposer_date):xr.proposer_date,
+            kind:(xr.type==='reprise'||xr.type==='swap')?xr.type:undefined,
+            counter_post_name:xr.type==='swap'?_cxPairTxt(xr.counter_post,xr.counter_post2,true):undefined,
+            counter_date:xr.type==='swap'?_cxDateLbl(xr.counter_date):undefined
           }
         })
       }).catch(()=>{});
@@ -3657,6 +3789,7 @@ async function cancelX(id){
 // MODAL
 // ══════════════════════════════════════════════════════════
 function openModal(dk,pid){
+  _cxCache={}; _cxSel=null; // [2026-10-02] ECHANGE_CROISE
   mDate=dk;mPost=pid;
   const post=planning?.posts?.find(p=>p.id===pid);
   document.getElementById('ms').textContent=(post?post.full||post.name:pid)+' · '+fmtDate(dk);
@@ -3727,7 +3860,7 @@ function _selectDayDoc(docId){
   setTarget('specific');
   var sel=document.getElementById('m-target-doc');
   if(sel) sel.value=docId;
-  window._selDocId=docId;
+  window._selDocId=docId; try{ _cxRefresh(); }catch(e){}
   document.querySelectorAll('#m-day-dist .mddr').forEach(function(r){
     var selected=r.getAttribute('data-did')===docId;
     r.style.background=selected?'rgba(99,179,237,.15)':'';
@@ -3797,16 +3930,20 @@ function setTarget(t){
   var _dd=document.getElementById('m-day-dist');
   if(_dd) _dd.style.display=t==='avail'?'none':'';
   var _al=document.getElementById('m-avail-list');
-  if(_al){if(t==='avail'){_fillAvailList(mDate);_al.style.display='';}else{_al.style.display='none';}}}
+  if(_al){if(t==='avail'){_fillAvailList(mDate);_al.style.display='';}else{_al.style.display='none';}}
+  try{ _cxRefresh(); }catch(e){} // [2026-10-02] ECHANGE_CROISE
+}
 
 async function submitExchange(){
   if(!mDate||!mPost)return;
   const targetDocId=mTarget==='specific'?parseInt(document.getElementById('m-target-doc').value):null;
+  const _cx=(mTarget==='specific'&&_cxSel&&_cxSel.pids&&_cxSel.pids.length)?_cxSel:null, _cxSib=window._siblingPost||null; // [2026-10-02] ECHANGE_CROISE
   try{
     const {error}=await sb.from('exchange_requests').insert({
       hospital_id:CFG.hospital,proposer_id:me.id,
       proposer_date:mDate,proposer_post:mPost,
-      type:'exchange',status:'open',proposer_post2:window._siblingPost||null,
+      type:_cx?'swap':'exchange',status:'open',proposer_post2:window._siblingPost||null,
+      counter_date:_cx?_cx.dk:null,counter_post:_cx?_cx.pids[0]:null,counter_post2:(_cx&&_cx.pids[1])?_cx.pids[1]:null,
       target_doctor_id:targetDocId,
       message:document.getElementById('m-msg').value.trim()||null
     });
@@ -3820,7 +3957,7 @@ async function submitExchange(){
       const _pushPayload = {
         hospital: CFG.hospital,
         title: '🔄 Demande d’échange',
-        message: me.firstname+' '+me.lastname+' vous propose un échange — '+_postName,
+        message: me.firstname+' '+me.lastname+' vous propose un échange — '+_postName+(_cx?' contre '+_cxPairTxt(_cx.pids[0],_cx.pids[1])+' ('+_cxDateLbl(_cx.dk)+')':''),
         url: 'https://julandrex.github.io/julandrex-viewer/'
       };
       // [2026-09-13] Toujours une liste explicite : sans doctor_ids, send-push envoie à TOUS
@@ -3839,7 +3976,9 @@ async function submitExchange(){
     const _notifData={
       type:'exchange_requested',
       hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
-      data:{proposer_name:me.firstname+' '+me.lastname,post_name:post?.full||post?.name||mPost,date:mDate,message:document.getElementById('m-msg').value.trim()||null}
+      data:_cx?{proposer_name:me.firstname+' '+me.lastname,kind:'swap',post_name:_cxPairTxt(mPost,_cxSib,true),date:_cxDateLbl(mDate),
+        counter_post_name:_cxPairTxt(_cx.pids[0],_cx.pids[1],true),counter_date:_cxDateLbl(_cx.dk),message:document.getElementById('m-msg').value.trim()||null}
+        :{proposer_name:me.firstname+' '+me.lastname,post_name:post?.full||post?.name||mPost,date:mDate,message:document.getElementById('m-msg').value.trim()||null}
     };
     // [2026-09-23] Le serveur trouve lui-même les adresses (ciblé : ce médecin ; ouvert : tous les collègues)
     fetch(CFG.url+'/functions/v1/send-notification',{
@@ -3963,6 +4102,8 @@ async function openMesEchanges(){
       // Nature de l'échange
       let nature=mine?'Vous cédez <b>'+pn(r.proposer_post)+'</b>'+(r.proposer_post2?' + <b>'+pn(r.proposer_post2)+'</b>':'')
                      :who(r.proposer_id)+' vous cède <b>'+pn(r.proposer_post)+'</b>'+(r.proposer_post2?' + <b>'+pn(r.proposer_post2)+'</b>':'');
+      if(r.type==='swap'){ const _c='<b>'+pn(r.counter_post)+'</b>'+(r.counter_post2?' + <b>'+pn(r.counter_post2)+'</b>':'')+' du '+fmtD(r.counter_date), _g='<b>'+pn(r.proposer_post)+'</b>'+(r.proposer_post2?' + <b>'+pn(r.proposer_post2)+'</b>':'');
+        nature=mine?'Vous cédez '+_g+' contre '+_c+' de '+who(r.target_doctor_id):who(r.proposer_id)+' vous cède '+_g+' contre votre '+_c; } // [2026-10-02] ECHANGE_CROISE
       if(r.type==='reprise') nature=mine?'Vous proposez de reprendre <b>'+pn(r.proposer_post)+'</b> de '+who(r.target_doctor_id):who(r.proposer_id)+' propose de reprendre votre poste <b>'+pn(r.proposer_post)+'</b>'; // [2026-10-02] REPRISE
       if(r.switch_proposer_post) nature+=mine?' · en échange, vous prenez <b>'+pn(r.switch_proposer_post)+'</b>':' · en échange, vous lui cédez <b>'+pn(r.switch_proposer_post)+'</b>';
       if(r.j1_date) nature+='<br>Switch J+1 le '+fmtD(r.j1_date)+' : '+pn(r.j1_proposer_post)+(r.j1_acceptor_posts&&r.j1_acceptor_posts.length?' ↔ '+r.j1_acceptor_posts.map(pn).join(', '):'');
