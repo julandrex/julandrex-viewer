@@ -2003,6 +2003,23 @@ function desidRenderReqs(){
   });
 }
 
+// ── [2026-10-03] ANTI_DOUBLONS — même clé que le serveur (_desid_key) : type, « toute la journée », poste, dates
+function _desidKey(e){
+  e=e||{}; var full=(e.full===true||e.detail==='Indisponible toute la journée');
+  return String(e.type||'').toLowerCase()+'|'+(full?'1|':'0|'+String(e.detail||'').trim().toLowerCase())+'|'+(e.date_start||'')+'|'+(e.date_end||e.date_start||'');
+}
+// Lignes envoyées mais absentes de la fiche enregistrée (doublons retirés par le serveur)
+function _desidRemoved(sent,kept){
+  var c={}; (kept||[]).forEach(function(e){ var k=_desidKey(e); c[k]=(c[k]||0)+1; });
+  return (sent||[]).filter(function(e){ var k=_desidKey(e); if(c[k]){ c[k]--; return false; } return true; });
+}
+function _desidLineLbl(e){
+  var L={c:'Congé',r:'Repos souhaité',f:'Formation',p:'Poste particulier',ip:'Indispo poste'};
+  var f=function(dk){ var p=String(dk||'').split('-'); return p.length===3?p[2]+'/'+p[1]:dk; };
+  var full=(e.type==='r'&&(e.full===true||e.detail==='Indisponible toute la journée'));
+  var d=(!e.date_end||e.date_end===e.date_start)?'le '+f(e.date_start):'du '+f(e.date_start)+' au '+f(e.date_end);
+  return '• '+(full?'Indisponible toute la journée':(L[e.type]||e.type))+' '+d+(!full&&e.detail?' — '+e.detail:'');
+}
 async function submitDesiderata(){
   if(!me)return;
   if(desidCheckLocked()){alert('La période de soumission des desiderata est clôturée.');return;}
@@ -2011,7 +2028,7 @@ async function submitDesiderata(){
   const bg=document.getElementById('desid-bg');
   const quarter=parseInt(bg.dataset.quarter),year=parseInt(bg.dataset.year);
   const _envoi=_desidExpand(_desidReqs); // [2026-09-28] « toute la journée » → une demande 'r' full:true
-  const {error}=await sb.from('desiderata_requests').insert({
+  const {data:_dIns,error}=await sb.from('desiderata_requests').insert({
     hospital_id:CFG.hospital,doctor_id:me.id,
     doctor_name:me.firstname+' '+me.lastname,
     year,quarter,requests:_envoi,
@@ -2020,8 +2037,15 @@ async function submitDesiderata(){
     prefs:_envoi.filter(r=>r.type==='p').map(r=>({date:r.date_start,poste:r.detail,posteName:r.detail})),
     unavail_posts:_envoi.filter(r=>r.type==='ip').map(r=>({date:r.date_start,poste:r.detail,posteName:r.detail})),
     remarques:'',status:'pending'
-  });
-  if(error){alert('Erreur : '+error.message);return;}
+  }).select();
+  if(error){
+    if(/déjà toutes été envoyées/.test(error.message||'')) alert('ℹ️ '+error.message+'\n\n'+_envoi.map(_desidLineLbl).join('\n'));
+    else alert('Erreur : '+error.message);
+    return;
+  }
+  // [2026-10-03] ANTI_DOUBLONS — lignes réellement enregistrées (le serveur retire celles déjà demandées)
+  const _keptRows=(Array.isArray(_dIns)&&_dIns[0]&&Array.isArray(_dIns[0].requests))?_dIns[0].requests:_envoi;
+  const _retires=_desidRemoved(_envoi,_keptRows);
   // [2026-09-12] Prévenir le gestionnaire par e-mail : avant, il ne voyait la demande qu'en ouvrant l'admin
   if(CFG.gest_email){
     fetch(CFG.url+'/functions/v1/send-notification',{
@@ -2030,12 +2054,16 @@ async function submitDesiderata(){
         type:'desiderata_submitted',to_email:CFG.gest_email,to_name:'Gestionnaire',
         hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
         data:{doctor_name:me.firstname+' '+me.lastname,quarter:quarter,year:year,
-          requests:_envoi.map(function(r){return {type:r.type,date_start:r.date_start,date_end:r.date_end,detail:r.detail||''};})}
+          requests:_keptRows.map(function(r){return {type:r.type,date_start:r.date_start,date_end:r.date_end,detail:r.detail||''};})}
       })
     }).catch(function(){});
   }
   closeDesiderata();
-  toast('✅ Desiderata envoyés au gestionnaire !'); loadMyDesids();
+  if(_retires.length) alert('✅ Desiderata envoyés au gestionnaire ('+_keptRows.length+' demande'+(_keptRows.length>1?'s':'')+').\n\n'
+    +(_retires.length>1?_retires.length+' demandes n’ont pas été envoyées car vous les aviez déjà faites':'Une demande n’a pas été envoyée car vous l’aviez déjà faite')+' :\n'
+    +_retires.map(_desidLineLbl).join('\n'));
+  else toast('✅ Desiderata envoyés au gestionnaire !');
+  loadMyDesids();
 }
 
 async function openMesDemandes(){
@@ -2701,7 +2729,7 @@ async function _dayPlanSend(ov,box,dk,p,hold,dLbl,msg,b){
         type:'reprise',status:'open',target_doctor_id:hold.id,message:msg||null});
     if(res&&res.error) throw res.error;
   }catch(e){
-    if(err){ err.textContent=(e&&e.message)||String(e); err.style.display=''; }
+    if(err){ var _dbl=/^Vous avez déjà/.test((e&&e.message)||''); err.textContent=(_dbl?'ℹ️ ':'')+((e&&e.message)||String(e)); err.style.color=_dbl?'var(--t2)':''; err.style.display=''; }
     b.disabled=false; b.style.opacity=''; b.textContent=give?'Proposer l’échange':'Envoyer la proposition'; return;
   }
   var hName=((hold.firstname||'')+' '+(hold.lastname||'')).trim(), pName=p.full||p.name||p.id;
@@ -3985,7 +4013,7 @@ async function submitExchange(){
       method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
       body:JSON.stringify(targetDocId?{..._notifData,doctor_id:targetDocId}:{..._notifData,broadcast:true})
     }).catch(()=>{});
-  }catch(e){toast('Erreur : '+e.message,true);}
+  }catch(e){ if(/^Vous avez déjà envoyé cette demande/.test(e&&e.message||'')) toast('ℹ️ '+e.message); else toast('Erreur : '+e.message,true); } // [2026-10-03] ANTI_DOUBLONS
 }
 
 // ══════════════════════════════════════════════════════════
