@@ -3124,7 +3124,14 @@ function renderCalPerso(){
   var cgMy=window._myCg||{}, cgY=cy;
   var cgEnt=(cgMy.droit!=null&&!isNaN(+cgMy.droit))?+cgMy.droit:cgGrade;
   var cgRep=parseInt((cgMy.report||{})[String(cgY)],10)||0;
-  if(cgEnt+cgRep>0){
+  if(cgY<2027){
+    // [2026-10-04] CONGES_DES_2027 — les congés du 1er semestre 2026 ne sont pas encodés : pas de solde 2026 affiché.
+    var cgSoon=document.createElement("div"); cgSoon.className="cs-card cs-conge-card";
+    cgSoon.title="Le solde de congés est calculé à partir de 2027 (les congés de 2026 ne sont pas tous encodés).";
+    var cgSv=document.createElement("div"); cgSv.className="cs-val"; cgSv.style.cssText="color:#f59e0b;font-size:13px;line-height:1.15;"; cgSv.textContent="dès 2027";
+    var cgSl=document.createElement("div"); cgSl.className="cs-lbl"; cgSl.textContent="Congés dispo";
+    cgSoon.appendChild(cgSv); cgSoon.appendChild(cgSl); statsDiv.appendChild(cgSoon);
+  } else if(cgEnt+cgRep>0){
     var cgLo=cgY+"-01-01", cgHi=cgY+"-12-31", cgPos={}, cgAtt={};
     // Absences enregistrées par le gestionnaire (toutes années) ; à défaut, celles des mois publiés
     var cgSrc=Array.isArray(cgMy.abs)?cgMy.abs:(window._allIndispos||((planning&&planning.indispos)||[])).filter(function(ind){return ind&&(ind.docId==me.local_id||ind.docId==me.id);});
