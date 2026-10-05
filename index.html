@@ -3551,8 +3551,56 @@ function onSessPinSubmit(){onSessPwdSubmit();}
 function logAccess(action,detail){
   if(!sb||!me)return;
   if(_vcIs()) return; // [2026-09-27] aperçu « Voir comme » : pas de trace au nom du médecin
+  try{ if(action==='logout'){ if(window._usageStop) window._usageStop(); }                       // [2026-10-05] USAGE_ANON
+       else if(action==='login'||action==='session_resume'){ setTimeout(function(){ if(window._usageStart) window._usageStart(); },1500); } }catch(e){}
   try{sb.from('access_logs').insert({hospital_id:CFG.hospital,doctor_id:me.id,action:action,detail:detail||'',ts:new Date().toISOString()}).then(function(){});}catch(e){}
 }
+
+// ════════ [2026-10-05] USAGE_ANON — mesure anonyme de l'utilisation ════════
+(function(){
+  var SID=null, T0=0, Q=[];
+  var DEV=((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone)?'app':(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'mobile':'desktop');
+  function uid(){ try{ if(crypto&&crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}); }
+  function ok(){ try{ return !!(me&&_jlxTok()&&!_vcIs()); }catch(e){ return false; } }
+  function flush(keep){
+    if(!Q.length||!SID) return; var tok=_jlxTok(); if(!tok){ Q=[]; return; }
+    var ev=Q.splice(0,60);
+    try{ fetch(CFG.url+'/rest/v1/rpc/viewer_usage_log',{method:'POST',keepalive:!!keep,
+      headers:{'apikey':CFG.key,'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
+      body:JSON.stringify({p_token:tok,p_sid:SID,p_events:ev})}).catch(function(){}); }catch(e){}
+  }
+  function start(){ if(SID||document.hidden||!ok()) return; SID=uid(); T0=Date.now(); Q.push({k:'open',v:DEV}); }
+  function stop(){ if(!SID) return; var d=Math.max(0,Math.min(14400,Math.round((Date.now()-T0)/1000)));
+    Q.push({k:'close',d:String(d),v:DEV}); flush(true); SID=null; }
+  // Nom technique de l'action touchée : jamais le texte affiché (il peut contenir un nom ou une date)
+  function name(t){
+    if(!t||!t.closest) return '';
+    var z=t.closest('[data-ev]'); if(z) return z.getAttribute('data-ev');
+    var el=t.closest('[onclick]');
+    if(el){ var m=/^\s*(?:event\.stopPropagation\(\)\s*;\s*)?(?:return\s+)?([A-Za-z_$][\w$]*)\s*\(/.exec(el.getAttribute('onclick')||'');
+      if(m&&m[1]!=='if'&&m[1]!=='document'&&m[1]!=='this') return m[1]; }
+    if(t.closest('.cp-day')) return t.closest('.cp-day').classList.contains('cp-shift')?'calendrier:monPoste':'calendrier:caseVide';
+    if(t.closest('[data-nav]')) return 'planJour:jourSuivantPrecedent';
+    if(t.closest('[data-rp]')) return 'planJour:posteCollegue';
+    if(t.closest('[data-back]')) return 'planJour:retour';
+    if(t.closest('[data-close]')) return 'fenetre:fermer';
+    if(t.closest('.xbtn-sw-ok')) return 'echange:confirmer';
+    if(t.closest('.xbtn-sw-no')) return 'echange:refuser';
+    if(t.closest('.mddr')) return 'echange:choixMedecin';
+    var b=t.closest('button,a,select,input[type=checkbox],input[type=radio]');
+    if(b&&b.id) return ('#'+b.id).replace(/\d+/g,'').slice(0,48);
+    if(b){ var p=b.closest('[id]'); return (b.tagName.toLowerCase()+(p?'@'+p.id.replace(/\d+/g,''):'')).slice(0,48); }
+    return '';
+  }
+  window._usageStart=start; window._usageStop=stop;
+  document.addEventListener('visibilitychange',function(){ if(document.hidden) stop(); else start(); });
+  window.addEventListener('pagehide',stop);
+  setInterval(function(){ if(SID) flush(false); },30000);
+  document.addEventListener('click',function(e){
+    try{ if(!SID) start(); if(!SID) return; var n=name(e.target); if(n){ Q.push({k:'click',n:n}); if(Q.length>=20) flush(false); } }catch(err){}
+  },true);
+})();
 
 // ══════════════════════════════════════════════════════════
 // EXCHANGES
