@@ -415,6 +415,7 @@ button{font-family:inherit;}
           </span>
           <span>E-mails</span>
         </button>
+        <button id="heures-btn" onclick="closeTbMenu();openMesHeures()" class="tb-dd-item">⏱ Mes heures</button>
         <button id="signaler-btn" onclick="closeTbMenu();openSignaler()" class="tb-dd-item">💬 Signaler un problème ou une idée</button>
         <div style="border-top:1px solid var(--b);margin:5px 0;"></div>
 <button id="chgpwd-btn" onclick="showChangePassword()" class="tb-dd-item">&#x1F510; Changer mon mot de passe</button>
@@ -2337,6 +2338,7 @@ function showMain(){
   loadQShifts();
   loadMyDesids();
   window._myCg=null; loadMyConges(); // [2026-09-30] CONGES_DISPO
+  window._myHeures=null; loadMyHeures(); // [2026-10-06] MES_HEURES
   jlxCheckUpdates();
   subscribeRT();
   initSession();
@@ -3194,6 +3196,10 @@ function renderCalPerso(){
       myExcFor(qDk2).forEach(function(ex){qHours+=(+ex.hours||0);});
     }
   }
+  // [2026-10-06] MES_HEURES : ajustements acceptés par le gestionnaire dans le trimestre affiché
+  var qAdj=(window._myHeures||[]).filter(function(a){ if(a.status!=='applied') return false; var y=+String(a.day).slice(0,4), mo=+String(a.day).slice(5,7)-1; return y===cy&&mo>=qStart&&mo<=qEnd; })
+    .reduce(function(n,a){ return n+(+a.hours||0); },0);
+  qHours+=qAdj;
   qHours=Math.round(qHours*10)/10;
   var pct=contractH>0?Math.min(100,Math.round(qHours/contractH*100)):0;
   var qNames=["T1","T2","T3","T4"];
@@ -3208,6 +3214,7 @@ function renderCalPerso(){
   barFill.style.width=pct+"%";
   var barPctLbl=document.createElement("div"); barPctLbl.className="cs-bar-pct-lbl"; barPctLbl.textContent=pct+"%";
   barTrack.appendChild(barFill); barTrack.appendChild(barPctLbl); barDiv.appendChild(barTrack);
+  if(qAdj){ var qAdjL=document.createElement("div"); qAdjL.style.cssText="font-size:10px;color:#94a3b8;margin-top:3px;cursor:pointer;"; qAdjL.textContent="dont ajustements validés : "+_hrsFmt(qAdj)+" (⏱ Mes heures)"; qAdjL.onclick=openMesHeures; barDiv.appendChild(qAdjL); }
   bottom.appendChild(barDiv);
   ga.appendChild(bottom);
 }
@@ -3546,6 +3553,94 @@ function lockSession(){
 }
 function onSessPinInput(v){}
 function onSessPinSubmit(){onSessPwdSubmit();}
+
+// ════════ [2026-10-06] MES_HEURES — ajustements du compte d'heures (demande au gestionnaire) ════════
+function loadMyHeures(){
+  if(!me||!sb||!_jlxTok()) return;
+  sb.rpc('viewer_hours_list',{p_token:_jlxTok()}).then(function(r){
+    window._myHeures=(r&&!r.error&&Array.isArray(r.data))?r.data:(window._myHeures||[]);
+    if(planning) renderCalPerso();
+    var ov=document.getElementById('hrs-ov'); if(ov&&ov.style.display==='flex') _hrsList();
+  },function(){});
+}
+function _hrsFmt(h){ h=+h||0; return (h>0?'+':h<0?'−':'')+Math.abs(h).toLocaleString('fr-BE',{maximumFractionDigits:2})+' h'; }
+function _hrsDate(dk){ return new Date(String(dk).slice(0,10)+'T12:00:00').toLocaleDateString('fr-BE',{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }
+function _hrsEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+var _hrsSign=1;
+function openMesHeures(){
+  if(!me){ toast('Connectez-vous d’abord.',true); return; }
+  var ov=document.getElementById('hrs-ov');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='hrs-ov';
+    ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+    var inp='width:100%;box-sizing:border-box;background:#132d52;border:1px solid #2a4a75;color:#e2e8f0;border-radius:10px;padding:11px 12px;font-size:15px;font-family:inherit;';
+    ov.innerHTML='<div style="background:#0d2240;border-radius:16px;padding:22px;width:100%;max-width:460px;max-height:calc(100dvh - 32px);overflow:auto;color:#e2e8f0;box-sizing:border-box;">'
+      +'<div style="font-size:17px;font-weight:700;margin-bottom:4px;">⏱ Mes heures</div>'
+      +'<div style="font-size:13px;color:#94a3b8;margin-bottom:14px;line-height:1.45;">Des heures en plus ou en moins qui n’apparaissent pas dans le planning (garde prolongée, départ anticipé…) ? Demandez un ajustement : le gestionnaire le valide, puis il est compté dans vos heures.</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:10px;"><button type="button" id="hrs-plus" onclick="_hrsSetSign(1)" style="flex:1;border-radius:10px;padding:10px;font-size:15px;font-weight:700;cursor:pointer;">＋ Ajouter des heures</button>'
+      +'<button type="button" id="hrs-minus" onclick="_hrsSetSign(-1)" style="flex:1;border-radius:10px;padding:10px;font-size:15px;font-weight:700;cursor:pointer;">− Retirer des heures</button></div>'
+      +'<div style="display:flex;gap:10px;margin-bottom:10px;"><label style="flex:1.4;font-size:12px;color:#94a3b8;">Date<input id="hrs-day" type="date" style="'+inp+'margin-top:4px;"></label>'
+      +'<label style="flex:1;font-size:12px;color:#94a3b8;">Heures<input id="hrs-h" type="text" inputmode="decimal" maxlength="5" autocomplete="off" placeholder="ex. 1,5" oninput="_hrsUpd()" style="'+inp+'margin-top:4px;"></label></div>'
+      +'<label style="display:block;font-size:12px;color:#94a3b8;">Raison<textarea id="hrs-reason" maxlength="300" rows="3" placeholder="Ex. : resté 1 h 30 après ma garde pour une réanimation" oninput="_hrsUpd()" style="'+inp+'margin-top:4px;resize:vertical;"></textarea></label>'
+      +'<div id="hrs-err" style="display:none;font-size:13px;margin:10px 0 0;"></div>'
+      +'<div style="display:flex;gap:10px;margin-top:14px;"><button type="button" onclick="closeMesHeures()" style="flex:1;background:none;border:1px solid #2a4a75;color:#94a3b8;border-radius:10px;padding:12px;font-size:15px;cursor:pointer;">Fermer</button>'
+      +'<button type="button" id="hrs-send" data-ev="mesHeures:envoyer" onclick="sendMesHeures()" disabled style="flex:1;background:#c9983a;border:none;color:#0f2847;border-radius:10px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;opacity:.45;">Envoyer la demande</button></div>'
+      +'<div style="font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin:20px 0 6px;">Mes ajustements</div><div id="hrs-list"></div>'
+      +'</div>';
+    ov.addEventListener('click',function(e){ if(e.target===ov) closeMesHeures(); });
+    document.body.appendChild(ov);
+  }
+  var t=new Date(), d=document.getElementById('hrs-day');
+  d.value=t.toISOString().slice(0,10); d.max=new Date(t.getTime()+30*864e5).toISOString().slice(0,10);
+  d.min=new Date(t.getTime()-395*864e5).toISOString().slice(0,10);
+  document.getElementById('hrs-h').value=''; document.getElementById('hrs-reason').value='';
+  document.getElementById('hrs-err').style.display='none';
+  _hrsSetSign(1); _hrsList(); ov.style.display='flex'; loadMyHeures();
+}
+function closeMesHeures(){ var ov=document.getElementById('hrs-ov'); if(ov) ov.style.display='none'; }
+function _hrsSetSign(v){ _hrsSign=v;
+  [['hrs-plus',1],['hrs-minus',-1]].forEach(function(x){ var b=document.getElementById(x[0]), on=_hrsSign===x[1];
+    b.style.background=on?'#1e3a5f':'#132d52'; b.style.border='1px solid '+(on?'#c9983a':'#2a4a75'); b.style.color=on?'#e2e8f0':'#94a3b8'; });
+  _hrsUpd(); }
+function _hrsVal(){ return parseFloat(String(document.getElementById('hrs-h').value||'').replace(',','.')); }
+function _hrsUpd(){ var h=_hrsVal(), ok=h>0&&h<=24&&document.getElementById('hrs-reason').value.trim().length>=3;
+  var b=document.getElementById('hrs-send'); b.disabled=!ok; b.style.opacity=ok?'1':'.45'; }
+function _hrsMsg(txt,ok){ var e=document.getElementById('hrs-err'); e.textContent=txt; e.style.color=ok?'#22c55e':'#f87171'; e.style.display=txt?'block':'none'; }
+async function sendMesHeures(){
+  var h=_hrsVal(), day=document.getElementById('hrs-day').value, reason=document.getElementById('hrs-reason').value.trim();
+  if(!(h>0&&h<=24)||!day||reason.length<3) return;
+  var b=document.getElementById('hrs-send'); b.disabled=true; b.textContent='Envoi…';
+  try{
+    var r=await sb.rpc('viewer_hours_request',{p_token:_jlxTok(),p_day:day,p_hours:Math.round(_hrsSign*h*100)/100,p_reason:reason});
+    if(r.error){ var m=String(r.error.message||'');
+      _hrsMsg(/jlx_readonly/.test(m)?'Aperçu en lecture seule : rien n’est envoyé.':/jlx_dup/.test(m)?'ℹ️ Vous avez déjà fait cette demande pour ce jour.':m.replace(/^jlx_\w+:\s*/,''),false); return; }
+    _hrsMsg('✅ Demande envoyée au gestionnaire : '+_hrsFmt(_hrsSign*h)+' le '+_hrsDate(day)+'.',true);
+    document.getElementById('hrs-h').value=''; document.getElementById('hrs-reason').value='';
+    loadMyHeures();
+  }catch(e){ _hrsMsg('Envoi impossible : '+e.message,false); }
+  finally{ b.textContent='Envoyer la demande'; _hrsUpd(); }
+}
+async function cancelMesHeures(id){
+  if(!confirm('Annuler cette demande d’ajustement ?')) return;
+  try{ var r=await sb.rpc('viewer_hours_cancel',{p_token:_jlxTok(),p_id:id});
+    if(r.error){ toast(/jlx_readonly/.test(r.error.message)?'Aperçu en lecture seule.':r.error.message,true); return; }
+    toast(r.data?'Demande annulée.':'Cette demande a déjà été traitée.'); loadMyHeures();
+  }catch(e){ toast(e.message,true); }
+}
+function _hrsList(){
+  var el=document.getElementById('hrs-list'); if(!el) return;
+  var L=window._myHeures||[];
+  if(!L.length){ el.innerHTML='<div style="font-size:13px;color:#64748b;">Aucun ajustement pour le moment.</div>'; return; }
+  var ST={pending:['⏳ En attente','#fbbf24'],applied:['✅ Compté','#22c55e'],refused:['✕ Refusé','#f87171']};
+  el.innerHTML=L.map(function(a){ var st=ST[a.status]||[a.status,'#94a3b8'];
+    return '<div style="background:#132d52;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px;">'
+      +'<div style="display:flex;justify-content:space-between;gap:8px;"><b>'+_hrsDate(a.day)+' · <span style="color:'+(a.hours>0?'#22c55e':'#f87171')+';">'+_hrsFmt(a.hours)+'</span></b><span style="color:'+st[1]+';font-weight:700;white-space:nowrap;">'+st[0]+'</span></div>'
+      +'<div style="color:#cbd5e1;margin-top:4px;">'+_hrsEsc(a.reason)+'</div>'
+      +(a.source==='gestionnaire'?'<div style="color:#64748b;font-size:12px;margin-top:3px;">Ajouté par le gestionnaire</div>':'')
+      +(a.decision_note?'<div style="color:#94a3b8;font-size:12px;margin-top:3px;">Note du gestionnaire : '+_hrsEsc(a.decision_note)+'</div>':'')
+      +(a.status==='pending'?'<button type="button" onclick="cancelMesHeures(\''+a.id+'\')" style="margin-top:8px;background:none;border:1px solid #2a4a75;color:#94a3b8;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;">Annuler la demande</button>':'')
+      +'</div>'; }).join('');
+}
 
 // ════════ LOGS RGPD ════════
 function logAccess(action,detail){
