@@ -3584,6 +3584,7 @@ function logAccess(action,detail){
     if(t.closest('[data-nav]')) return 'planJour:jourSuivantPrecedent';
     if(t.closest('[data-rp]')) return 'planJour:posteCollegue';
     if(t.closest('[data-back]')) return 'planJour:retour';
+    if(t.closest('[data-send]')) return 'planJour:envoyer';
     if(t.closest('[data-close]')) return 'fenetre:fermer';
     if(t.closest('.xbtn-sw-ok')) return 'echange:confirmer';
     if(t.closest('.xbtn-sw-no')) return 'echange:refuser';
