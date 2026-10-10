@@ -3967,11 +3967,18 @@ async function cancelX(id){
 // ══════════════════════════════════════════════════════════
 // MODAL
 // ══════════════════════════════════════════════════════════
+// [2026-10-10] EXCH_MODAL_V2 — libellé court (U3 tôt) et heures du poste
+function _vPostShort(p){ return p?(p.id==='u3-1'?'U3 tôt':(p.name||p.id)):''; }
+function _vPostTimes(p,dk){ if(!p) return ''; var w=new Date(dk+'T12:00:00').getDay();
+  var a=(p.startByDow&&p.startByDow[w])||p.start, b=(p.endByDow&&p.endByDow[w])||p.end; return (a&&b)?a+' – '+b:''; }
+function _vEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function openModal(dk,pid){
   _cxCache={}; _cxSel=null; // [2026-10-02] ECHANGE_CROISE
   mDate=dk;mPost=pid;
   const post=planning?.posts?.find(p=>p.id===pid);
-  document.getElementById('ms').textContent=(post?post.full||post.name:pid)+' · '+fmtDate(dk);
+  const _hrs=_vPostTimes(post,dk);
+  document.getElementById('ms').innerHTML=_vEsc(post?post.full||post.name:pid)+' · '+_vEsc(fmtDate(dk))
+    +(_hrs?' · <span style="color:#fbbf24;font-weight:800;white-space:nowrap;">🕘 '+_vEsc(_hrs)+'</span>':'');
   document.getElementById('m-msg').value='';
   setTarget('all');
   // Remplir le sélecteur de médecins (hors soi-même)
@@ -4006,20 +4013,20 @@ function _fillDayDist(dk){
     if(e.isMe){
       html+='<div style="display:flex;align-items:center;gap:6px;padding:3px 0;opacity:.45;">';
       html+='<span style="width:7px;height:7px;border-radius:50%;background:'+(e.post.color||'var(--t3)')+';flex-shrink:0;"></span>';
-      html+='<span style="color:var(--t2);min-width:60px;font-weight:600;">'+(e.post.name||e.post.id)+'</span>';
+      html+='<span style="color:var(--t2);min-width:60px;font-weight:600;">'+_vPostShort(e.post)+'</span>';
       html+='<span style="color:var(--t1);">'+docName+' <span style="color:var(--t3);">(vous)</span></span>';
       html+='</div>';
     } else if(e.doc){
       html+='<div class="mddr" data-did="'+e.doc.id+'" style="display:flex;align-items:center;gap:6px;padding:4px 6px;margin:1px -6px;border-radius:7px;cursor:pointer;">';
       html+='<span style="width:7px;height:7px;border-radius:50%;background:'+(e.post.color||'var(--t3)')+';flex-shrink:0;"></span>';
-      html+='<span style="color:var(--t2);min-width:60px;font-weight:600;">'+(e.post.name||e.post.id)+'</span>';
+      html+='<span style="color:var(--t2);min-width:60px;font-weight:600;">'+_vPostShort(e.post)+'</span>';
       html+='<span style="color:var(--t1);">'+docName+'</span>';
       html+='<span style="margin-left:auto;font-size:10px;color:var(--t3);">›</span>';
       html+='</div>';
     } else {
       html+='<div style="display:flex;align-items:center;gap:6px;padding:3px 0;opacity:.5;">';
       html+='<span style="width:7px;height:7px;border-radius:50%;background:'+(e.post.color||'var(--t3)')+';flex-shrink:0;"></span>';
-      html+='<span style="color:var(--t2);min-width:60px;font-weight:600;">'+(e.post.name||e.post.id)+'</span>';
+      html+='<span style="color:var(--t2);min-width:60px;font-weight:600;">'+_vPostShort(e.post)+'</span>';
       html+='<span style="color:var(--t3);">—</span>';
       html+='</div>';
     }
@@ -4072,17 +4079,25 @@ function _fillAvailList(dk){
     Object.values(window._qShifts).forEach(function(day){var did=day[mPost];if(did)eligible[did]=true;});
   }
   var hasEligible=Object.keys(eligible).length>0;
+  var _apData=doctors.some(function(d){ return Array.isArray(d.allowed_posts); }); // [2026-10-10] postes autorisés connus
+  var _need=[mPost,window._siblingPost].filter(Boolean);
   var availDocs=doctors.filter(function(doc){
+    if(_apData){ if(!Array.isArray(doc.allowed_posts)||_need.some(function(p){ return doc.allowed_posts.indexOf(p)<0; })) return false; }
     if(doc.id===me.id||(doc.local_id&&doc.local_id===me.local_id)) return false;
     if(inds.some(function(ind){var dm=ind.docId==doc.id||ind.docId==doc.local_id;var dtm=dk>=ind.start&&dk<=ind.end;return dm&&dtm&&ind.type!=='pref';})) return false;
     if(busyToday[doc.id]||busyToday[doc.local_id]) return false;
     if(busyYest[doc.id]||busyYest[doc.local_id]) return false;
-    if(hasEligible&&!eligible[doc.id]&&!eligible[doc.local_id]) return false;
+    if(!_apData&&hasEligible&&!eligible[doc.id]&&!eligible[doc.local_id]) return false;
     return true;
   });
   availDocs.sort(function(a,b){return a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname);});
-  if(!availDocs.length){el.innerHTML='<div style="padding:12px;font-size:13px;color:var(--t3);text-align:center;">Aucun médecin disponible ce jour.</div>';return;}
-  var html='<div style="color:var(--t3);font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px;">'+availDocs.length+' disponible'+(availDocs.length!==1?'s':'')+'</div>';
+  window._availIds=availDocs.map(function(d){ return d.id; }); // [2026-10-10]
+  if(!availDocs.length){el.innerHTML='<div style="padding:12px;font-size:13px;color:var(--t3);text-align:center;">Aucun médecin disponible ce jour'+(_apData?' parmi ceux qui ont ce poste dans leurs postes autorisés':'')+'.</div>';return;}
+  var html='<label style="display:flex;align-items:center;gap:10px;background:rgba(201,152,58,.12);border:1px solid #c9983a;border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;font-size:13px;color:var(--t1);font-weight:600;">'
+    +'<input type="checkbox" id="m-avail-all" checked onchange="_availAllChg(this.checked)" style="width:20px;height:20px;accent-color:#c9983a;margin:0;">'
+    +'Envoyer à tous les médecins disponibles ('+availDocs.length+')</label>'
+    +'<div id="m-avail-hint" style="color:var(--t3);font-size:11px;margin:-2px 0 6px;">Seuls ces médecins verront la demande. Décochez pour choisir un seul médecin dans la liste.</div>';
+  html+='<div style="color:var(--t3);font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px;">'+availDocs.length+' disponible'+(availDocs.length!==1?'s':'')+(_apData?' · poste autorisé':'')+'</div>';
   html+='<div style="max-height:calc(100svh - 380px);min-height:120px;overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:10px;background:var(--bg2);">';
   availDocs.forEach(function(doc,idx){
     var rl=shortRole(doc.role||'');
@@ -4097,11 +4112,13 @@ function _fillAvailList(dk){
   el.innerHTML=html;
   el.onclick=function(ev){var row=ev.target.closest('.mddr');if(!row)return;_selectDayDoc(row.getAttribute('data-did'));};
 }
+function _availAllChg(on){ var h=document.getElementById('m-avail-hint');
+  if(h) h.textContent=on?'Seuls ces médecins verront la demande. Décochez pour choisir un seul médecin dans la liste.':'Touchez le médecin à qui envoyer la demande.'; }
 function closeModal(){document.getElementById('modal-bg').classList.remove('show');}
 
 let mTarget='all';
 function setTarget(t){
-  mTarget=(t==='avail')?'all':t;
+  mTarget=t; // [2026-10-10] 'avail' = liste des médecins disponibles
   document.getElementById('r-all').classList.toggle('on',t==='all');
   document.getElementById('r-specific').classList.toggle('on',t==='specific');
   document.getElementById('r-avail').classList.toggle('on',t==='avail');
@@ -4116,6 +4133,11 @@ function setTarget(t){
 async function submitExchange(){
   if(!mDate||!mPost)return;
   const targetDocId=mTarget==='specific'?parseInt(document.getElementById('m-target-doc').value):null;
+  // [2026-10-10] « tous les médecins disponibles » : liste explicite
+  const _availAll=mTarget==='avail'&&!!(document.getElementById('m-avail-all')||{}).checked;
+  if(mTarget==='avail'&&!_availAll){ toast('Touchez un médecin dans la liste, ou cochez « tous les médecins disponibles ».',true); return; }
+  const targetIds=_availAll?(window._availIds||[]).slice():null;
+  if(_availAll&&!targetIds.length){ toast('Aucun médecin disponible à qui envoyer la demande.',true); return; }
   const _cx=(mTarget==='specific'&&_cxSel&&_cxSel.pids&&_cxSel.pids.length)?_cxSel:null, _cxSib=window._siblingPost||null; // [2026-10-02] ECHANGE_CROISE
   try{
     const {error}=await sb.from('exchange_requests').insert({
@@ -4124,12 +4146,13 @@ async function submitExchange(){
       type:_cx?'swap':'exchange',status:'open',proposer_post2:window._siblingPost||null,
       counter_date:_cx?_cx.dk:null,counter_post:_cx?_cx.pids[0]:null,counter_post2:(_cx&&_cx.pids[1])?_cx.pids[1]:null,
       target_doctor_id:targetDocId,
+      target_doctor_ids:targetIds,
       message:document.getElementById('m-msg').value.trim()||null
     });
     if(error)throw error;
   window._siblingPost=null;
     closeModal();
-    toast(targetDocId?'Demande envoyée au médecin ciblé !':'Demande envoyée à tous les médecins !');
+    toast(targetDocId?'Demande envoyée au médecin ciblé !':targetIds?'Demande envoyée aux '+targetIds.length+' médecins disponibles !':'Demande envoyée à tous les médecins !');
     // Push notification au(x) destinataire(s)
     try {
       const _postName = planning?.posts?.find(p=>p.id===mPost)?.full || mPost;
@@ -4143,6 +4166,7 @@ async function submitExchange(){
       // les abonnés de l'hôpital, demandeur compris. Liste vide → pas d'envoi (sinon = tout le monde).
       _pushPayload.doctor_ids = targetDocId
         ? [String(targetDocId)]
+        : targetIds ? targetIds.map(String)
         : doctors.filter(d=>d.id!==me.id).map(d=>String(d.id));
       if(_pushPayload.doctor_ids.length) fetch(CFG.url+'/functions/v1/send-push',{
         method:'POST',
@@ -4160,6 +4184,11 @@ async function submitExchange(){
         :{proposer_name:me.firstname+' '+me.lastname,post_name:post?.full||post?.name||mPost,date:mDate,message:document.getElementById('m-msg').value.trim()||null}
     };
     // [2026-09-23] Le serveur trouve lui-même les adresses (ciblé : ce médecin ; ouvert : tous les collègues)
+    if(targetIds){ // [2026-10-10] un e-mail par médecin disponible (pas d'envoi à tous)
+      targetIds.forEach(function(id,i){ setTimeout(function(){ fetch(CFG.url+'/functions/v1/send-notification',{
+        method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
+        body:JSON.stringify({..._notifData,doctor_id:id})}).catch(()=>{}); }, i*250); });
+    } else
     fetch(CFG.url+'/functions/v1/send-notification',{
       method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
       body:JSON.stringify(targetDocId?{..._notifData,doctor_id:targetDocId}:{..._notifData,broadcast:true})
