@@ -2986,7 +2986,7 @@ function renderCalPerso(){
   for(var d=1;d<=d2;d++){
     var dk=dkStr(cy,cm,d);
     var dw=new Date(dk+'T12:00:00').getDay();
-    var we=dw===0||dw===6, isTd=dk===today;
+    var we=dw===0||dw===6, isTd=dk===today, fer=isFerie(dk); // CALPERSO_FERIES
     var dayS=shifts[dk]||{}, myPosts=[], pids=Object.keys(dayS);
     for(var pi=0;pi<pids.length;pi++){
       var pid=pids[pi],did=dayS[pid];
@@ -3019,7 +3019,7 @@ function renderCalPerso(){
     var excDetail=myPosts.filter(function(p){return p._exc;}).map(function(p){return p.full+' · '+p.hours+' h';}).join('\n');
     var isPast=dk<today;
     var cell=document.createElement('div');
-    cell.className='cp-day'+(we?' cp-we':'')+' '+(isTd?'cp-today':'')+' '+(myPosts.length?'cp-shift':'cp-empty')+(isPast?' cp-past':'');
+    cell.className='cp-day'+((we||fer)?' cp-we':'')+' '+(isTd?'cp-today':'')+' '+(myPosts.length?'cp-shift':'cp-empty')+(isPast?' cp-past':'');
     var dayInd=null;
     var inds=(planning&&planning.indispos)||[];
     for(var ii=0;ii<inds.length;ii++){
@@ -3138,6 +3138,7 @@ function renderCalPerso(){
     }
     // [2026-10-02] PLANNING_JOUR — case sans poste (jour libre, absence) : planning complet du jour
     if(!myPosts.length){ cell.style.cursor='pointer'; (function(d2){cell.addEventListener('click',function(){openDayPlanning(d2);});})(dk); }
+    if(fer){ cell.title='Jour férié'+(cell.title?'\n'+cell.title:''); } // CALPERSO_FERIES
         grid.appendChild(cell);
   }
   ga.appendChild(grid);
@@ -3684,6 +3685,8 @@ async function sendMesHeures(){
     if(r.error){ var m=String(r.error.message||'');
       _hrsMsg(/jlx_readonly/.test(m)?'Aperçu en lecture seule : rien n’est envoyé.':/jlx_dup/.test(m)?'ℹ️ Vous avez déjà fait cette demande pour ce jour.':m.replace(/^jlx_\w+:\s*/,''),false); return; }
     _hrsMsg('✅ Demande envoyée au gestionnaire : '+_hrsFmt(_hrsSign*h)+' le '+_hrsDate(day)+'.',true);
+    try{ fetch(CFG.url+'/functions/v1/send-notification',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
+      body:JSON.stringify({type:'hours_requested',hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',data:{}})}).catch(function(){}); }catch(e){} // HOURS_MAIL
     document.getElementById('hrs-h').value=''; document.getElementById('hrs-reason').value='';
     loadMyHeures();
   }catch(e){ _hrsMsg('Envoi impossible : '+e.message,false); }
