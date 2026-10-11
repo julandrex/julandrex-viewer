@@ -1052,7 +1052,7 @@ async function loadDoctors(){
   if(!_jlxTok()){ doctors=[]; renderLoginDocs(); return; }
   try{
     const _tmo=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Impossible de charger les médecins (10s). Vérifiez votre connexion.')),10000));
-    const {data,error}=await Promise.race([sb.from('doctors_public').select('id,local_id,firstname,lastname,role,color,pin_set,has_pin,weekly_hours,initials,login').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname'),_tmo]);
+    const {data,error}=await Promise.race([sb.from('doctors_public').select('id,local_id,firstname,lastname,role,color,pin_set,has_pin,weekly_hours,target_hours,contract_start,contract_end,initials,login').eq('hospital_id',CFG.hospital).eq('active',true).order('lastname').order('firstname'),_tmo]);
     if(error)throw error;
     doctors=data||[];
     window._docIni={}; doctors.forEach(function(d){ if(d.initials) window._docIni[d.id]=d.initials; });
@@ -3295,10 +3295,23 @@ function renderCalPerso(){
     }
     statsDiv.appendChild(cgCard);
   }
-  var wh=me.weekly_hours||40;
-  var contractH=Math.round(wh*11*10)/10;
   var tQ=Math.floor(cm/3);
   var qStart=tQ*3,qEnd=qStart+2;
+  // [2026-10-11] CIBLE_TRIMESTRE — cible = (heures/semaine × semaines travaillées par an) ÷ 4, comme la cible annuelle du gestionnaire
+  // (40 h → 1 740 h/an → 435 h ; assistants : 46 semaines) ; prorata des jours de contrat présents dans le trimestre.
+  var _th=(me.target_hours!=null&&+me.target_hours>0)?+me.target_hours:(+me.weekly_hours||40);
+  var _isAss=/assistant/i.test(me.role||'');
+  var _weeks=_isAss?46:43.5;
+  var _qFull=_th*_weeks/4;
+  var _qA=dkStr(cy,qStart,1), _qB=dkStr(cy,qEnd,new Date(cy,qEnd+1,0).getDate());
+  var _frac=1;
+  if(me.contract_start||me.contract_end){
+    var _cs=(me.contract_start&&String(me.contract_start)>_qA)?String(me.contract_start):_qA;
+    var _ce=(me.contract_end&&String(me.contract_end)<_qB)?String(me.contract_end):_qB;
+    var _nd=function(a,b){ return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000)+1; };
+    _frac=_ce<_cs?0:_nd(_cs,_ce)/_nd(_qA,_qB);
+  }
+  var contractH=Math.round(_qFull*_frac*10)/10;
   var qShifts=window._qShifts||planning.shifts||{};
   var qHours=0;
   for(var qi=qStart;qi<=qEnd;qi++){
@@ -3339,7 +3352,7 @@ function renderCalPerso(){
   var barDiv=document.createElement("div"); barDiv.className="cs-bar-wrap";
   var barHdr=document.createElement("div"); barHdr.className="cs-bar-hdr";
   var barLbl=document.createElement("span"); barLbl.className="cs-bar-lbl"; barLbl.textContent=qLabel+" — Heures prestees";
-  var barPct=document.createElement("span"); barPct.className="cs-bar-pct"; barPct.textContent=qHours+"h / "+contractH+"h";
+  var barPct=document.createElement("span"); barPct.className="cs-bar-pct"; barPct.textContent=qHours+"h / "+contractH+"h"; barPct.title="Cible du trimestre : "+_th+" h/semaine × "+String(_weeks).replace('.',',')+" semaines par an ÷ 4"+(_frac<1?" (au prorata de votre contrat)":"");
   barHdr.appendChild(barLbl); barHdr.appendChild(barPct); barDiv.appendChild(barHdr);
   var barTrack=document.createElement("div"); barTrack.className="cs-bar-track";
   var barFill=document.createElement("div"); barFill.className="cs-bar-fill";
@@ -3799,7 +3812,7 @@ document.addEventListener('DOMContentLoaded',_themeLbl); setTimeout(_themeLbl,0)
 
 // ════════ [2026-10-05] USAGE_ANON — mesure anonyme de l'utilisation ════════
 (function(){
-  var SID=null, T0=0, Q=[], ERRN=0, VER='20261011d'; // USAGE_ERR
+  var SID=null, T0=0, Q=[], ERRN=0, VER='20261011e'; // USAGE_ERR
   var DEV=((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone)?'app':(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'mobile':'desktop');
   function uid(){ try{ if(crypto&&crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}); }
