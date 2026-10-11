@@ -3851,7 +3851,7 @@ document.addEventListener('DOMContentLoaded',_themeLbl); setTimeout(_themeLbl,0)
 
 // ════════ [2026-10-05] USAGE_ANON — mesure anonyme de l'utilisation ════════
 (function(){
-  var SID=null, T0=0, Q=[], ERRN=0, VER='20261011g'; // USAGE_ERR
+  var SID=null, T0=0, Q=[], ERRN=0, VER='20261011h'; // USAGE_ERR
   var DEV=((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone)?'app':(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'mobile':'desktop');
   function uid(){ try{ if(crypto&&crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}); }
@@ -4324,6 +4324,71 @@ function _availAllChg(on){ var h=document.getElementById('m-avail-hint');
 function closeModal(){document.getElementById('modal-bg').classList.remove('show');}
 
 let mTarget='all';
+// [2026-10-11] SELECT_SHEET — remplace une liste déroulante native par un bouton + feuille de choix (groupes pris des <optgroup>)
+function jlxEnhanceSelect(sel,opt){
+  if(!sel||sel._jlxEnh) return; sel._jlxEnh=true; opt=opt||{};
+  var btn=document.createElement('button'); btn.type='button';
+  btn.style.cssText='width:100%;display:none;align-items:center;justify-content:space-between;gap:8px;text-align:left;background:var(--bg2);border:1px solid var(--b);border-radius:8px;color:var(--t1);font-size:13px;padding:10px 11px;margin-bottom:6px;cursor:pointer;min-height:42px;box-sizing:border-box;';
+  btn.innerHTML='<span class="jse-l" style="color:var(--t3);"></span><span style="color:var(--t3);">▾</span>';
+  sel.parentNode.insertBefore(btn,sel.nextSibling);
+  var st=document.createElement('style'); st.textContent='#'+sel.id+'{display:none !important}'; document.head.appendChild(st);
+  var lbl=btn.querySelector('.jse-l');
+  function sync(){
+    var o=sel.options[sel.selectedIndex];
+    var has=o&&o.value!=='';
+    lbl.textContent=has?o.textContent:(opt.placeholder||'Choisir…'); lbl.style.color=has?'var(--t1)':'var(--t3)';
+  }
+  // valeur posée par le code (sel.value=…) : le libellé suit
+  var d=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value');
+  Object.defineProperty(sel,'value',{get:function(){ return d.get.call(this); },set:function(v){ d.set.call(this,v); sync(); },configurable:true});
+  new MutationObserver(sync).observe(sel,{childList:true,subtree:true});
+  // l'affichage du bouton suit celui que le code donne au <select> (display:block / none)
+  new MutationObserver(function(){ btn.style.display=(sel.style.display==='none'||sel.style.display==='')?'none':'flex'; }).observe(sel,{attributes:true,attributeFilter:['style']});
+  sel.addEventListener('change',sync);
+  btn.addEventListener('click',function(){ jlxOpenSelectSheet(sel,opt.title||'Choisir',sync); });
+  sync();
+}
+function jlxOpenSelectSheet(sel,title,after){
+  var ov=document.getElementById('jse-ov');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='jse-ov';
+    ov.style.cssText='position:fixed;inset:0;z-index:2100;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;';
+    ov.innerHTML='<div style="background:var(--bg1);color:var(--t1);width:100%;max-width:520px;max-height:80vh;border-radius:16px 16px 0 0;display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.4);">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;"><div id="jse-t" style="font-size:15px;font-weight:700;"></div>'
+      +'<button type="button" id="jse-x" aria-label="Fermer" style="background:none;border:none;color:var(--t3);font-size:22px;line-height:1;cursor:pointer;padding:4px 8px;">✕</button></div>'
+      +'<div id="jse-l" style="overflow-y:auto;padding:0 10px 16px;-webkit-overflow-scrolling:touch;"></div></div>';
+    ov.addEventListener('click',function(e){ if(e.target===ov||e.target.id==='jse-x') ov.style.display='none'; });
+    document.body.appendChild(ov);
+  }
+  document.getElementById('jse-t').textContent=title;
+  var esc=function(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+  var H='font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--t3);margin:10px 4px 5px;';
+  var row=function(o){
+    var on=o.value===sel.value;
+    return '<div class="jse-r" data-v="'+esc(o.value)+'" style="display:flex;align-items:center;gap:10px;padding:11px 11px;margin-bottom:4px;border-radius:10px;cursor:pointer;min-height:44px;box-sizing:border-box;font-size:14px;'
+      +'border:1px solid '+(on?'#c9983a':'transparent')+';background:'+(on?'rgba(201,152,58,.16)':'var(--bg2)')+';"><span style="min-width:0;">'+esc(o.textContent)+'</span>'
+      +(on?'<span style="margin-left:auto;color:#c9983a;font-weight:800;">✓</span>':'')+'</div>';
+  };
+  var h='';
+  Array.prototype.forEach.call(sel.children,function(ch){
+    if(ch.tagName==='OPTGROUP'){ h+='<div style="'+H+'">'+esc(ch.label)+'</div>'+Array.prototype.map.call(ch.children,row).join(''); }
+    else if(ch.tagName==='OPTION'&&ch.value!=='') h+=row(ch);
+  });
+  var L=document.getElementById('jse-l');
+  L.innerHTML=h||'<div style="padding:18px;text-align:center;color:var(--t3);font-size:13px;">Aucun choix disponible.</div>';
+  L.onclick=function(e){
+    var r=e.target.closest('.jse-r'); if(!r) return;
+    sel.value=r.getAttribute('data-v');
+    sel.dispatchEvent(new Event('change',{bubbles:true}));
+    ov.style.display='none'; if(after) after();
+  };
+  ov.style.display='flex'; L.scrollTop=0;
+}
+document.addEventListener('DOMContentLoaded',function(){
+  try{ jlxEnhanceSelect(document.getElementById('desid-p-select'),{title:'Choisir le poste',placeholder:'Choisir un poste ou une section…'}); }catch(e){}
+});
+if(document.readyState!=='loading'){ try{ jlxEnhanceSelect(document.getElementById('desid-p-select'),{title:'Choisir le poste',placeholder:'Choisir un poste ou une section…'}); }catch(e){} }
+
 // [2026-10-11] CHOIX_MEDECIN — feuille de choix avec recherche (nom, prénom, fonction)
 function _syncDocLabel(){
   var sel=document.getElementById('m-target-doc'), lbl=document.getElementById('m-target-lbl'); if(!sel||!lbl) return;
