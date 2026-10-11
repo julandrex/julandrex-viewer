@@ -838,7 +838,7 @@ html[data-theme="light"] [style*="solid #7a1010"],html[data-theme="light"] [styl
     </div>
     <div class="mfield" id="m-target-wrap" style="display:none;">
       <span class="mlbl">Choisir le médecin</span>
-      <select id="m-target-doc" class="mtxt" style="padding:8px;font-size:13px;" onchange="_cxRefresh()"></select>
+      <button type="button" id="m-target-btn" onclick="openDocPicker()" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;background:var(--bg2);border:1px solid var(--b);border-radius:10px;color:var(--t1);font-size:14px;padding:11px 12px;cursor:pointer;min-height:44px;box-sizing:border-box;"><span id="m-target-lbl" style="color:var(--t3);">Choisir un médecin…</span><span style="color:var(--t3);">▾</span></button><select id="m-target-doc" style="display:none" aria-hidden="true" onchange="_cxRefresh()"></select>
     </div>
     <div class="mfield" id="m-counter-wrap" style="display:none;">
       <span class="mlbl">En échange, je prends (facultatif)</span>
@@ -3851,7 +3851,7 @@ document.addEventListener('DOMContentLoaded',_themeLbl); setTimeout(_themeLbl,0)
 
 // ════════ [2026-10-05] USAGE_ANON — mesure anonyme de l'utilisation ════════
 (function(){
-  var SID=null, T0=0, Q=[], ERRN=0, VER='20261011f'; // USAGE_ERR
+  var SID=null, T0=0, Q=[], ERRN=0, VER='20261011g'; // USAGE_ERR
   var DEV=((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone)?'app':(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'mobile':'desktop');
   function uid(){ try{ if(crypto&&crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}); }
@@ -4186,7 +4186,7 @@ function openModal(dk,pid){
   setTarget('all');
   // Remplir le sélecteur de médecins (hors soi-même)
   const sel=document.getElementById('m-target-doc');
-  sel.innerHTML=[...doctors].filter(d=>d.id!==me.id).sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname)).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
+  sel.innerHTML='<option value=""></option>'+[...doctors].filter(d=>d.id!==me.id).sort((a,b)=>a.lastname.localeCompare(b.lastname)||a.firstname.localeCompare(b.firstname)).map(d=>`<option value="${d.id}">${d.firstname} ${d.lastname} — ${shortRole(d.role)}</option>`).join('');
   _fillDayDist(dk);
   document.getElementById('modal-bg').classList.add('show');
 }
@@ -4249,6 +4249,7 @@ function _selectDayDoc(docId){
   setTarget('specific');
   var sel=document.getElementById('m-target-doc');
   if(sel) sel.value=docId;
+  try{ _syncDocLabel(); }catch(e){} // CHOIX_MEDECIN
   window._selDocId=docId; try{ _cxRefresh(); }catch(e){}
   document.querySelectorAll('#m-day-dist .mddr').forEach(function(r){
     var selected=r.getAttribute('data-did')===docId;
@@ -4323,12 +4324,69 @@ function _availAllChg(on){ var h=document.getElementById('m-avail-hint');
 function closeModal(){document.getElementById('modal-bg').classList.remove('show');}
 
 let mTarget='all';
+// [2026-10-11] CHOIX_MEDECIN — feuille de choix avec recherche (nom, prénom, fonction)
+function _syncDocLabel(){
+  var sel=document.getElementById('m-target-doc'), lbl=document.getElementById('m-target-lbl'); if(!sel||!lbl) return;
+  var d=sel.value?(doctors||[]).find(function(x){ return String(x.id)===String(sel.value); }):null;
+  if(d){ lbl.textContent=d.firstname+' '+d.lastname+' — '+shortRole(d.role); lbl.style.color='var(--t1)'; }
+  else { lbl.textContent='Choisir un médecin…'; lbl.style.color='var(--t3)'; }
+}
+function openDocPicker(){
+  var sel=document.getElementById('m-target-doc'); if(!sel) return;
+  var ov=document.getElementById('doc-picker-ov');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='doc-picker-ov';
+    ov.style.cssText='position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;';
+    ov.innerHTML='<div id="doc-picker-box" style="background:var(--bg1);color:var(--t1);width:100%;max-width:520px;max-height:82vh;border-radius:16px 16px 0 0;display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.4);">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;"><div style="font-size:15px;font-weight:700;">Choisir le médecin</div>'
+      +'<button type="button" onclick="closeDocPicker()" aria-label="Fermer" style="background:none;border:none;color:var(--t3);font-size:22px;line-height:1;cursor:pointer;padding:4px 8px;">✕</button></div>'
+      +'<div style="padding:0 16px 10px;"><input id="doc-picker-q" type="search" placeholder="Rechercher un nom, un prénom…" autocomplete="off" '
+      +'style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--b);border-radius:10px;color:var(--t1);font-size:16px;padding:11px 12px;outline:none;" oninput="_docPickerFilter()"></div>'
+      +'<div id="doc-picker-list" style="overflow-y:auto;padding:0 10px 16px;-webkit-overflow-scrolling:touch;"></div></div>';
+    ov.addEventListener('click',function(e){ if(e.target===ov) closeDocPicker(); });
+    document.body.appendChild(ov);
+  }
+  ov.style.display='flex';
+  var q=document.getElementById('doc-picker-q'); q.value='';
+  _docPickerFilter();
+  setTimeout(function(){ try{ q.focus(); }catch(e){} },60);
+}
+function closeDocPicker(){ var ov=document.getElementById('doc-picker-ov'); if(ov) ov.style.display='none'; }
+function _docPickerFilter(){
+  var list=document.getElementById('doc-picker-list'); if(!list) return;
+  var q=((document.getElementById('doc-picker-q')||{}).value||'').trim().toLowerCase();
+  var norm=function(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); };
+  var nq=norm(q), cur=(document.getElementById('m-target-doc')||{}).value;
+  var esc=function(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+  var rows=(doctors||[]).filter(function(d){ return me&&d.id!==me.id; })
+    .sort(function(a,b){ return (a.lastname||'').localeCompare(b.lastname||'')||(a.firstname||'').localeCompare(b.firstname||''); })
+    .filter(function(d){ return !nq||norm(d.firstname+' '+d.lastname+' '+d.lastname+' '+d.firstname+' '+shortRole(d.role)).indexOf(nq)>=0; });
+  if(!rows.length){ list.innerHTML='<div style="padding:18px;text-align:center;color:var(--t3);font-size:13px;">Aucun médecin ne correspond.</div>'; return; }
+  list.innerHTML=rows.map(function(d){
+    var on=String(d.id)===String(cur);
+    return '<div class="dpk-row" data-did="'+esc(d.id)+'" onclick="_docPickerPick(this.getAttribute(\'data-did\'))" style="display:flex;align-items:center;gap:10px;padding:10px 10px;margin-bottom:4px;border-radius:10px;cursor:pointer;min-height:46px;box-sizing:border-box;'
+      +'border:1px solid '+(on?'#c9983a':'transparent')+';background:'+(on?'rgba(201,152,58,.16)':'var(--bg2)')+';">'
+      +'<span style="width:34px;height:34px;border-radius:50%;background:'+esc(d.color||'#475569')+'33;color:'+esc(d.color||'#94a3b8')+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">'+esc(docIni(d.id))+'</span>'
+      +'<span style="display:flex;flex-direction:column;min-width:0;"><span style="font-size:14px;font-weight:600;">'+esc(d.firstname)+' '+esc(d.lastname)+'</span>'
+      +'<span style="font-size:11px;color:var(--t3);">'+esc(shortRole(d.role))+'</span></span>'
+      +(on?'<span style="margin-left:auto;color:#c9983a;font-weight:800;">✓</span>':'')+'</div>';
+  }).join('');
+}
+function _docPickerPick(id){
+  var sel=document.getElementById('m-target-doc'); if(!sel) return;
+  sel.value=String(id);
+  window._selDocId=String(id);
+  _syncDocLabel();
+  closeDocPicker();
+  try{ _cxRefresh(); }catch(e){}
+}
 function setTarget(t){
   mTarget=t; // [2026-10-10] 'avail' = liste des médecins disponibles
   document.getElementById('r-all').classList.toggle('on',t==='all');
   document.getElementById('r-specific').classList.toggle('on',t==='specific');
   document.getElementById('r-avail').classList.toggle('on',t==='avail');
   document.getElementById('m-target-wrap').style.display=t==='specific'?'':'none';
+  if(t==='specific'){ try{ _syncDocLabel(); }catch(e){} }
   var _dd=document.getElementById('m-day-dist');
   if(_dd) _dd.style.display=t==='avail'?'none':'';
   var _al=document.getElementById('m-avail-list');
@@ -4339,6 +4397,7 @@ function setTarget(t){
 async function submitExchange(){
   if(!mDate||!mPost)return;
   const targetDocId=mTarget==='specific'?parseInt(document.getElementById('m-target-doc').value):null;
+  if(mTarget==='specific'&&!targetDocId){ toast('Choisissez le médecin à qui adresser la demande.',true); return; }
   // [2026-10-10] « tous les médecins disponibles » : liste explicite
   const _availAll=mTarget==='avail'&&!!(document.getElementById('m-avail-all')||{}).checked;
   if(mTarget==='avail'&&!_availAll){ toast('Touchez un médecin dans la liste, ou cochez « tous les médecins disponibles ».',true); return; }
