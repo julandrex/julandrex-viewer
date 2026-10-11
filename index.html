@@ -504,12 +504,14 @@ html[data-theme="light"] [style*="solid #7a1010"],html[data-theme="light"] [styl
 
 <!-- [2026-09-24] Conditions d'utilisation + notice RGPD (version 2026-09-v1) -->
 <template id="tpl-terms">
-<h1>Conditions d’utilisation</h1><div class="t-meta">Version 2 du 11 octobre 2026 · Application des médecins (« viewer ») pendant la phase de test</div><div class="lead">Julandrex est un outil de planification des gardes, conçu au sein du service des urgences du CHR Citadelle. L’application des médecins
+<h1>Conditions d’utilisation</h1><div class="t-meta">Version 3 du 11 octobre 2026 · Application des médecins (« viewer ») pendant la phase de test</div><div class="lead">Julandrex est un outil de planification des gardes, conçu au sein du service des urgences du CHR Citadelle. L’application des médecins
   permet de consulter le planning, de recevoir des rappels, de proposer des échanges ou des reprises de postes, de transmettre ses desiderata et de demander un ajustement de son compte d’heures.
   Elle est proposée en <b>phase de test</b> et son utilisation est <b>volontaire</b>.</div>
   <div class="lead"><b>Ce qui change par rapport à la version 1 (24 septembre 2026) :</b> la <b>mesure d’utilisation anonyme</b> de l’application,
   les <b>demandes d’ajustement du compte d’heures</b>, l’envoi de <b>signalements</b>, l’option <b>« Se souvenir de moi »</b>, le <b>thème clair</b>
-  et l’<b>aperçu en lecture seule</b> que le gestionnaire peut ouvrir pour vous assister. Le reste est inchangé.</div>
+  et l’<b>aperçu en lecture seule</b> que le gestionnaire peut ouvrir pour vous assister. <b>Depuis la version 2 :</b> l’assistance technique
+  par un outil d’intelligence artificielle (Claude, Anthropic) est mentionnée parmi les prestataires, les absences prolongées ne portent
+  <b>aucun motif médical</b>, et une copie de sauvegarde chiffrée de la base est conservée par l’administrateur. Le reste est inchangé.</div>
 
   <h2>1. Participation volontaire</h2>
   <p>L’utilisation de l’application est facultative. Vous pouvez arrêter à tout moment, sans justification et sans aucune
@@ -574,7 +576,7 @@ html[data-theme="light"] [style*="solid #7a1010"],html[data-theme="light"] [styl
   <p>Questions, accès perdu, fermeture de votre accès : le <b>gestionnaire du planning</b> du service des urgences.
   Questions sur vos données : voir la notice ci-après.</p>
 <hr>
-<h1>Protection de vos données personnelles</h1><div class="t-meta">Notice d’information (articles 13 et 14 du RGPD) · Version 2 du 11 octobre 2026</div><div class="lead"><b>En bref :</b> Julandrex traite uniquement des données professionnelles liées à l’organisation des gardes.
+<h1>Protection de vos données personnelles</h1><div class="t-meta">Notice d’information (articles 13 et 14 du RGPD) · Version 3 du 11 octobre 2026</div><div class="lead"><b>En bref :</b> Julandrex traite uniquement des données professionnelles liées à l’organisation des gardes.
   <b>Aucune donnée de patient</b> n’y figure. La base de données est hébergée <b>dans l’Union européenne</b> (Francfort). Vos données
   ne sont ni vendues, ni utilisées à des fins publicitaires, ni utilisées pour évaluer vos performances. L’utilisation de l’application est en outre <b>mesurée de façon anonyme</b>
   (section 4) : cette mesure n’est pas rattachée à votre identité.</div>
@@ -607,7 +609,8 @@ html[data-theme="light"] [style*="solid #7a1010"],html[data-theme="light"] [styl
   <ul>
     <li><b>Identité professionnelle</b> : nom, prénom, fonction (PH, assistant, médecin généraliste…), dates de contrat, temps de travail et objectifs d’heures ; adresse e-mail professionnelle si vous l’avez communiquée.</li>
     <li><b>Accès</b> : identifiant ; mot de passe conservé uniquement sous forme d’empreinte chiffrée (illisible, même par le gestionnaire) ; sessions de connexion ; tentatives de connexion échouées.</li>
-    <li><b>Planning</b> : postes attribués, gardes, heures, échanges de postes et messages associés, desiderata (congés, indisponibilités, préférences, remarques).</li>
+    <li><b>Planning</b> : postes attribués, gardes, heures, échanges de postes et messages associés, desiderata (congés, indisponibilités, préférences, remarques). Les absences sont notées par type (congé, formation, absence prolongée…) :
+      <b>aucun motif médical n’est enregistré</b>.</li>
     <li><b>Journal d’utilisation</b> : date et heure des connexions, déconnexions et consultations du planning.</li>
     <li><b>Compte d’heures</b> : ajustements (date, nombre d’heures en plus ou en moins, motif, statut de la demande, décision du gestionnaire et note éventuelle).</li>
     <li><b>Suivi des desiderata</b> : mention « aucune demande pour ce trimestre » si vous l’indiquez ; relances que le gestionnaire vous a adressées.</li>
@@ -653,6 +656,7 @@ html[data-theme="light"] [style*="solid #7a1010"],html[data-theme="light"] [styl
     <tr><td>Google (Gmail)</td><td>Envoi des e-mails (accès, informations)</td><td>États-Unis / UE</td></tr>
     <tr><td>Apple, Google, Mozilla</td><td>Acheminement des notifications vers votre téléphone</td><td>États-Unis / UE : contenu chiffré de bout en bout</td></tr>
     <tr><td>jsDelivr</td><td>Distribution d’une bibliothèque technique</td><td>International : voit l’adresse IP</td></tr>
+    <tr><td>Anthropic (Claude)</td><td>Outil d’intelligence artificielle utilisé par l’administrateur pour développer et maintenir Julandrex : lors d’opérations de maintenance ponctuelles, il peut avoir à traiter des données du planning (noms, postes, e-mails professionnels)</td><td>États-Unis : transfert encadré comme ci-dessous ; aucun accès permanent ni indépendant</td></tr>
   </table>
   <p>Les transferts éventuels hors de l’Union européenne sont encadrés par le cadre de protection des données UE–États-Unis
   (Data Privacy Framework) ou par les clauses contractuelles types de la Commission européenne.</p>
@@ -674,6 +678,7 @@ html[data-theme="light"] [style*="solid #7a1010"],html[data-theme="light"] [styl
     <tr><td>Sessions de connexion</td><td>12 heures au plus</td></tr>
     <tr><td>Accès (identifiant, mot de passe), préférences, abonnements aux notifications, lien calendrier</td><td>Tant que votre accès est ouvert ; supprimés à sa fermeture</td></tr>
     <tr><td>Preuve d’acceptation de ces documents</td><td>Durée de votre accès + 12 mois</td></tr>
+    <tr><td>Copie de sauvegarde chiffrée de la base (à la seule disposition de l’administrateur)</td><td>90 jours au plus, puis effacement</td></tr>
   </table>
 
   <h2>7. Sécurité</h2>
@@ -1326,7 +1331,7 @@ function updateStrengthBar(pwd,barId,lblId){
 // Les interrupteurs sont lus sur le serveur (viewer_features, table hospital_features) : le viewer ne décide jamais seul,
 // il masque seulement ce que le serveur refuse de toute façon (update-pin, viewer_pwd_reset_*, _viewer_me).
 var _jlxFeat=null;
-var TERMS_VERSION='2026-10-v2'; // version du texte intégré (template #tpl-terms)
+var TERMS_VERSION='2026-10-v3'; // version du texte intégré (template #tpl-terms)
 function _loadFeatures(){
   try{ window._jlxFeatP=sb.rpc('viewer_features',{p_hospital:CFG.hospital}).then(function(r){ if(r&&!r.error&&r.data){ _jlxFeat=r.data; _applyFeatureUI(); } }); }catch(e){}
 }
@@ -3794,7 +3799,7 @@ document.addEventListener('DOMContentLoaded',_themeLbl); setTimeout(_themeLbl,0)
 
 // ════════ [2026-10-05] USAGE_ANON — mesure anonyme de l'utilisation ════════
 (function(){
-  var SID=null, T0=0, Q=[], ERRN=0, VER='20261011b'; // USAGE_ERR
+  var SID=null, T0=0, Q=[], ERRN=0, VER='20261011c'; // USAGE_ERR
   var DEV=((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone)?'app':(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'mobile':'desktop');
   function uid(){ try{ if(crypto&&crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}); }
