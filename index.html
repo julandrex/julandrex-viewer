@@ -3737,7 +3737,7 @@ document.addEventListener('DOMContentLoaded',_themeLbl); setTimeout(_themeLbl,0)
 
 // ════════ [2026-10-05] USAGE_ANON — mesure anonyme de l'utilisation ════════
 (function(){
-  var SID=null, T0=0, Q=[];
+  var SID=null, T0=0, Q=[], ERRN=0, VER='20261011a'; // USAGE_ERR
   var DEV=((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone)?'app':(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'mobile':'desktop');
   function uid(){ try{ if(crypto&&crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}); }
@@ -3749,7 +3749,7 @@ document.addEventListener('DOMContentLoaded',_themeLbl); setTimeout(_themeLbl,0)
       headers:{'apikey':CFG.key,'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
       body:JSON.stringify({p_token:tok,p_sid:SID,p_events:ev})}).catch(function(){}); }catch(e){}
   }
-  function start(){ if(SID||document.hidden||!ok()) return; SID=uid(); T0=Date.now(); Q.push({k:'open',v:DEV,th:(document.documentElement.getAttribute('data-theme')==='light'?'light':'dark')}); }
+  function start(){ if(SID||document.hidden||!ok()) return; SID=uid(); T0=Date.now(); ERRN=0; Q.push({k:'open',v:DEV,w:VER,th:(document.documentElement.getAttribute('data-theme')==='light'?'light':'dark')}); }
   function stop(){ if(!SID) return; var d=Math.max(0,Math.min(14400,Math.round((Date.now()-T0)/1000)));
     Q.push({k:'close',d:String(d),v:DEV}); flush(true); SID=null; }
   // Nom technique de l'action touchée : jamais le texte affiché (il peut contenir un nom ou une date)
@@ -3774,6 +3774,11 @@ document.addEventListener('DOMContentLoaded',_themeLbl); setTimeout(_themeLbl,0)
     return '';
   }
   window._usageStart=start; window._usageStop=stop;
+  // [2026-10-11] USAGE_ERR — erreurs de l'appli : le NOM de l'erreur seulement (jamais le message), 5 par visite
+  function errName(n){ return String(n||'Error').replace(/[^A-Za-z0-9_:#.-]/g,'').slice(0,48)||'Error'; }
+  function noteErr(n){ try{ if(!SID) start(); if(!SID||ERRN>=5) return; ERRN++; Q.push({k:'err',n:errName(n)}); }catch(e){} }
+  window.addEventListener('error',function(e){ noteErr(e&&e.error&&e.error.name); });
+  window.addEventListener('unhandledrejection',function(e){ noteErr('promesse:'+(e&&e.reason&&e.reason.name||'Error')); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden) stop(); else start(); });
   window.addEventListener('pagehide',stop);
   setInterval(function(){ if(SID) flush(false); },30000);
