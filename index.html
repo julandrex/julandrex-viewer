@@ -783,7 +783,7 @@ html[data-theme="light"] [style*="solid #7a1010"],html[data-theme="light"] [styl
           </div><div id="desid-warn-poste" style="display:none;background:#1e1a0a;border:1px solid #7a5a10;border-radius:6px;padding:6px 8px;font-size:10px;color:#d4a030;margin-bottom:6px;line-height:1.5;">🔒 Un poste ne peut être demandé que pour <strong>un seul jour</strong>.</div>
           <input id="desid-f-input" placeholder="Nom de la formation..." style="display:none;width:100%;margin-bottom:6px;background:#0d2240;border:1px solid #2a4a72;border-radius:6px;color:#e2e8f0;font-size:11px;padding:5px 7px;box-sizing:border-box;" oninput="desidUpdAdd()">
           <div id="desid-ip-section" style="display:none;">
-          <div style="background:#1e0a0a;border:1px solid #7a1010;border-radius:6px;padding:6px 8px;font-size:10px;color:#e05050;margin-bottom:6px;line-height:1.5;">🚫 Indispo poste : sélectionnez un <strong>seul jour</strong> dans le calendrier, puis cochez <strong>un ou plusieurs</strong> postes ou sections. Chaque case cochée devient une demande, acceptée ou refusée séparément par le gestionnaire.</div>
+          <div id="desid-ip-help" style="background:#1e0a0a;border:1px solid #7a1010;border-radius:6px;padding:6px 8px;font-size:10px;color:#e05050;margin-bottom:6px;line-height:1.5;">🚫 Indispo poste : sélectionnez un <strong>seul jour</strong> dans le calendrier, puis cochez <strong>un ou plusieurs</strong> postes ou sections. Chaque case cochée devient une demande, acceptée ou refusée séparément par le gestionnaire.</div>
           <div id="desid-ip-multi" style="margin-bottom:6px;"></div><select id="desid-ip-post-sel" style="display:none" aria-hidden="true"><option value=""></option></select>
         </div>
     <select id="desid-p-select" style="display:none;width:100%;margin-bottom:6px;background:#0d2240;border:1px solid #2a4a72;border-radius:6px;color:#e2e8f0;font-size:11px;padding:4px 6px;" onchange="desidUpdAdd()"><option value="">-- Choisir --</option></select>
@@ -796,6 +796,7 @@ html[data-theme="light"] [style*="solid #7a1010"],html[data-theme="light"] [styl
           🟡 Un jour d'<b>indisponibilité récurrente</b> accolé à un congé (juste avant, juste après ou entre deux jours de congé, même semaine) compte comme un jour de congé : posez-le aussi en congé (le formulaire vous le propose).<br>
           ☀️ Congé · 🌙 Repos souhaité · 🎓 Formation : <b>strict</b> — aucun poste ces jours-là, ni garde de nuit la veille (elle déborderait). La soirée qui finit à minuit reste possible la veille.<br>
           🚫 Indispo poste : <b>strict pour ce poste</b> (ou cette section) — les autres postes restent possibles.<br>
+          📅 <b>Week-end et jours fériés</b> : les postes proposés sont ceux du week-end. « Jour 9h–18h » = postes qui ne passent pas la nuit (DOUB, WE-E) ; « Nuit 18h–9h » = les gardes ; « 24 h (9h–9h) » = tout le week-end.<br>
           ⛔ Indisponible toute la journée (1er choix de « Indispo poste ») : <b>strict, sans exception</b> — aucun poste ce jour-là, ni garde de nuit la veille.<br>
           📌 Poste particulier : <b>préférence forte</b> — le moteur essaie de vous y placer ; si c'est impossible, le gestionnaire est prévenu. Pas garanti.</div></details>
         <div id="desid-req-empty" style="font-size:10px;color:#334155;text-align:center;padding:4px;">Aucune demande ajoutée</div>
@@ -1861,10 +1862,12 @@ function desidClickPoste(){
 function desidPickType(t){
   window._desidCurType=t;
   // Gérer la section ip
-  document.getElementById('desid-ip-section').style.display=(t==='ip')?'block':'none';
-  if(t==='ip'){
-    // Peupler le sélecteur de postes via desidGetPosts (même source que poste particulier)
-    desidBuildIpMulti(); // INDISPO_MULTI
+  document.getElementById('desid-ip-section').style.display=(t==='ip'||t==='p')?'block':'none';
+  if(t==='ip'||t==='p'){
+    var _hp=document.getElementById('desid-ip-help'); // [2026-10-12] mêmes cases à cocher pour « Poste particulier »
+    if(_hp){ if(!window._desidIpHelp0) window._desidIpHelp0=_hp.innerHTML;
+      _hp.innerHTML=(t==='p')?'⭐ Poste particulier : sélectionnez un <strong>seul jour</strong> dans le calendrier, puis cochez <strong>un ou plusieurs</strong> postes ou sections. Ce sont des <strong>alternatives</strong> : un seul vous sera attribué si le gestionnaire accepte.':window._desidIpHelp0; }
+    desidBuildIpMulti(t); // INDISPO_MULTI
     // Forcer mode single-day dans le calendrier (comme le type poste particulier)
     _desidMulti=false;
   }
@@ -1878,10 +1881,7 @@ function desidPickType(t){
   var fi=document.getElementById('desid-f-input'),ps=document.getElementById('desid-p-select');
   if(fi)fi.style.display=t==='f'?'block':'none';
   if(ps){
-    if(t==='p'){
-      desidFillPostSelect(ps);
-      ps.style.display='block';
-    }else ps.style.display='none';
+    ps.style.display='none'; // [2026-10-12] « Poste particulier » passe par les cases à cocher (sélection multiple)
   }
   desidUpdAdd();
 }
@@ -1899,7 +1899,34 @@ function _desidExpand(reqs){
     return {id:r.id,type:'r',full:true,date_start:r.date_start,date_end:r.date_end||r.date_start,detail:_DESID_FULL_LBL,label:'⛔ '+_DESID_FULL_LBL};
   });
 }
+// [2026-10-12] SECTIONS_WE — le week-end (samedi, dimanche, jour férié) : les postes ouverts sont ceux du week-end,
+// regroupés en « Jour 9h–18h » (postes qui ne passent pas la nuit : DOUB, WE-E) et « Nuit 18h–9h » (gardes qui traversent la nuit).
+function _desidWeInfo(){
+  var d=(typeof _desidD1!=='undefined')?_desidD1:null; if(!d) return null;
+  var iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  var dow=d.getDay(), fer=false; try{ fer=(typeof isFerie==='function')&&!!isFerie(iso); }catch(e){}
+  return (dow===0||dow===6||fer)?{dow:dow,fer:fer,iso:iso}:null;
+}
+function _desidWePosts(wi){
+  var src=(planning&&planning.posts)?planning.posts:[];
+  return src.filter(function(p){
+    if(p.section!=='we') return false;
+    var av=p.avail||'we';
+    if(av==='sat') return wi.dow!==0;
+    if(av==='sun') return wi.dow===0;
+    return true;
+  });
+}
+function _desidWeKind(p){ var e=p.end||'', st=p.start||''; return (e!=='00:00'&&e<=st)?'nuit':'jour'; }
+function _desidWeNames(list){ var seen={},out=[]; list.forEach(function(p){ if(!seen[p.name]){seen[p.name]=1;out.push(p.name);} }); return out; }
 function desidGetSections(){
+  var _wi=_desidWeInfo();
+  if(_wi){
+    var _ps=_desidWePosts(_wi), _J=_ps.filter(function(p){return _desidWeKind(p)==='jour';}), _N=_ps.filter(function(p){return _desidWeKind(p)==='nuit';}), _o=[];
+    if(_J.length) _o.push({value:'Section Week-end Jour',label:'Section Week-end Jour · 9h–18h ('+_desidWeNames(_J).join(', ')+')',n:_J.length});
+    if(_N.length) _o.push({value:'Section Week-end Nuit',label:'Section Week-end Nuit · 18h–9h ('+_desidWeNames(_N).join(', ')+')',n:_N.length});
+    return _o;
+  }
   const src=(planning&&planning.posts)?planning.posts:[];
   return _DESID_SECTIONS.map(function(s){
     var names=[],seen={};
@@ -1920,7 +1947,8 @@ function desidFillPostSelect(sel){
   sel.appendChild(g2);
 }
 // [2026-10-11] INDISPO_MULTI — cases à cocher : toute la journée (exclusif) · sections entières · postes précis
-function desidBuildIpMulti(){
+function desidBuildIpMulti(kind){
+  kind=kind||'ip'; var _we=!!_desidWeInfo();
   var box=document.getElementById('desid-ip-multi'); if(!box) return;
   window._desidIpSel=[];
   var esc=function(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
@@ -1928,7 +1956,7 @@ function desidBuildIpMulti(){
   var CB='width:18px;height:18px;flex-shrink:0;accent-color:#c9983a;';
   var item=function(val,label){ return '<label class="dipm-it" style="'+LBL+'"><input type="checkbox" value="'+esc(val)+'" style="'+CB+'" onchange="desidIpToggle(this)"><span>'+label+'</span></label>'; };
   var T='font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--t3);margin:8px 0 5px;';
-  var h='<div style="'+T+'margin-top:0;">Toute la journée</div>'+item(_DESID_ALL,'⛔ Indisponible toute la journée (tous les postes)');
+  var h=(kind==='ip')?'<div style="'+T+'margin-top:0;">'+(_we?'Les 24 heures':'Toute la journée')+'</div>'+item(_DESID_ALL,_we?'⛔ Indisponible les 24 h (9h–9h, tous les postes du week-end)':'⛔ Indisponible toute la journée (tous les postes)'):(_we?'<div style="'+T+'margin-top:0;">Week-end</div>':'');
   var secs=desidGetSections();
   if(secs.length) h+='<div style="'+T+'">Sections entières</div><div style="display:grid;gap:6px;">'+secs.map(function(sc){ return item(sc.value,esc(sc.label)); }).join('')+'</div>';
   var posts=desidGetPosts();
@@ -1957,6 +1985,7 @@ function desidIpToggle(cb){
   desidUpdAdd();
 }
 function desidGetPosts(){
+  var _wi=_desidWeInfo(); if(_wi) return _desidWeNames(_desidWePosts(_wi)); // [2026-10-12] SECTIONS_WE
   const src=(planning&&planning.posts)?planning.posts:[];
   if(!src.length)return[];
   var names=[],seen={};
@@ -1970,8 +1999,8 @@ function desidGetPosts(){
 }
 
 function desidUpdAdd(){
-  // Cas ip : vérifier date + poste sélectionnés
-  if(window._desidCurType==='ip'){
+  // Cas ip (et poste particulier, cases à cocher) : vérifier date + poste sélectionnés
+  if(window._desidCurType==='ip'||window._desidCurType==='p'){
     const btn=document.getElementById('desid-add-btn');
     const canAdd=!!_desidD1&&(window._desidIpSel||[]).length>0;
     if(btn){btn.style.opacity=canAdd?'1':'0.4';btn.disabled=!canAdd;}
@@ -2002,7 +2031,8 @@ function desidResetType(){
 
 function desidAddRequest(){
   if(desidCheckLocked())return;
-  if(window._desidCurType==='ip'){
+  if(window._desidCurType==='ip'||window._desidCurType==='p'){
+    var _isP=window._desidCurType==='p';
     if(!_desidD1){alert('Sélectionnez un jour dans le calendrier.');return;}
     var _sel=(window._desidIpSel||[]).slice();
     if(!_sel.length){alert('Cochez au moins un poste ou une section.');return;}
@@ -2011,6 +2041,7 @@ function desidAddRequest(){
     const _dl=_desidD1.toLocaleDateString('fr-BE',{day:'2-digit',month:'short'});
     // INDISPO_MULTI : une ligne de desiderata par case cochée (le gestionnaire les traite une par une)
     _sel.forEach(function(pn){
+      if(_isP){ _desidReqs.push({id:++_desidRid,type:'p',date_start:dk,date_end:dk,detail:pn,status:'pending'}); return; }
       var label=(pn===_DESID_ALL?'⛔ '+_DESID_FULL_LBL:'🚫 '+pn)+' le '+_dl;
       _desidReqs.push({id:++_desidRid,type:'ip',date_start:dk,date_end:dk,detail:pn,label:label}); // [2026-09-28] id : la ✕ n'efface plus que celle-ci
     });
