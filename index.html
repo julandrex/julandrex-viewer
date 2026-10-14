@@ -3867,7 +3867,10 @@ function logAccess(action,detail){
   if(_vcIs()) return; // [2026-09-27] aperçu « Voir comme » : pas de trace au nom du médecin
   try{ if(action==='logout'){ if(window._usageStop) window._usageStop(); }                       // [2026-10-05] USAGE_ANON
        else if(action==='login'||action==='session_resume'){ setTimeout(function(){ if(window._usageStart) window._usageStart(); },1500); } }catch(e){}
-  try{sb.from('access_logs').insert({hospital_id:CFG.hospital,doctor_id:me.id,action:action,detail:detail||'',ts:new Date().toISOString()}).then(function(){});}catch(e){}
+  // [2026-10-14] JOURNAL_SERVEUR : l'écriture directe dans access_logs (clé publique) est fermée ; le serveur écrit lui-même la ligne
+  // à partir du jeton de session (login, session_resume, view_planning). « logout » est écrit par viewer_logout ; « pwd_lockout » est déjà tracé côté serveur (viewer_login_fails).
+  try{ if(action==='logout'||action==='pwd_lockout') return; var _t=_jlxTok(); if(!_t) return;
+       sb.rpc('viewer_log_access',{p_token:_t,p_action:action,p_detail:String(detail||'').slice(0,120)}).then(function(){},function(){}); }catch(e){}
 }
 
 // ════════ [2026-10-11] THEME_CLAIR — bascule clair / sombre (mémorisée sur l'appareil) ════════
