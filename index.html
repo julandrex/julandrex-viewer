@@ -18,7 +18,7 @@
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Planning Urgences</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#0f1117;--bg1:#161b27;--bg2:#1c2235;--bg3:#232b3e;--t1:#dde3f0;--t2:#8892aa;--t3:#525e78;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--acc:#3b82f6;--acc2:#6366f1;--b:rgba(255,255,255,.08);}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -3400,7 +3400,9 @@ function renderCalPerso(){
                 var sh=parseInt(p.start.split(":")[0]),sm=parseInt(p.start.split(":")[1]);
                 var eh=parseInt(p.end.split(":")[0]),em2=parseInt(p.end.split(":")[1]);
                 var dur=(eh*60+em2-sh*60-sm);
-                if(dur<0)dur+=24*60;
+                if(dur<=0)dur+=24*60;             // [2026-10-14] DUREE_24H — une garde 9h–9h (début = fin) dure 24 h, pas 0 h
+                // même règle que le tuile du mois : poste B suivi de SMUR-N le même jour en semaine → B finit à 19 h
+                if(pid==='b'){ var _dw=new Date(cy,qi,qd2).getDay(); if(_dw>=1&&_dw<=5&&qDayS['smur-n']!=null&&vIsMe(qDayS['smur-n'])) dur=(19*60)-(sh*60+sm); }
                 qHours+=vMyHours(qpart,dur/60);   // poste scindé : seulement ma part
               }
               break;
@@ -5208,10 +5210,11 @@ async function rejectX(id){
 ║  1. IT crée App Registration → noter clientId + tenantId     ║
 ║  2. Remplir MSAL_CONFIG ci-dessous                           ║
 ║  3. Remplir doctors.email avec adresses @citadelle.be        ║
-║  4. Ajouter le script MSAL (version à jour) dans head        ║
+║  4. Décommenter script MSAL dans head                        ║
 ║  5. Remplacer écran login par bouton Microsoft               ║
 ║  6. Supprimer mot de passe + TOTP custom                     ║
 ╚══════════════════════════════════════════════════════════════╝
+  <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
 -->
 <script>
 /*=== AZURE AD — NE PAS ACTIVER AVANT ACCORD IT ===
