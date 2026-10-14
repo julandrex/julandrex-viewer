@@ -3499,7 +3499,7 @@ function renderSupervPDF(){
   const exceptionalShifts=window._excShifts||{};
   const UD=window._supUnavail||{};
   const docs=doctors.map(d=>{ let u=UD[d.local_id??d.id]; if(typeof u==='string'){ try{ u=JSON.parse(u); }catch(e){ u=null; } }
-    return {id:d.local_id??d.id, firstname:d.firstname||'', lastname:d.lastname||'', role:d.role||'', initials:d.initials||'', unavailDow:Array.isArray(u)?u:[]}; });
+    return {id:d.local_id??d.id, firstname:d.firstname||'', lastname:d.lastname||'', role:d.role||'', initials:d.initials||'', unavailDow:Array.isArray(u)?u:[], contractStart:d.contract_start||null, contractEnd:d.contract_end||null}; });
   const myId=me?(me.local_id??me.id):null;
   const E=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const EW=s=>E(s).replace(/([+\/])/g,'$1<wbr>'); // retour à la ligne permis après « + » et « / » (écran étroit)
@@ -3601,6 +3601,13 @@ function renderSupervPDF(){
   const docRow=doc=>`<tr><td class="nm${doc.id===myId?' me':''}">${E(doc.lastname.replace(/\s+SENIOR$/i,''))} ${E(doc.firstname)}</td>${days.map(x=>cell(doc,x)).join('')}</tr>`;
   p1+=rowsA.map(docRow).join('');
   if(rowsB.length) p1+=`<tr class="sep"><td></td>${days.map(()=>'<td></td>').join('')}</tr>`+rowsB.map(docRow).join('');
+  // [2026-10-14] Assistants puis médecins généralistes sous les PH (contrat en cours dans le mois, ou poste/absence)
+  const _mS=days[0].dk,_mE=days[days.length-1].dk;
+  const _inContract=doc=>!(doc.contractStart&&String(doc.contractStart).slice(0,10)>_mE)&&!(doc.contractEnd&&String(doc.contractEnd).slice(0,10)<_mS);
+  const _extra=re=>docs.filter(doc=>re.test(doc.role||'')&&_inContract(doc)&&active(doc)).sort((a,b)=>a.id-b.id);
+  [_extra(/^Assistant/i),_extra(/g[ée]n[ée]raliste/i)].forEach(g=>{
+    if(g.length) p1+=`<tr class="sep"><td></td>${days.map(()=>'<td></td>').join('')}</tr>`+g.map(docRow).join('');
+  });
   p1+=`</table>`;
   html=p1;
   }else if(_supTab===1){
@@ -3867,10 +3874,7 @@ function logAccess(action,detail){
   if(_vcIs()) return; // [2026-09-27] aperçu « Voir comme » : pas de trace au nom du médecin
   try{ if(action==='logout'){ if(window._usageStop) window._usageStop(); }                       // [2026-10-05] USAGE_ANON
        else if(action==='login'||action==='session_resume'){ setTimeout(function(){ if(window._usageStart) window._usageStart(); },1500); } }catch(e){}
-  // [2026-10-14] JOURNAL_SERVEUR : l'écriture directe dans access_logs (clé publique) est fermée ; le serveur écrit lui-même la ligne
-  // à partir du jeton de session (login, session_resume, view_planning). « logout » est écrit par viewer_logout ; « pwd_lockout » est déjà tracé côté serveur (viewer_login_fails).
-  try{ if(action==='logout'||action==='pwd_lockout') return; var _t=_jlxTok(); if(!_t) return;
-       sb.rpc('viewer_log_access',{p_token:_t,p_action:action,p_detail:String(detail||'').slice(0,120)}).then(function(){},function(){}); }catch(e){}
+  try{sb.from('access_logs').insert({hospital_id:CFG.hospital,doctor_id:me.id,action:action,detail:detail||'',ts:new Date().toISOString()}).then(function(){});}catch(e){}
 }
 
 // ════════ [2026-10-11] THEME_CLAIR — bascule clair / sombre (mémorisée sur l'appareil) ════════
