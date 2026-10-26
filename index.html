@@ -418,7 +418,7 @@ html[data-theme="light"] [style*="solid #7a1010"],html[data-theme="light"] [styl
 <!-- LOGIN -->
 <div id="scr-login">
   <div class="logo">📋 Julandrex</div>
-  <div class="logo-sub">Planning des urgences — CHR Citadelle</div>
+  <div class="logo-sub">Planning des urgences</div>
   <div class="login-box">
     <!-- [2026-09-23] Connexion par identifiant : la liste des médecins n'est plus affichée -->
     <form id="login-form" onsubmit="doLogin();return false;" autocomplete="on" style="max-width:360px;margin:0 auto;">
@@ -868,6 +868,17 @@ const CFG = {
   hospital: 'citadelle',
   gest_email: 'sorcegiuseppepro@gmail.com'
 };
+// [2026-10-26 lot 4b] Viewer unique : l'hôpital affiché est celui de la session, retrouvé par le serveur à la connexion
+// (viewer_login_global). Le serveur ne fait jamais confiance à cette valeur : elle sert à l'affichage et aux clés locales.
+const _JLX_HOSP_DEFAUT = CFG.hospital;
+try{ var _jlxH=sessionStorage.getItem('jlx_hosp'); if(_jlxH&&/^[a-z0-9_]{2,40}$/.test(_jlxH)) CFG.hospital=_jlxH; }catch(e){}
+function _jlxShowHospName(name){ var el=document.querySelector('.logo-sub'); if(el&&name) el.textContent='Planning des urgences — '+name; }
+function _jlxSetHosp(h,name){
+  if(h&&/^[a-z0-9_]{2,40}$/.test(h)){ CFG.hospital=h; try{ sessionStorage.setItem('jlx_hosp',h); }catch(e){} }
+  if(name){ try{ sessionStorage.setItem('jlx_hosp_name',name); }catch(e){} _jlxShowHospName(name); }
+}
+function _jlxClearHosp(){ CFG.hospital=_JLX_HOSP_DEFAUT; try{ sessionStorage.removeItem('jlx_hosp'); sessionStorage.removeItem('jlx_hosp_name'); }catch(e){} var el=document.querySelector('.logo-sub'); if(el) el.textContent='Planning des urgences'; }
+document.addEventListener('DOMContentLoaded',function(){ try{ var n=sessionStorage.getItem('jlx_hosp_name'); if(n) _jlxShowHospName(n); }catch(e){} });
 
 // ══════════════════════════════════════════════════════════
 // STATE
@@ -1195,7 +1206,9 @@ async function doLogin(){
   }
   var pwd=document.getElementById('pin-inp').value;
   if(!pwd){ _pe.textContent='Entrez votre mot de passe.'; _pe.style.display='block'; document.getElementById('pin-inp').focus(); return; }
-  var _vp=await sb.rpc('viewer_login_by_login',{p_hospital:CFG.hospital,p_login:_lg,p_pin:pwd});
+  // [2026-10-26 lot 4b] connexion sans hôpital : le serveur le retrouve à partir de l'identifiant (identifiant unique pour tous les hôpitaux)
+  var _vp=await sb.rpc('viewer_login_global',{p_login:_lg,p_pin:pwd});
+  if(_vp&&!_vp.error&&_vp.data&&_vp.data.hospital) _jlxSetHosp(_vp.data.hospital,_vp.data.hospital_name);
   if(_vp&&_vp.error){var eN=document.getElementById('pin-err');eN.textContent='Erreur réseau — réessayez.';eN.style.display='block';return;}
   var _vs=_vp&&_vp.data?_vp.data.status:null;
   // Le médecin est identifié par le serveur (et seulement si le mot de passe est juste, ou s'il n'en a pas encore)
@@ -1255,6 +1268,7 @@ function logout(){
   _sessActive=false;
   sessionStorage.removeItem('jlx_me');
   _jlxDropTok(); _exchSnap=null;
+  try{ _jlxClearHosp(); }catch(e){} // [2026-10-26 lot 4b]
   me=null;planning=null;
   if(rtChannel){sb.removeChannel(rtChannel);rtChannel=null;}
   document.getElementById('scr-main').style.display='none';
