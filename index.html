@@ -2510,13 +2510,14 @@ function loadQShifts(pYear,pMo){
     }
   }
   Promise.all(reqs.concat(extraReqs)).then(function(results){
-    window._qShifts={};
+    window._qShifts={}; window._qHO={}; // [2026-10-27 horaires du jour]
     window._qYear=tYear;
     window._qTri=tQ;
     window._allIndispos=[];
     results.forEach(function(r){
       if(!r.data)return;
       if(r.data.shifts) Object.assign(window._qShifts, r.data.shifts);
+      if(r.data.hours_override) Object.assign(window._qHO, r.data.hours_override); // [2026-10-27 horaires du jour]
       if(r.data.indispos&&r.data.indispos.length){
         window._allIndispos=window._allIndispos.concat(r.data.indispos);
       }
@@ -2845,7 +2846,7 @@ function _dayPlanRender(ov,box,dk){
     else if(sh){ names=who(did)+'<br>'+who(sh.docId2); }
     var k=SEC.some(function(x){ return x[0]===p.section; })?p.section:'autre';
     if(!groups[k]){ groups[k]=[]; order.push(k); }
-    var rpAt='', rpSub=(p.start&&p.end)?p.start+'–'+p.end:'';
+    var _qd=vPH(p,dk), rpAt='', rpSub=(_qd.start&&_qd.end)?_qd.start+'–'+_qd.end+(_qd._ho?' *':''):''; // [2026-10-27 horaires du jour]
     // [2026-10-02] REPRISE — poste d'un collègue (non partagé, jour non passé) : toucher pour proposer de le reprendre
     if(!sh&&!vIsMe(did)&&dk>=auj&&docOf(did)){
       var deja=(exchanges||[]).some(function(x){ return x&&x.proposer_id===me.id&&(x.status==='open'||x.status==='accepted')
@@ -2903,7 +2904,7 @@ function _dayPlanReprise(ov,box,dk,pid,did){
     +'<button type="button" data-close aria-label="Fermer" style="'+btn+'font-size:14px;">✕</button></div>'
     +'<div style="background:var(--bg3);border-left:4px solid '+_dpE(p.color||'#94a3b8')+';border-radius:10px;padding:11px 13px;margin-top:6px;">'
     +'<div style="font-size:14px;font-weight:700;color:var(--t1);">'+_dpE(p.full||p.name)+'</div>'
-    +'<div style="font-size:12px;color:var(--t2);margin-top:2px;">'+_dpE(dLbl.charAt(0).toUpperCase()+dLbl.slice(1))+(p.start&&p.end?' · '+_dpE(p.start)+'–'+_dpE(p.end):'')+'</div>'
+    +'<div style="font-size:12px;color:var(--t2);margin-top:2px;">'+_dpE(dLbl.charAt(0).toUpperCase()+dLbl.slice(1))+(function(q){ return q.start&&q.end?' · '+_dpE(q.start)+'–'+_dpE(q.end)+(q._ho?' (horaire du jour)':''):''; })(vPH(p,dk))+'</div>'
     +'<div style="font-size:12px;color:var(--t2);margin-top:2px;">Titulaire : <b style="color:var(--t1);">'+_dpE(hName)+'</b></div></div>'
     +'<div style="font-size:12.5px;color:var(--t2);line-height:1.5;margin-top:8px;">Vous proposez à <b>'+_dpE(hName)+'</b> de reprendre son poste. En cas d’accord, le gestionnaire du planning valide, puis le poste passe dans votre planning.</div>'
     +(abs?'<div style="font-size:12px;color:var(--warn);background:rgba(245,158,11,.1);border-radius:8px;padding:7px 10px;margin-top:8px;">⚠️ Vous êtes noté(e) absent(e) ce jour-là : le gestionnaire en tiendra compte.</div>':'')
@@ -3079,6 +3080,9 @@ function _rpInfo(r){
 //               poste, le second la suite. Chacun ne voit QUE sa part (heures et horaires).
 //   · doublé  : les deux font l'intégralité du poste, affiché comme un poste normal (pas de marque).
 function vIsMe(id){ return me&&(id==me.local_id||id==me.id); }
+// [2026-10-27 horaires du jour] Horaire du jour : planning.hours_override = { 'AAAA-MM-JJ': { poste: { start, end } } }
+function vHO(dk,pid){ var x=null; [planning&&planning.hours_override, window._qHO].forEach(function(h){ if(!x&&h&&h[dk]&&h[dk][pid]) x=h[dk][pid]; }); return (x&&(x.start||x.end))?x:null; }
+function vPH(p,dk){ var o=(p&&dk)?vHO(dk,p.id):null; return o?Object.assign({},p,{start:o.start||p.start,end:o.end||p.end,_ho:true}):p; }
 function vShare(dk,pid){ var d=window._sharedShifts&&window._sharedShifts[dk]; var x=d&&d[pid]; return (x&&x.docId2!=null)?x:null; }
 function vShareSpans(post,sh){
   var mn=function(t){ var p=String(t||'00:00').split(':'); return (+p[0]||0)*60+(+p[1]||0); };
@@ -3207,7 +3211,7 @@ function renderCalPerso(){
       cell.style.background=p0.color+'33';
       dspan.style.color=p0.color+'cc';
       var cspan=document.createElement('span'); cspan.className='cp-code';
-      cspan.style.color=p0.color; cspan.textContent=sc;
+      cspan.style.color=p0.color; cspan.textContent=sc+(!p0._exc&&vHO(dk,p0.id)?'*':''); // [2026-10-27 horaires du jour]
       if(p0._split){   // [2026-09-22] poste SCINDÉ : marque bien visible au-dessus du poste
         cspan.textContent='';
         var bd=document.createElement('span');
@@ -3222,7 +3226,7 @@ function renderCalPerso(){
         cell.title=excDetail;
         (function(msg){cell.addEventListener('click',function(){toast(msg);});})(excDetail);
       }else{
-      cell.title=p0.full+' · '+p0.start+'–'+p0.end;
+      var _q0=vPH(p0,dk); cell.title=_q0.full+' · '+_q0.start+'–'+_q0.end+(_q0._ho?' (horaire du jour)':''); // [2026-10-27 horaires du jour]
       if(p0._split){ (function(d2,q0,ip){cell.addEventListener('click',function(){openPickerModal(d2,q0,null,ip);});})(dk,p0,isPast); }
       else if(!isPast){ (function(d2,pid){cell.addEventListener('click',function(){openModal(d2,pid);});})(dk,p0.id); }
       }
@@ -3270,7 +3274,7 @@ function renderCalPerso(){
       }
       cell.appendChild(s0);cell.appendChild(s1);
       // [2026-09-22] Infobulle détaillée : le médecin doit voir ses HORAIRES, surtout sur un poste scindé
-      cell.title=myPosts.map(function(p){return p._exc?p.full+' · '+p.hours+' h':p.full+' · '+p.start+'–'+p.end;}).join('\n');
+      cell.title=myPosts.map(function(p){ if(p._exc) return p.full+' · '+p.hours+' h'; var q=vPH(p,dk); return q.full+' · '+q.start+'–'+q.end+(q._ho?' (horaire du jour)':''); }).join('\n'); // [2026-10-27 horaires du jour]
       if(realPosts.length>=2){
         if(!isPast||realPosts[0]._split||realPosts[1]._split){
           (function(d2,q0,q1,ip){cell.addEventListener('click',function(){openPickerModal(d2,q0,q1,ip);});})(dk,realPosts[0],realPosts[1],isPast);
@@ -3305,7 +3309,7 @@ function renderCalPerso(){
         for(var pp2=0;pp2<posts.length;pp2++){if(posts[pp2].id===pids2[pi2]){post2=posts[pp2];break;}}
         if(post2){
           totalShifts++;
-          var p0s=post2.start.split(':'),p1s=post2.end.split(':');
+          var _q2=vPH(post2,dk2), p0s=_q2.start.split(':'),p1s=_q2.end.split(':'); // [2026-10-27 horaires du jour]
           var h0=parseInt(p0s[0])+parseInt(p0s[1])/60,h1=parseInt(p1s[0])+parseInt(p1s[1])/60;
           // Règle stricte : poste B suivi de SMUR-N le même jour en semaine -> B se termine à 19h
           if(post2.id==='b'&&dw2>=1&&dw2<=5){
@@ -3409,7 +3413,7 @@ function renderCalPerso(){
         if(qpart){
           for(var pp=0;pp<posts.length;pp++){
             if(posts[pp].id===pid){
-              var p=posts[pp];
+              var p=vPH(posts[pp],qDk2); // [2026-10-27 horaires du jour]
               if(p.start&&p.end){
                 var sh=parseInt(p.start.split(":")[0]),sm=parseInt(p.start.split(":")[1]);
                 var eh=parseInt(p.end.split(":")[0]),em2=parseInt(p.end.split(":")[1]);
@@ -3727,7 +3731,7 @@ function renderGrid(){
         h+=`<td class="c-filled${isMe2?' c-mine':''}${hasX?' c-exch':''}${isTd?' c-today':''}"
           style="${isMe2?`border-color:${me.color};`:`color:${p.color};`}"
           ${isMe2?`onclick="openModal('${dk}','${p.id}')"`:''} title="${doc.firstname} ${doc.lastname}">
-          ${lbl}</td>`;
+          ${lbl}${vHO(dk,p.id)?'*':''}</td>`;
       }
       h+='</tr>';
     }
@@ -3756,7 +3760,7 @@ function renderShiftWidget(){
     }
   }
   if(todayS.length){
-    var p=todayS[0].p;
+    var p=vPH(todayS[0].p,today); // [2026-10-27 horaires du jour]
     el.className='shift-widget shift-today';
     el.innerHTML='<span style="font-size:20px">🔴</span><div><strong>Shift aujourd\'hui !</strong><br><span style="opacity:.75">'+(p.full||p.name)+' · '+p.start+'–'+p.end+'</span></div>';
   }else if(nextS){
@@ -3764,7 +3768,7 @@ function renderShiftWidget(){
     var diff=Math.round((dt.getTime()-new Date().setHours(0,0,0,0))/86400000);
     var DS2=['dim','lun','mar','mer','jeu','ven','sam'];
     var dlbl=DS2[dt.getDay()]+' '+dt.getDate()+' '+MO[dt.getMonth()].toLowerCase().slice(0,3)+'.';
-    var pp=nextS.p;
+    var pp=vPH(nextS.p,nextS.dk); // [2026-10-27 horaires du jour]
     el.className='shift-widget shift-next';
     el.innerHTML='<span style="font-size:20px">📅</span><div><strong>Prochain shift</strong><br><span style="opacity:.75">'+dlbl+' — '+(pp.full||pp.name)+' '+pp.start+'–'+pp.end+' · <em>dans '+diff+' jour'+(diff>1?'s':'')+'</em></span></div>';
   }else{el.className='';el.innerHTML='';}
