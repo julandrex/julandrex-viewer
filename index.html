@@ -4806,6 +4806,7 @@ async function _vcStart(tok){
   try{ sessionStorage.setItem('jlx_imp','1'); sessionStorage.setItem('jlx_imp_by',r.data.by||''); sessionStorage.setItem('jlx_imp_end',r.data.expires_at||'');
        sessionStorage.setItem('jlx_me',JSON.stringify(r.data.doctor)); sessionStorage.setItem('jlx_last',String(Date.now())); }catch(e){}
   me=r.data.doctor;
+  try{ if(r.data.hospital) _jlxSetHosp(r.data.hospital, r.data.hospital_name); }catch(e){} // [2026-10-27 voir comme hors Citadelle]
   _vcGuards();
   showMain();
   _vcBanner();
@@ -4824,6 +4825,7 @@ async function _vcEnd(msg){
   if(t&&sb){ try{ await Promise.race([sb.rpc('viewer_logout',{p_token:t}),new Promise(function(r){ setTimeout(r,1500); })]); }catch(e){} }
   _jlxSetTok(null);
   try{ ['jlx_imp','jlx_imp_by','jlx_imp_end','jlx_me','jlx_last'].forEach(function(k){ sessionStorage.removeItem(k); }); }catch(e){}
+  try{ _jlxClearHosp(); }catch(e){} // [2026-10-27 voir comme hors Citadelle]
   me=null;
   document.body.innerHTML='<div style="font-family:system-ui,sans-serif;color:#cbd5e1;background:#0f172a;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;">'
     +'<div><div style="font-size:40px;">👁</div><div style="font-size:17px;font-weight:700;margin:10px 0;">'+(msg||'Aperçu fermé.')+'</div>'
