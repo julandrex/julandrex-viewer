@@ -3508,10 +3508,62 @@ function _supUnavailDow(doc,dk){
 }
 var _supTab=0;
 function _supSetTab(i){ _supTab=i; renderSupervPDF(); }
+// [2026-10-27 grille hors Citadelle] Planning du mois au format Excel de l'hôpital (hors Citadelle)
+function _jlxGrilleGenerique(bd){
+  var E=function(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+  var y=cy, m=cm, d2=new Date(y,m+1,0).getDate(), shifts=planning.shifts||{}, posts=(planning.posts||[]).filter(function(p){ return p&&p.id; });
+  var myId=me?(me.local_id!=null?me.local_id:me.id):null;
+  var nmOf=function(id){ var d=(doctors||[]).find(function(x){ return (x.local_id!=null?x.local_id:x.id)===id; }); if(!d) return '';
+    return String(d.lastname||'').toLowerCase().replace(/(^|[\s'-])(\S)/g,function(a,b,c){ return b+c.toUpperCase(); }); };
+  var nuit=function(p){ return !!(p.end&&p.start&&p.end<=p.start); };
+  var weP=function(p){ return p.avail==='we'||p.avail==='sat'||p.avail==='sun'; };
+  var grp=[['Semaine — jour',posts.filter(function(p){ return !weP(p)&&!nuit(p); })],['Semaine — nuit',posts.filter(function(p){ return !weP(p)&&nuit(p); })],
+           ['Week-end — jour',posts.filter(function(p){ return weP(p)&&!nuit(p); })],['Week-end — nuit',posts.filter(function(p){ return weP(p)&&nuit(p); })]]
+          .filter(function(g){ return g[1].length; });
+  var hh=function(t){ return String(t||'').replace(/^0(\d)/,'$1').replace(':00','h').replace(':','h'); };
+  var JOURS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  var pub=planning.published_at?new Date(planning.published_at):null;
+  var h='<table class="jxg"><tr><td class="ti" colspan="2">'+(pub?'Publié le<br>'+pub.toLocaleDateString('fr-BE')+' à '+pub.toLocaleTimeString('fr-BE',{hour:'2-digit',minute:'2-digit'}):'')+'</td>'
+    +'<td class="tt" colspan="'+grp.reduce(function(n,g){ return n+g[1].length; },0)+'">'+E(MO[m]+' '+y)+'</td></tr>';
+  h+='<tr class="g"><td colspan="2" rowspan="3"></td>'+grp.map(function(g){ return '<td class="s" colspan="'+g[1].length+'">'+E(g[0])+'</td>'; }).join('')+'</tr>';
+  h+='<tr class="p">'+grp.map(function(g){ return g[1].map(function(p,i){ return '<td class="'+(i?'':'s')+'">'+E(p.name)+'</td>'; }).join(''); }).join('')+'</tr>';
+  h+='<tr class="hr">'+grp.map(function(g){ return g[1].map(function(p,i){ return '<td class="'+(i?'':'s')+'">'+E(hh(p.start)+'–'+hh(p.end))+'</td>'; }).join(''); }).join('')+'</tr>';
+  var ho=[];
+  for(var d=1;d<=d2;d++){
+    var dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'), w=new Date(y,m,d).getDay();
+    var fer=false; try{ fer=(typeof isFerie==='function')&&!!isFerie(dk); }catch(e){}
+    var we=w===0||w===6||fer;
+    h+='<tr class="'+(we?'we':'')+'"><td class="j">'+(fer&&!(w===0||w===6)?'Férié':JOURS[w])+'</td><td class="n">'+d+'</td>';
+    grp.forEach(function(g){ g[1].forEach(function(p,i){
+      var cl=i?'':' s';
+      var actif=p.avail==='all'||!p.avail||(weP(p)?we:!we);
+      if(!actif){ h+='<td class="x'+cl+'"></td>'; return; }
+      var id=(shifts[dk]||{})[p.id];
+      if(id==null){ h+='<td class="v'+cl+'"></td>'; return; }
+      var t=nmOf(id), mine=id===myId, sh=vShare(dk,p.id);
+      if(sh){ t+=(sh.mode==='double'?'+':'/')+nmOf(sh.docId2); if(sh.docId2===myId) mine=true; }
+      var o=vHO(dk,p.id); if(o){ ho.push(d+'/'+(m+1)+' '+p.name+' '+hh(o.start||p.start)+'–'+hh(o.end||p.end)); }
+      h+='<td class="c'+cl+(mine?' me':'')+'">'+E(t)+(o?'*':'')+'</td>';
+    }); });
+    h+='</tr>';
+  }
+  h+='</table>';
+  h+='<div class="jxg-pied">'+(ho.length?'<b>* Horaire du jour :</b> '+E(ho.join(' · '))+'<br>':'')+'Bleu : week-end et jour férié · gris : poste fermé ce jour-là · cadre rouge : à pourvoir · encadré : vos postes</div>';
+  var css='<style>.jxg{border-collapse:collapse;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:11px;min-width:100%;}'
+    +'.jxg td{border:1px solid #555;padding:2px 4px;text-align:center;white-space:nowrap;height:22px;}'
+    +'.jxg .ti{font-size:10px;} .jxg .tt{font-size:20px;font-weight:700;text-align:left;padding:6px 10px;border:2px solid #000;}'
+    +'.jxg tr.g td{font-weight:700;text-transform:uppercase;background:#dbe5f1;} .jxg tr.p td{font-weight:700;background:#f2f2f2;} .jxg tr.hr td{font-size:9.5px;color:#333;}'
+    +'.jxg td.j{text-align:left;font-weight:700;} .jxg td.n{font-weight:700;} .jxg tr.we td{background:#90b5f8;}'
+    +'.jxg td.x{background:#e2e2e2!important;} .jxg td.v{box-shadow:inset 0 0 0 1.5px #c00;} .jxg td.s{border-left:2px solid #000;}'
+    +'.jxg td.me{box-shadow:inset 0 0 0 2.5px #1e3a5f;font-weight:700;background:#fff8c5!important;}'
+    +'.jxg-pied{background:#fff;color:#333;font-size:11px;padding:8px 4px;line-height:1.5;}</style>';
+  bd.innerHTML=css+'<div class="sup"><div class="sup-sc">'+h+'</div></div>';
+}
 function renderSupervPDF(){
   const bd=document.getElementById('grille-bd');
   document.getElementById('grille-mlbl').textContent=MO[cm]+' '+cy;
   if(!planning){ bd.innerHTML='<div class="sup-empty">Planning non disponible pour ce mois.</div>'; return; }
+  if(CFG.hospital!=='citadelle') return _jlxGrilleGenerique(bd); // [2026-10-27 grille hors Citadelle]
   const y=cy,m=cm,d2=new Date(y,m+1,0).getDate(),monthLabel=`${MO[m]} ${y}`;
   const shifts=planning.shifts||{}, indispos=Array.isArray(planning.indispos)?planning.indispos:[];
   const exceptionalShifts=window._excShifts||{};
