@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- © 2026 Dr Giuseppe Sorce — Julandrex. Tous droits réservés. Usage limité au service des urgences du CHR de la Citadelle
-     dans le cadre de la convention conclue avec l'Hôpital. Toute copie, modification, diffusion ou réutilisation est interdite
+<!-- © 2026 Dr Giuseppe Sorce — Julandrex. Tous droits réservés. Usage limité aux services hospitaliers
+     dans le cadre de la convention conclue avec chaque établissement. Toute copie, modification, diffusion ou réutilisation est interdite
      sans l'accord écrit de l'auteur. [2026-09-28] ANONYMISATION -->
 <html lang="fr">
 <head>
@@ -880,6 +880,7 @@ function _jlxSetHosp(h,name){
   if(h&&/^[a-z0-9_]{2,40}$/.test(h)){ CFG.hospital=h; try{ sessionStorage.setItem('jlx_hosp',h); }catch(e){} }
   if(name){ try{ sessionStorage.setItem('jlx_hosp_name',name); }catch(e){} _jlxShowHospName(name); }
 }
+function _jlxHospNom(){ try{ return sessionStorage.getItem('jlx_hosp_name')||''; }catch(e){ return ''; } } // [2026-10-28 générique étape 1]
 function _jlxClearHosp(){ CFG.hospital=_JLX_HOSP_DEFAUT; try{ sessionStorage.removeItem('jlx_hosp'); sessionStorage.removeItem('jlx_hosp_name'); }catch(e){} var el=document.querySelector('.logo-sub'); if(el) el.textContent='Planning des urgences'; var th=document.getElementById('tb-hosp'); if(th) th.textContent=''; }
 document.addEventListener('DOMContentLoaded',function(){ try{ var n=sessionStorage.getItem('jlx_hosp_name'); if(n) _jlxShowHospName(n); }catch(e){} });
 
@@ -2272,7 +2273,7 @@ async function submitDesiderata(){
       method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
       body:JSON.stringify({
         type:'desiderata_submitted',to_email:CFG.gest_email,to_name:'Gestionnaire',
-        hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
+        hospital_name:_jlxHospNom(),
         data:{doctor_name:me.firstname+' '+me.lastname,quarter:quarter,year:year,
           requests:_keptRows.map(function(r){return {type:r.type,date_start:r.date_start,date_end:r.date_end,detail:r.detail||''};})}
       })
@@ -2961,7 +2962,7 @@ async function _dayPlanSend(ov,box,dk,p,hold,dLbl,msg,b){
     body:JSON.stringify({hospital:CFG.hospital,doctor_ids:[String(hold.id)],title:give?'⇄ Proposition d’échange':'🙋 Proposition de reprise',
       message:me.firstname+' '+me.lastname+(give?' vous propose un échange : vous prenez '+_cxPairTxt(give.pids[0],give.pids[1])+' ('+_cxDateLbl(give.dk)+') contre votre '+takeTxt+' ('+dLbl+')':' propose de reprendre votre poste — '+takeTxt+' ('+dLbl+')'),url:'https://julandrex.github.io/julandrex-viewer/'})}).catch(function(){}); }catch(e){}
   try{ fetch(CFG.url+'/functions/v1/send-notification',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
-    body:JSON.stringify({type:'exchange_requested',hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',doctor_id:hold.id,
+    body:JSON.stringify({type:'exchange_requested',hospital_name:_jlxHospNom(),doctor_id:hold.id,
       data:give?{kind:'swap',post_name:_cxPairTxt(give.pids[0],give.pids[1],true),date:_cxDateLbl(give.dk),counter_post_name:takeTxtT,counter_date:dLbl,message:msg||null}
         :{kind:'reprise',post_name:takeTxtT,date:dLbl,message:msg||null}})}).catch(function(){}); }catch(e){}
   try{ var fr=await sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false});
@@ -3914,7 +3915,7 @@ async function sendMesHeures(){
       _hrsMsg(/jlx_readonly/.test(m)?'Aperçu en lecture seule : rien n’est envoyé.':/jlx_dup/.test(m)?'ℹ️ Vous avez déjà fait cette demande pour ce jour.':m.replace(/^jlx_\w+:\s*/,''),false); return; }
     _hrsMsg('✅ Demande envoyée au gestionnaire : '+_hrsFmt(_hrsSign*h)+' le '+_hrsDate(day)+'.',true);
     try{ fetch(CFG.url+'/functions/v1/send-notification',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
-      body:JSON.stringify({type:'hours_requested',hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',data:{}})}).catch(function(){}); }catch(e){} // HOURS_MAIL
+      body:JSON.stringify({type:'hours_requested',hospital_name:_jlxHospNom(),data:{}})}).catch(function(){}); }catch(e){} // HOURS_MAIL
     document.getElementById('hrs-h').value=''; document.getElementById('hrs-reason').value='';
     loadMyHeures();
   }catch(e){ _hrsMsg('Envoi impossible : '+e.message,false); }
@@ -4252,7 +4253,7 @@ async function acceptX(id){
           type:'exchange_accepted',
           to_email:CFG.gest_email,
           to_name:'Gestionnaire',
-          hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
+          hospital_name:_jlxHospNom(),
           data:{
             acceptor_name:me.firstname+' '+me.lastname,
             proposer_name:proposer?proposer.firstname+' '+proposer.lastname:'?',
@@ -4625,7 +4626,7 @@ async function submitExchange(){
     const post=planning?.posts?.find(p=>p.id===mPost);
     const _notifData={
       type:'exchange_requested',
-      hospital_name:CFG.hospital==='citadelle'?'CHR Citadelle':'CHR Huy',
+      hospital_name:_jlxHospNom(),
       data:_cx?{proposer_name:me.firstname+' '+me.lastname,kind:'swap',post_name:_cxPairTxt(mPost,_cxSib,true),date:_cxDateLbl(mDate),
         counter_post_name:_cxPairTxt(_cx.pids[0],_cx.pids[1],true),counter_date:_cxDateLbl(_cx.dk),message:document.getElementById('m-msg').value.trim()||null}
         :{proposer_name:me.firstname+' '+me.lastname,post_name:post?.full||post?.name||mPost,date:mDate,message:document.getElementById('m-msg').value.trim()||null}
@@ -5289,59 +5290,7 @@ async function rejectX(id){
 </script><div class="grille-ov" id="grille-ov"><div class="grille-wrap"><div class="grille-tb"><button class="mnav" onclick="prevMonth()" aria-label="Mois précédent">‹</button><span id="grille-mlbl" style="font-size:13px;font-weight:600;min-width:110px;text-align:center;"></span><button class="mnav" onclick="nextMonth()" aria-label="Mois suivant">›</button><span style="flex:1;"></span><button class="grille-close" onclick="closeGrille()">✕ Fermer</button></div><div class="grille-bd" id="grille-bd"></div></div></div>
 
 
-<!--
-╔══════════════════════════════════════════════════════════════╗
-║  TODO AZURE AD — Décommenter quand IT CHR Citadelle approuve ║
-║  Prérequis : App Registration dans le tenant CHR Citadelle   ║
-║  1. IT crée App Registration → noter clientId + tenantId     ║
-║  2. Remplir MSAL_CONFIG ci-dessous                           ║
-║  3. Remplir doctors.email avec adresses @citadelle.be        ║
-║  4. Décommenter script MSAL dans head                        ║
-║  5. Remplacer écran login par bouton Microsoft               ║
-║  6. Supprimer mot de passe + TOTP custom                     ║
-╚══════════════════════════════════════════════════════════════╝
-  <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
--->
-<script>
-/*=== AZURE AD — NE PAS ACTIVER AVANT ACCORD IT ===
-
-const MSAL_CONFIG = {
-  auth: {
-    clientId:    'TODO_CLIENT_ID',
-    authority:   'https://login.microsoftonline.com/TODO_TENANT_ID',
-    redirectUri: 'https://julandrex.github.io/julandrex-viewer/'
-  },
-  cache: { cacheLocation: 'sessionStorage' }
-};
-
-async function msalLogin() {
-  const pca = new msal.PublicClientApplication(MSAL_CONFIG);
-  await pca.initialize();
-  try {
-    const res = await pca.loginPopup({ scopes: ['openid','email','profile'] });
-    const upn = (res.account.username || '').toLowerCase();
-    const doc = doctors.find(d => d.email && d.email.toLowerCase() === upn);
-    if (!doc) { alert('Compte ' + upn + ' non reconnu. Contactez le responsable.'); return; }
-    me = { ...doc };
-    sessionStorage.setItem('jlx_me', JSON.stringify(me));
-    showMain();
-  } catch(e) {
-    if (e.errorCode !== 'user_cancelled') alert('Erreur Microsoft : ' + e.message);
-  }
-}
-
-// Remplacer contenu de #scr-login par :
-// <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1.5rem">
-//   <p style="font-size:1.1rem;font-weight:600">Julandrex — CHR Citadelle</p>
-//   <button onclick="msalLogin()" style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1.5rem;background:#fff;border:1px solid #ccc;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:500;color:#111">
-//     <svg width="20" height="20" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-//     Se connecter avec Microsoft
-//   </button>
-//   <p style="font-size:.75rem;opacity:.5;margin:0">Utilisez votre adresse @citadelle.be</p>
-// </div>
-
-=== FIN BLOC AZURE AD ===*/
-</script>
+<!-- [2026-10-28 générique étape 1] bloc Azure AD (connexion Microsoft, jamais activé) supprimé -->
 <!-- ══════════ ANIMATIONS (port animate-ui → vanilla) ══════════ -->
 <style id="jx-anim">
 @media (prefers-reduced-motion: no-preference){
