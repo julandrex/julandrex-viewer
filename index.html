@@ -18,7 +18,7 @@
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Planning Urgences</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js" integrity="sha384-dl/4LkSyQ4uEucc48NM6VDZLAjLLq9yMzZ5JLXumBq7Ld33XBof73hseOqPhO89+" crossorigin="anonymous"></script><!-- [2026-10-28 XSS échange] -->
 <style>
 :root{--bg:#0f1117;--bg1:#161b27;--bg2:#1c2235;--bg3:#232b3e;--t1:#dde3f0;--t2:#8892aa;--t3:#525e78;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--acc:#3b82f6;--acc2:#6366f1;--b:rgba(255,255,255,.08);}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -936,6 +936,7 @@ async function init(){
 // avec la clé publique. Le viewer passe par des fonctions serveur (viewer_exch_*, viewer_desid_*) qui vérifient
 // un jeton de session émis à la connexion (viewer_login) et les droits du médecin ligne par ligne.
 // Cette couche imite sb.from(...) pour ces deux tables : les appels existants restent inchangés.
+function _xe(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); } // [2026-10-28 XSS échange]
 function _jlxTok(){ try{ return sessionStorage.getItem('jlx_tok')||''; }catch(e){ return ''; } }
 function _jlxSetTok(t){ try{ if(t) sessionStorage.setItem('jlx_tok',t); else sessionStorage.removeItem('jlx_tok'); }catch(e){} }
 function _jlxDropTok(){ var t=_jlxTok(); _jlxSetTok(null); if(t&&sb) sb.rpc('viewer_logout',{p_token:t}).then(function(){},function(){}); }
@@ -4097,7 +4098,7 @@ function renderPanel(){
     if(r.status==='pending_switch'){
       const isPropSw=r.proposer_id===me.id;
       const alreadyOkSw=isPropSw?r.switch_proposer_ok:r.switch_acceptor_ok;
-      const othNameSw=isPropSw?(acc?acc.firstname+' '+acc.lastname:'accepteur'):(prop?prop.firstname+' '+prop.lastname:'demandeur');
+      const othNameSw=_xe(isPropSw?(acc?acc.firstname+' '+acc.lastname:'accepteur'):(prop?prop.firstname+' '+prop.lastname:'demandeur')); // [2026-10-28 XSS échange]
       const swPostProp=r.switch_proposer_post?((planning&&planning.posts||[]).find(function(p){return p.id===r.switch_proposer_post;})||{full:r.switch_proposer_post}).full||r.switch_proposer_post:'(aucun)';
       const swPostsAcc=(r.switch_acceptor_posts||[]).map(function(pid){return ((planning&&planning.posts||[]).find(function(p){return p.id===pid;})||{full:pid}).full||pid;}).join(' + ')||'(aucun)';
       if(!alreadyOkSw){
@@ -4115,17 +4116,17 @@ function renderPanel(){
       } else {
         acts='<div style="color:var(--ok);font-size:11px;padding:8px 0;">✔ Vous avez validé le switch — en attente de '+othNameSw+'</div>';
       }
-    }    if(r.status==='open'&&r.cancel_reason&&r.acceptor_id===me.id){acts='<div style="background:rgba(239,68,68,.08);border-left:3px solid var(--err);border-radius:0 8px 8px 0;padding:10px 12px;font-size:11px;"><div style="font-weight:700;color:var(--err);margin-bottom:4px;">✗ Refusé par le gestionnaire</div>'+r.cancel_reason+'</div>';}
+    }    if(r.status==='open'&&r.cancel_reason&&r.acceptor_id===me.id){acts='<div style="background:rgba(239,68,68,.08);border-left:3px solid var(--err);border-radius:0 8px 8px 0;padding:10px 12px;font-size:11px;"><div style="font-weight:700;color:var(--err);margin-bottom:4px;">✗ Refusé par le gestionnaire</div>'+_xe(r.cancel_reason)+'</div>';}
     let stLbl='';
     if(r.status==='accepted'&&!isMe2&&!isMeAcc)stLbl='<span class="xstatus accepted">En attente de confirmation</span>';
     if(r.status==='confirmed')stLbl='<span class="xstatus confirmed">✓ Confirmé</span>';
     return `<div class="xcard">
       <div class="xcard-hdr">
-        <div style="font-size:12px;font-weight:600;">${prop?prop.firstname+' '+prop.lastname:'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
+        <div style="font-size:12px;font-weight:600;">${prop?_xe(prop.firstname+' '+prop.lastname):'?'}${isMe2?' <span style="font-size:10px;color:var(--acc)">(vous)</span>':''}</div>
         <span class="xbadge exch">${r.type==='reprise'?'🙋 Reprise':(r.type==='swap'?'⇄ Échange croisé':'🔄 Échange')}</span>
       </div>
-      <div class="xinfo">${_rpInfo(r)}${(function(){var m=post?post.full||post.name:r.proposer_post;if(!r.proposer_post2)return m;var p2=(planning.posts||[]).find(function(q){return q.id===r.proposer_post2;});return m+' + '+(p2?p2.full||p2.name:r.proposer_post2);}())} · ${fmtDate(r.proposer_date)}${_rpSuffix(r)}${acc?`<br>Accepté par <b>${acc.firstname} ${acc.lastname}</b>`:''}</div>
-      ${r.message?`<div class="xmsg">"${r.message}"</div>`:''}
+      <div class="xinfo">${_rpInfo(r)}${(function(){var m=post?post.full||post.name:r.proposer_post;if(!r.proposer_post2)return m;var p2=(planning.posts||[]).find(function(q){return q.id===r.proposer_post2;});return m+' + '+(p2?p2.full||p2.name:r.proposer_post2);}())} · ${fmtDate(r.proposer_date)}${_rpSuffix(r)}${acc?`<br>Accepté par <b>${_xe(acc.firstname+' '+acc.lastname)}</b>`:''}</div>
+      ${r.message?`<div class="xmsg">"${_xe(r.message)}"</div>`:''}
       ${acts?`<div class="xacts">${acts}</div>`:stLbl}
     </div>`;
   }).join('');
