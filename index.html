@@ -61,6 +61,7 @@ button{font-family:inherit;}
 #scr-main{display:none;flex-direction:column;height:100vh;height:100dvh;}
 .topbar{background:var(--bg1);border-bottom:1px solid var(--b);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .tb-logo{font-size:14px;font-weight:800;color:var(--acc);}
+.tb-hosp{display:block;font-size:10px;font-weight:600;color:var(--t3);line-height:1.1;white-space:nowrap;}.tb-hosp:empty{display:none;} /* [2026-10-28 ouverture Huy] */
 .tb-sep{color:var(--t3);}
 .tb-doc{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
 .tb-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
@@ -452,7 +453,7 @@ html[data-theme="light"] [style*="solid #7a1010"],html[data-theme="light"] [styl
 <!-- MAIN -->
 <div id="scr-main">
   <div class="topbar">
-    <span class="tb-logo">Julandrex</span>
+    <span class="tb-logo">Julandrex<span id="tb-hosp" class="tb-hosp"></span></span><!-- [2026-10-28 ouverture Huy] -->
     <span class="tb-sep">|</span>
     <div class="tb-doc">
       <div class="tb-av" id="tb-av"></div>
@@ -872,12 +873,13 @@ const CFG = {
 // (viewer_login_global). Le serveur ne fait jamais confiance à cette valeur : elle sert à l'affichage et aux clés locales.
 const _JLX_HOSP_DEFAUT = CFG.hospital;
 try{ var _jlxH=sessionStorage.getItem('jlx_hosp'); if(_jlxH&&/^[a-z0-9_]{2,40}$/.test(_jlxH)) CFG.hospital=_jlxH; }catch(e){}
-function _jlxShowHospName(name){ var el=document.querySelector('.logo-sub'); if(el&&name) el.textContent='Planning des urgences — '+name; }
+function _jlxShowHospName(name){ var el=document.querySelector('.logo-sub'); if(el&&name) el.textContent='Planning des urgences — '+name;
+  var th=document.getElementById('tb-hosp'); if(th) th.textContent=name||''; } // [2026-10-28 ouverture Huy] + en-tête
 function _jlxSetHosp(h,name){
   if(h&&/^[a-z0-9_]{2,40}$/.test(h)){ CFG.hospital=h; try{ sessionStorage.setItem('jlx_hosp',h); }catch(e){} }
   if(name){ try{ sessionStorage.setItem('jlx_hosp_name',name); }catch(e){} _jlxShowHospName(name); }
 }
-function _jlxClearHosp(){ CFG.hospital=_JLX_HOSP_DEFAUT; try{ sessionStorage.removeItem('jlx_hosp'); sessionStorage.removeItem('jlx_hosp_name'); }catch(e){} var el=document.querySelector('.logo-sub'); if(el) el.textContent='Planning des urgences'; }
+function _jlxClearHosp(){ CFG.hospital=_JLX_HOSP_DEFAUT; try{ sessionStorage.removeItem('jlx_hosp'); sessionStorage.removeItem('jlx_hosp_name'); }catch(e){} var el=document.querySelector('.logo-sub'); if(el) el.textContent='Planning des urgences'; var th=document.getElementById('tb-hosp'); if(th) th.textContent=''; }
 document.addEventListener('DOMContentLoaded',function(){ try{ var n=sessionStorage.getItem('jlx_hosp_name'); if(n) _jlxShowHospName(n); }catch(e){} });
 
 // ══════════════════════════════════════════════════════════
@@ -1439,7 +1441,7 @@ async function requestPwdHelp(){
   if(m){ m.style.display='block'; m.textContent='Envoi…'; }
   try{
     var r=await fetch(CFG.url+'/functions/v1/update-pin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},
-      body:JSON.stringify({action:'help_request',login:_lg,hospital_id:CFG.hospital,reason:_pwdHelpReason})});
+      body:JSON.stringify({action:'help_request',login:_lg,reason:_pwdHelpReason})}); // [2026-10-28 ouverture Huy] sans hôpital (update-pin v18)
     var d=await r.json();
     if(!r.ok) throw new Error(d.error||'Erreur serveur');
     if(a) a.style.display='none';
