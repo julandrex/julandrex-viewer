@@ -505,7 +505,7 @@ html[data-theme="light"] [style*="solid #7a1010"],html[data-theme="light"] [styl
 </div>
 
 <!-- [2026-09-24] Conditions d'utilisation + notice RGPD (version 2026-09-v1) -->
-<template id="tpl-terms">
+<template id="tpl-terms" data-hospital="citadelle"><!-- [2026-10-28 générique étape 4] texte de la Citadelle seulement -->
 <h1>Conditions d’utilisation</h1><div class="t-meta">Version 3 du 11 octobre 2026 · Application des médecins (« viewer ») pendant la phase de test</div><div class="lead">Julandrex est un outil de planification des gardes, conçu au sein du service des urgences du CHR Citadelle. L’application des médecins
   permet de consulter le planning, de recevoir des rappels, de proposer des échanges ou des reprises de postes, de transmettre ses desiderata et de demander un ajustement de son compte d’heures.
   Elle est proposée en <b>phase de test</b> et son utilisation est <b>volontaire</b>.</div>
@@ -1359,9 +1359,10 @@ function _applyFeatureUI(){
   var f=_jlxFeat||{};
   var b=document.getElementById('chgpwd-btn'); if(b) b.style.display=(f.pwd_change_by_doctor===false)?'none':'';
   var mp=document.getElementById('mon-planning-btn'); if(mp&&f.mon_planning_btn===false&&!(typeof _vcIs==='function'&&_vcIs())) mp.style.display='none'; // [2026-09-27]
-  if(f.pwd_forgot_email===false) _showForgotOffMsg(typeof _pwdHelpReason!=='undefined'&&_pwdHelpReason==='first');
+  if(f.pwd_forgot_email===false&&_jlxHospConnu()) _showForgotOffMsg(typeof _pwdHelpReason!=='undefined'&&_pwdHelpReason==='first');
 }
-function _forgotOff(){ return !!(_jlxFeat&&_jlxFeat.pwd_forgot_email===false); }
+function _jlxHospConnu(){ try{ return !!sessionStorage.getItem('jlx_hosp'); }catch(e){ return false; } } // [2026-10-28 générique étape 4]
+function _forgotOff(){ return !!(_jlxFeat&&_jlxFeat.pwd_forgot_email===false&&_jlxHospConnu()); }
 function _showForgotOffMsg(first){
   var a=document.getElementById('pin-help-link'), m=document.getElementById('pin-help-msg');
   if(a) a.style.display='none';
@@ -1395,13 +1396,32 @@ function showTermsGate(cb){
       +'<button type="button" id="terms-ok" disabled onclick="_termsAccept()">J’accepte</button></div></div>';
     document.body.appendChild(ov);
   }
-  var tpl=document.getElementById('tpl-terms');
-  document.getElementById('terms-body').innerHTML=tpl?tpl.innerHTML:'';
+  document.getElementById('terms-body').textContent='Chargement des conditions…'; // [2026-10-28 générique étape 4]
+  _termsChargerTexte().then(function(ok){ var c=document.getElementById('terms-chk'); if(c) c.disabled=!ok; });
   document.getElementById('terms-body').scrollTop=0;
   document.getElementById('terms-chk').checked=false;
   document.getElementById('terms-ok').disabled=true;
   document.getElementById('terms-err').style.display='none';
   ov.style.display='flex';
+}
+// [2026-10-28 générique étape 4] Texte de l'hôpital du médecin (serveur), sinon texte intégré s'il est celui de cet hôpital, sinon blocage.
+function _termsNettoyer(html){
+  var t=document.createElement('template'); t.innerHTML=String(html||'');
+  t.content.querySelectorAll('script,iframe,object,embed,style,link,meta,base,form,input,button,textarea,select').forEach(function(n){ n.remove(); });
+  t.content.querySelectorAll('*').forEach(function(n){ Array.prototype.slice.call(n.attributes).forEach(function(a){
+    var nm=a.name.toLowerCase(), val=String(a.value||'').trim().toLowerCase();
+    if(nm.indexOf('on')===0||nm==='style'||((nm==='href'||nm==='src')&&!/^(https:|mailto:|#)/.test(val))) n.removeAttribute(a.name); }); });
+  return t.innerHTML;
+}
+async function _termsChargerTexte(){
+  var body=document.getElementById('terms-body'); window._termsVer=null;
+  var r=null; try{ r=await sb.rpc('viewer_terms_text',{p_token:_jlxTok()}); }catch(e){}
+  var d=(r&&!r.error&&r.data)?r.data:null;
+  if(d&&d.html){ body.innerHTML=_termsNettoyer(d.html); window._termsVer=d.version; body.scrollTop=0; return true; }
+  var tpl=document.getElementById('tpl-terms');
+  if(tpl&&tpl.getAttribute('data-hospital')===CFG.hospital){ body.innerHTML=tpl.innerHTML; window._termsVer=TERMS_VERSION; body.scrollTop=0; return true; }
+  body.innerHTML='<p>Les conditions d’utilisation de votre hôpital ne sont pas encore disponibles. Contactez le gestionnaire du planning.</p>';
+  return false;
 }
 function _termsClose(){
   var ov=document.getElementById('terms-overlay'); if(ov) ov.style.display='none';
@@ -1410,7 +1430,7 @@ function _termsClose(){
 async function _termsAccept(){
   var err=document.getElementById('terms-err'), btn=document.getElementById('terms-ok');
   btn.disabled=true; err.style.display='none';
-  var r=null; try{ r=await sb.rpc('viewer_terms_accept',{p_token:_jlxTok(),p_version:TERMS_VERSION,p_user_agent:navigator.userAgent}); }catch(e){}
+  var r=null; try{ r=await sb.rpc('viewer_terms_accept',{p_token:_jlxTok(),p_version:(window._termsVer||TERMS_VERSION),p_user_agent:navigator.userAgent}); }catch(e){}
   var s=r&&!r.error&&r.data?r.data.status:null;
   if(s==='ok'||s==='not_required'){ var cb=window._termsCb; _termsClose(); if(cb) cb(); return; }
   if(r&&r.error&&/jlx_session/.test(r.error.message||'')){ _termsClose(); _jlxSessionLost(); return; }
@@ -1448,7 +1468,7 @@ async function requestPwdHelp(){
     var d=await r.json();
     if(!r.ok) throw new Error(d.error||'Erreur serveur');
     if(a) a.style.display='none';
-    if(m) m.textContent='✓ Si cet identifiant existe, un e-mail a été envoyé à l\'adresse enregistrée. Aucun mot de passe n\'a été modifié.';
+    if(m) m.textContent='✓ Demande transmise. Si cet identifiant existe et que la réinitialisation est active pour votre hôpital, vous recevrez un e-mail. Sinon, contactez le gestionnaire du planning. Aucun mot de passe n\'a été modifié.';
   }catch(e){ if(m) m.textContent='Envoi impossible ('+e.message+'). Contactez directement le gestionnaire.'; }
 }
 
