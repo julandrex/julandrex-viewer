@@ -4608,7 +4608,7 @@ async function submitExchange(){
   if(_availAll&&!targetIds.length){ toast('Aucun médecin disponible à qui envoyer la demande.',true); return; }
   const _cx=(mTarget==='specific'&&_cxSel&&_cxSel.pids&&_cxSel.pids.length)?_cxSel:null, _cxSib=window._siblingPost||null; // [2026-10-02] ECHANGE_CROISE
   try{
-    const {error}=await sb.from('exchange_requests').insert({
+    const {data:_exIns,error}=await sb.from('exchange_requests').insert({ // [2026-11-03] ECHANGE_SANS_ABSENTS : .select()
       hospital_id:CFG.hospital,proposer_id:me.id,
       proposer_date:mDate,proposer_post:mPost,
       type:_cx?'swap':'exchange',status:'open',proposer_post2:window._siblingPost||null,
@@ -4616,11 +4616,14 @@ async function submitExchange(){
       target_doctor_id:targetDocId,
       target_doctor_ids:targetIds,
       message:document.getElementById('m-msg').value.trim()||null
-    });
+    }).select();
     if(error)throw error;
+    // [2026-11-03] « à tous » : le serveur ne garde que les collègues présents ce jour-là
+    const _srvIds=(!targetDocId&&_exIns&&_exIns[0]&&Array.isArray(_exIns[0].target_doctor_ids))?_exIns[0].target_doctor_ids:null;
+    const _sendIds=targetIds||_srvIds;
   window._siblingPost=null;
     closeModal();
-    toast(targetDocId?'Demande envoyée au médecin ciblé !':targetIds?'Demande envoyée aux '+targetIds.length+' médecins disponibles !':'Demande envoyée à tous les médecins !');
+    toast(targetDocId?'Demande envoyée au médecin ciblé !':targetIds?'Demande envoyée aux '+targetIds.length+' médecins disponibles !':_srvIds?'Demande envoyée aux '+_srvIds.length+' médecins présents ce jour-là !':'Demande envoyée à tous les médecins !');
     // Push notification au(x) destinataire(s)
     try {
       const _postName = planning?.posts?.find(p=>p.id===mPost)?.full || mPost;
@@ -4634,7 +4637,7 @@ async function submitExchange(){
       // les abonnés de l'hôpital, demandeur compris. Liste vide → pas d'envoi (sinon = tout le monde).
       _pushPayload.doctor_ids = targetDocId
         ? [String(targetDocId)]
-        : targetIds ? targetIds.map(String)
+        : _sendIds ? _sendIds.map(String)
         : doctors.filter(d=>d.id!==me.id).map(d=>String(d.id));
       if(_pushPayload.doctor_ids.length) fetch(CFG.url+'/functions/v1/send-push',{
         method:'POST',
@@ -4652,11 +4655,7 @@ async function submitExchange(){
         :{proposer_name:me.firstname+' '+me.lastname,post_name:post?.full||post?.name||mPost,date:mDate,message:document.getElementById('m-msg').value.trim()||null}
     };
     // [2026-09-23] Le serveur trouve lui-même les adresses (ciblé : ce médecin ; ouvert : tous les collègues)
-    if(targetIds){ // [2026-10-10] un e-mail par médecin disponible (pas d'envoi à tous)
-      targetIds.forEach(function(id,i){ setTimeout(function(){ fetch(CFG.url+'/functions/v1/send-notification',{
-        method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
-        body:JSON.stringify({..._notifData,doctor_id:id})}).catch(()=>{}); }, i*250); });
-    } else
+    // [2026-11-03] liste (disponibles ou présents) : un seul envoi, le serveur prend les destinataires dans la demande
     fetch(CFG.url+'/functions/v1/send-notification',{
       method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
       body:JSON.stringify(targetDocId?{..._notifData,doctor_id:targetDocId}:{..._notifData,broadcast:true})
