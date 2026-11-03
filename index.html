@@ -4077,7 +4077,7 @@ function renderPanel(){
     const isMe2=r.proposer_id===me.id,isMeAcc=r.acceptor_id===me.id;
     let acts='';
     const _hasRefused=Array.isArray(r.refusal_log)&&r.refusal_log.some(function(e){return e.by_id===me.id&&e.type==='exchange';});
-    if(r.status==='open'&&!isMe2&&!_hasRefused)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">${r.type==='reprise'?'✓ Accepter (je cède mon poste)':(r.type==='swap'?'✓ Accepter l’échange':'✓ Accepter')}</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>`;
+    if(r.status==='open'&&!isMe2&&!_hasRefused)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">${r.type==='reprise'?'✓ Accepter (je cède mon poste)':(r.type==='swap'?'✓ Accepter l’échange':'✓ Accepter')}</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>${(r.type==='exchange'&&_cxOn())?'<button class="xbtn" onclick="counterX(\''+r.id+'\')" style="margin-left:4px">⇄ Proposer un de mes postes</button>':''}`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
     if(r.status==='accepted')acts='<div style="color:var(--t3);font-size:11px;padding:6px 0;">⏳ En attente de confirmation du gestionnaire</div>';
     if(r.status==='pending_j1'){
@@ -4158,6 +4158,65 @@ function renderPanel(){
 
 // [2026-09-16] Un seul clic : bouton désactivé tout de suite (pas de double envoi), puis la carte passe
 // aussitôt à « ✅ Vous avez validé » (avant : on attendait l'évènement temps réel, la carte restait telle quelle).
+// [2026-11-03] CONTRE_PROPOSITION — « Proposer un de mes postes » sur une demande d'échange reçue
+function counterX(id){
+  var r=(exchanges||[]).find(function(e){ return e.id===id; }); if(!r||!me) return;
+  var prop=doctors.find(function(d){ return d.id===r.proposer_id; });
+  var pName=prop?((prop.firstname||'')+' '+(prop.lastname||'')).trim():'le demandeur';
+  var dLbl=_cxDateLbl(r.proposer_date), takeTxt=_cxPairTxt(r.proposer_post,r.proposer_post2,true);
+  var old=document.getElementById('cp-ov'); if(old&&old._close) old._close();
+  var ov=document.createElement('div'); ov.className='picker-ov'; ov.id='cp-ov';
+  var box=document.createElement('div'); box.className='picker-box'; box.style.cssText='width:min(440px,94vw);gap:4px;padding:14px 14px 10px;';
+  ov._esc=function(e){ if(e.key==='Escape') ov._close(); };
+  ov._close=function(){ document.removeEventListener('keydown',ov._esc); if(ov.parentNode) ov.parentNode.removeChild(ov); };
+  ov.addEventListener('click',function(e){ if(e.target===ov) ov._close(); });
+  document.addEventListener('keydown',ov._esc);
+  box.innerHTML='<div class="picker-title" style="margin:0;text-align:center;">Proposer un de mes postes</div>'
+    +'<div style="background:var(--bg3);border-radius:10px;padding:11px 13px;margin-top:6px;font-size:12.5px;color:var(--t2);line-height:1.5;">'
+    +'<b style="color:var(--t1);">'+_dpE(pName)+'</b> cherche un remplaçant le <b style="color:var(--t1);">'+_dpE(dLbl)+'</b> : '+_dpE(takeTxt)+'.</div>'
+    +'<div style="font-size:12.5px;color:var(--t2);line-height:1.5;margin-top:8px;">Vous prenez ce poste et vous lui donnez un des vôtres en échange. '+_dpE(pName)+' accepte ou refuse, puis le gestionnaire du planning valide les deux changements ensemble.</div>'
+    +'<div style="margin-top:10px;"><div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:4px;">Je lui donne</div><div id="cp-list"><div style="font-size:12px;color:var(--t3);">Chargement…</div></div></div>'
+    +'<textarea id="cp-msg" maxlength="300" rows="2" placeholder="Message pour '+_dpE(pName)+' (facultatif)" style="width:100%;box-sizing:border-box;margin-top:10px;background:var(--bg3);border:1px solid var(--line);color:var(--t1);border-radius:9px;padding:9px 10px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>'
+    +'<div id="cp-err" style="display:none;font-size:12px;color:var(--err);margin-top:6px;"></div>'
+    +'<div style="display:flex;gap:8px;margin-top:10px;">'
+    +'<button type="button" data-close style="flex:1;background:transparent;border:1px solid var(--line);color:var(--t2);border-radius:10px;padding:11px;font-size:13px;cursor:pointer;font-family:inherit;">Annuler</button>'
+    +'<button type="button" data-send disabled style="flex:2;background:var(--acc);border:none;color:#fff;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;opacity:.5;">Proposer l’échange</button></div>';
+  ov.appendChild(box); document.body.appendChild(ov);
+  box.querySelector('[data-close]').addEventListener('click',function(){ ov._close(); });
+  var sendB=box.querySelector('[data-send]'), give=null;
+  _cxMonths().then(function(ms){
+    if(!box.isConnected) return;
+    _cxRender(box.querySelector('#cp-list'),_cxPostsOf(_cxLid(me),ms),'Vous n’avez aucun poste à venir dans le planning publié.','Un jour, un ou deux postes de ce jour-là.',function(x){
+      give=x; sendB.disabled=!x; sendB.style.opacity=x?'':'.5'; });
+  });
+  sendB.addEventListener('click',async function(){
+    if(sendB.disabled||!give) return; sendB.disabled=true; sendB.style.opacity='.6'; sendB.textContent='Envoi…';
+    var err=box.querySelector('#cp-err'); err.style.display='none';
+    var msg=(box.querySelector('#cp-msg').value||'').trim();
+    try{
+      var res=await sb.from('exchange_requests').insert({hospital_id:CFG.hospital,proposer_id:me.id,type:'swap',status:'open',
+        proposer_date:give.dk,proposer_post:give.pids[0],proposer_post2:give.pids[1]||null,target_doctor_id:r.proposer_id,
+        counter_date:r.proposer_date,counter_post:r.proposer_post,counter_post2:r.proposer_post2||null,linked_exchange_id:r.id,message:msg||null});
+      if(res&&res.error) throw res.error;
+    }catch(e){
+      err.textContent=(e&&e.message)||String(e); err.style.display='';
+      sendB.disabled=false; sendB.style.opacity=''; sendB.textContent='Proposer l’échange'; return;
+    }
+    var giveTxt=_cxPairTxt(give.pids[0],give.pids[1]), giveTxtT=_cxPairTxt(give.pids[0],give.pids[1],true);
+    toast('⇄ Contre-proposition envoyée à '+pName+'.');
+    try{ fetch(CFG.url+'/functions/v1/send-push',{method:'POST',headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
+      body:JSON.stringify({hospital:CFG.hospital,doctor_ids:[String(r.proposer_id)],title:'⇄ Réponse à votre demande d’échange',
+        message:me.firstname+' '+me.lastname+' prend votre '+_cxPairTxt(r.proposer_post,r.proposer_post2)+' ('+fmtDate(r.proposer_date)+') contre son '+giveTxt+' ('+fmtDate(give.dk)+')',
+        url:'https://julandrex.github.io/julandrex-viewer/'})}).catch(function(){}); }catch(e){}
+    try{ fetch(CFG.url+'/functions/v1/send-notification',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
+      body:JSON.stringify({type:'exchange_requested',hospital_name:_jlxHospNom(),doctor_id:r.proposer_id,
+        data:{kind:'swap',post_name:giveTxtT,date:_cxDateLbl(give.dk),counter_post_name:takeTxt,counter_date:dLbl,
+          message:'En réponse à votre demande d’échange du '+dLbl+'.'+(msg?' '+msg:'')}})}).catch(function(){}); }catch(e){}
+    ov._close();
+    try{ var fr=await sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false});
+      if(fr&&!fr.error){ exchanges=fr.data||[]; if(typeof renderBadge==='function') renderBadge(); renderPanel(); } }catch(e){}
+  });
+}
 function _markExchangeOk(id,upd){
   var ex=(exchanges||[]).find(function(e){return e.id===id;});
   if(ex) Object.assign(ex,upd);
