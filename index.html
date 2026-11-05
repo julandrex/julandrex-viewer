@@ -4046,7 +4046,8 @@ function renderBadge(){
   // Ne compter QUE les échanges qui concernent le médecin connecté (cohérent avec renderPanel)
   const _hasRefused=r=>Array.isArray(r.refusal_log)&&r.refusal_log.some(e=>e.by_id===me.id&&e.type==='exchange');
   // offres ouvertes que JE peux accepter : ouvertes à tous OU ciblées sur moi, pas les miennes, pas déjà refusées
-  const openForMe=exchanges.filter(r=>r.status==='open'&&r.proposer_id!==me.id&&(r.target_doctor_id==null||r.target_doctor_id===me.id)&&!_hasRefused(r)).length;
+  const openForMe=exchanges.filter(r=>r.status==='open'&&r.proposer_id!==me.id&&(r.target_doctor_id==null||r.target_doctor_id===me.id)&&!_hasRefused(r)&&!(_xIsCall(r)&&_xMyProp(r))&&!_xNested(r)).length
+    +exchanges.filter(r=>_xNested(r)).length; // [2026-11-05] PROPOSITIONS : propositions reçues à départager
   // ma propre demande acceptée, en attente de validation gestionnaire
   const myAccepted=exchanges.filter(r=>r.status==='accepted'&&r.proposer_id===me.id).length;
   const pendJ1=exchanges.filter(r=>r.status==='pending_j1'&&(r.proposer_id===me.id||r.acceptor_id===me.id)&&!(r.proposer_id===me.id?r.j1_proposer_ok:r.j1_acceptor_ok)).length;
@@ -4069,7 +4070,7 @@ function togglePanel(){
 function renderPanel(){
   const l=document.getElementById('exch-list');
   if(!exchanges.length){l.innerHTML='<div class="ld">Aucune demande en cours</div>';return;}
-  const myExchanges=exchanges.filter(r=>{if(['confirmed','archived'].includes(r.status))return false;if(r.status==='cancelled')return false;if(r.target_doctor_id!=null&&r.target_doctor_id!==me.id&&r.proposer_id!==me.id&&r.acceptor_id!==me.id)return false;if(r.status==='open'&&r.cancel_reason&&r.acceptor_id===me.id)return true;return(r.status!=='pending_j1'&&r.status!=='pending_switch')||(r.proposer_id===me.id||r.acceptor_id===me.id);});
+  const myExchanges=exchanges.filter(r=>{if(['confirmed','archived'].includes(r.status))return false;if(_xNested(r)||_xMineNested(r))return false;if(r.status==='cancelled')return false;if(r.target_doctor_id!=null&&r.target_doctor_id!==me.id&&r.proposer_id!==me.id&&r.acceptor_id!==me.id)return false;if(r.status==='open'&&r.cancel_reason&&r.acceptor_id===me.id)return true;return(r.status!=='pending_j1'&&r.status!=='pending_switch')||(r.proposer_id===me.id||r.acceptor_id===me.id);});
   l.innerHTML=myExchanges.map(r=>{
     const prop=doctors.find(d=>d.id===r.proposer_id);
     const acc=r.acceptor_id?doctors.find(d=>d.id===r.acceptor_id):null;
@@ -4079,6 +4080,7 @@ function renderPanel(){
     const _hasRefused=Array.isArray(r.refusal_log)&&r.refusal_log.some(function(e){return e.by_id===me.id&&e.type==='exchange';});
     if(r.status==='open'&&!isMe2&&!_hasRefused)acts=`<button class="xbtn accept" onclick="acceptX('${r.id}')">${r.type==='reprise'?'✓ Accepter (je cède mon poste)':(r.type==='swap'?'✓ Accepter l’échange':'✓ Accepter')}</button><button class="xbtn cancel" onclick="rejectX('${r.id}')" style="margin-left:4px">✕ Refuser</button>${(r.type==='exchange'&&_cxOn())?'<button class="xbtn" onclick="counterX(\''+r.id+'\')" style="margin-left:4px">⇄ Proposer un de mes postes</button>':''}`;
     if(r.status==='open'&&isMe2)acts=`<button class="xbtn cancel" onclick="cancelX('${r.id}')">Annuler</button>`;
+    if(_xIsCall(r)){ const _pa=_xPropActs(r,isMe2,_hasRefused); if(_pa!==null) acts=_pa; } // [2026-11-05] PROPOSITIONS
     if(r.status==='accepted')acts='<div style="color:var(--t3);font-size:11px;padding:6px 0;">⏳ En attente de confirmation du gestionnaire</div>';
     if(r.status==='pending_j1'){
       const isProp=r.proposer_id===me.id;
@@ -4356,6 +4358,69 @@ async function confirmX(id){
   }catch(e){toast('Erreur : '+e.message,true);}
 }
 
+// [2026-11-05] PROPOSITIONS
+function _xIsCall(r){ return !!r&&r.type==='exchange'&&r.target_doctor_id==null; }
+function _xMyProp(r){ return (exchanges||[]).find(function(c){ return c.linked_exchange_id===r.id&&c.proposer_id===me.id&&['open','accepted','pending_j1','pending_switch'].indexOf(c.status)>=0; })||null; }
+function _xNested(r){ // proposition ouverte reçue sur MA demande : affichée sous la demande
+  return !!(r&&r.linked_exchange_id&&r.status==='open'&&r.target_doctor_id===me.id
+    &&(exchanges||[]).some(function(p){ return p.id===r.linked_exchange_id&&p.proposer_id===me.id&&(p.status==='open'||p.status==='held'); }));
+}
+function _xMineNested(r){ // ma proposition ouverte sur la demande d'un collègue : affichée sur sa demande (« Retirer »)
+  return !!(r&&r.linked_exchange_id&&r.status==='open'&&r.proposer_id===me.id
+    &&(exchanges||[]).some(function(p){ return p.id===r.linked_exchange_id&&p.status==='open'; }));
+}
+function _xDocName(id){ var d=(doctors||[]).find(function(x){ return x.id===id; }); return d?((d.firstname||'')+' '+(d.lastname||'')).trim():'un collègue'; }
+function _xPropActs(r,isMe2,refused){
+  var box='background:var(--bg3);border-radius:9px;padding:9px 11px;font-size:12px;line-height:1.5;color:var(--t2);';
+  if(isMe2){
+    if(r.status==='held') return '<div style="'+box+'">⏳ Vous avez choisi une proposition : elle attend la validation du gestionnaire. Les autres restent en attente.</div>';
+    if(r.status!=='open') return null;
+    var kids=(exchanges||[]).filter(function(c){ return c.linked_exchange_id===r.id&&c.status==='open'&&c.target_doctor_id===me.id; });
+    var h='<div style="width:100%;">';
+    if(!kids.length) h+='<div style="'+box+'">Aucune proposition pour l’instant : vos collègues peuvent encore répondre.</div>';
+    else{
+      h+='<div style="font-size:11px;font-weight:700;color:var(--t2);margin:2px 0 6px;">'+kids.length+' proposition'+(kids.length>1?'s':'')+' reçue'+(kids.length>1?'s':'')+' — choisissez-en une</div>';
+      kids.forEach(function(k){
+        var who=_xe(_xDocName(k.proposer_id));
+        var what=k.type==='swap'?'prend votre poste et vous donne <b>'+_xe(_cxPairTxt(k.proposer_post,k.proposer_post2))+'</b> ('+_xe(fmtDate(k.proposer_date))+')':'prend votre poste (libre ce jour-là)';
+        h+='<div style="'+box+'margin-bottom:6px;"><b style="color:var(--t1);">'+who+'</b> '+what
+          +(k.message?'<div style="color:var(--t3);font-style:italic;margin-top:3px;">« '+_xe(k.message)+' »</div>':'')
+          +'<div style="display:flex;gap:6px;margin-top:7px;"><button class="xbtn accept" onclick="acceptX(\''+k.id+'\')">✓ Choisir</button>'
+          +'<button class="xbtn cancel" onclick="rejectX(\''+k.id+'\')">✕ Refuser</button></div></div>';
+      });
+    }
+    return h+'<button class="xbtn cancel" onclick="cancelX(\''+r.id+'\')" style="margin-top:2px;">Annuler ma demande</button></div>';
+  }
+  if(r.status!=='open'||refused) return null;
+  var mine=_xMyProp(r);
+  if(mine) return '<div style="width:100%;"><div style="'+box+'">✓ Votre proposition est envoyée à <b>'+_xe(_xDocName(r.proposer_id))+'</b>, qui choisira parmi les réponses reçues.</div>'
+    +'<button class="xbtn cancel" onclick="cancelX(\''+mine.id+'\')" style="margin-top:6px;">Retirer ma proposition</button></div>';
+  return '<button class="xbtn accept" onclick="offerX(\''+r.id+'\')">✓ Je prends ce poste</button>'
+    +(_cxOn()?'<button class="xbtn" onclick="counterX(\''+r.id+'\')" style="margin-left:4px">⇄ Proposer un de mes postes</button>':'')
+    +'<button class="xbtn cancel" onclick="rejectX(\''+r.id+'\')" style="margin-left:4px">✕ Refuser</button>';
+}
+async function _xRefresh(){
+  try{ var fr=await sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false});
+    if(fr&&!fr.error){ exchanges=fr.data||[]; if(typeof renderBadge==='function') renderBadge(); renderPanel(); } }catch(e){}
+}
+async function offerX(id){
+  var r=(exchanges||[]).find(function(e){ return e.id===id; }); if(!r||!me) return;
+  var pName=_xDocName(r.proposer_id), postTxt=_cxPairTxt(r.proposer_post,r.proposer_post2);
+  if(!confirm('Proposer à '+pName+' de prendre son poste '+postTxt+' du '+fmtDate(r.proposer_date)+' ?\n\n'+pName+' choisira parmi les propositions reçues, puis le gestionnaire du planning valide.')) return;
+  try{
+    var res=await sb.from('exchange_requests').insert({hospital_id:CFG.hospital,proposer_id:me.id,type:'reprise',status:'open',
+      proposer_date:r.proposer_date,proposer_post:r.proposer_post,proposer_post2:r.proposer_post2||null,target_doctor_id:r.proposer_id,linked_exchange_id:r.id,message:null});
+    if(res&&res.error) throw res.error;
+  }catch(e){ toast((e&&e.message)||String(e),true); return; }
+  toast('✓ Proposition envoyée à '+pName+'.');
+  try{ fetch(CFG.url+'/functions/v1/send-push',{method:'POST',headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
+    body:JSON.stringify({hospital:CFG.hospital,doctor_ids:[String(r.proposer_id)],title:'🙋 Réponse à votre demande d’échange',
+      message:me.firstname+' '+me.lastname+' propose de prendre votre '+postTxt+' ('+fmtDate(r.proposer_date)+')',url:'https://julandrex.github.io/julandrex-viewer/'})}).catch(function(){}); }catch(e){}
+  try{ fetch(CFG.url+'/functions/v1/send-notification',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
+    body:JSON.stringify({type:'exchange_requested',hospital_name:_jlxHospNom(),doctor_id:r.proposer_id,
+      data:{kind:'reprise',post_name:_cxPairTxt(r.proposer_post,r.proposer_post2,true),date:_cxDateLbl(r.proposer_date),message:'En réponse à votre demande d’échange : choisissez parmi les propositions reçues (menu ☰ → Mes échanges).'}})}).catch(function(){}); }catch(e){}
+  _xRefresh();
+}
 async function cancelX(id){
   try{
     const {error}=await sb.from('exchange_requests').update({status:'cancelled',cancelled_at:new Date().toISOString()}).eq('id',id);
