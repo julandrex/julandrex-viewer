@@ -4177,6 +4177,7 @@ function counterX(id){
     +'<div style="background:var(--bg3);border-radius:10px;padding:11px 13px;margin-top:6px;font-size:12.5px;color:var(--t2);line-height:1.5;">'
     +'<b style="color:var(--t1);">'+_dpE(pName)+'</b> cherche un remplaçant le <b style="color:var(--t1);">'+_dpE(dLbl)+'</b> : '+_dpE(takeTxt)+'.</div>'
     +'<div style="font-size:12.5px;color:var(--t2);line-height:1.5;margin-top:8px;">Vous prenez ce poste et vous lui donnez un des vôtres en échange. '+_dpE(pName)+' accepte ou refuse, puis le gestionnaire du planning valide les deux changements ensemble.</div>'
+    +'<div id="cp-eve"></div>'
     +'<div style="margin-top:10px;"><div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:4px;">Je lui donne</div><div id="cp-list"><div style="font-size:12px;color:var(--t3);">Chargement…</div></div></div>'
     +'<textarea id="cp-msg" maxlength="300" rows="2" placeholder="Message pour '+_dpE(pName)+' (facultatif)" style="width:100%;box-sizing:border-box;margin-top:10px;background:var(--bg3);border:1px solid var(--line);color:var(--t1);border-radius:9px;padding:9px 10px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>'
     +'<div id="cp-err" style="display:none;font-size:12px;color:var(--err);margin-top:6px;"></div>'
@@ -4189,6 +4190,8 @@ function counterX(id){
   _cxMonths().then(function(ms){
     if(!box.isConnected) return;
     var _all=_cxPostsOf(_cxLid(me),ms), _lst=_all, _hint='Un jour, un ou deux postes de ce jour-là.';
+    var _evt=_xEveTxt(ms,r.proposer_date), _evb=box.querySelector('#cp-eve'); // [2026-11-07] VEILLE_REPOS
+    if(_evt&&_evb) _evb.innerHTML='<div style="font-size:12px;color:var(--warn);background:rgba(245,158,11,.1);border-radius:8px;padding:7px 10px;margin-top:8px;">⚠️ '+_dpE(_evt)+'</div>';
     var _same=_all.filter(function(g){ return g.dk===r.proposer_date; });
     var _t=new Date(r.proposer_date+'T12:00:00'); _t.setDate(_t.getDate()+1); var _nx=_desidIso(_t);
     var _ap=_cxDefs[r.proposer_post]||{}, _next=_all.filter(function(g){ return g.dk===_nx; });
@@ -4376,7 +4379,14 @@ function _xMineNested(r){ // ma proposition ouverte sur la demande d'un collègu
     &&(exchanges||[]).some(function(p){ return p.id===r.linked_exchange_id&&p.status==='open'; }));
 }
 function _xDocName(id){ var d=(doctors||[]).find(function(x){ return x.id===id; }); return d?((d.firstname||'')+' '+(d.lastname||'')).trim():'un collègue'; }
+function _xEveTxt(ms,dk){ // [2026-11-07] VEILLE_REPOS
+  var t=new Date(dk+'T12:00:00'); t.setDate(t.getDate()-1); var ev=_desidIso(t);
+  var g=_cxPostsOf(_cxLid(me),ms||[]).find(function(x){ return x.dk===ev; }); if(!g) return '';
+  var rp=g.posts.filter(function(p){ return p.section==='nuit'||p.section==='soir'||p.overnight; }); if(!rp.length) return '';
+  return 'Vous travaillez la veille ('+rp.map(function(p){ return p.full||p.name||p.id; }).join(' + ')+', '+fmtDate(ev)+') : un repos est normalement prévu ce jour-là. Le gestionnaire pourrait refuser.';
+}
 function _xPropActs(r,isMe2,refused){
+  if(!isMe2&&!window._xMs){ _cxMonths().then(function(ms){ if(!window._xMs){ window._xMs=ms; try{ renderPanel(); }catch(e){} } }); }
   var box='background:var(--bg3);border-radius:9px;padding:9px 11px;font-size:12px;line-height:1.5;color:var(--t2);';
   if(isMe2){
     if(r.status==='held') return '<div style="'+box+'">⏳ Vous avez choisi une proposition : elle attend la validation du gestionnaire. Les autres restent en attente.</div>';
@@ -4401,7 +4411,9 @@ function _xPropActs(r,isMe2,refused){
   var mine=_xMyProp(r);
   if(mine) return '<div style="width:100%;"><div style="'+box+'">✓ Votre proposition est envoyée à <b>'+_xe(_xDocName(r.proposer_id))+'</b>, qui choisira parmi les réponses reçues.</div>'
     +'<button class="xbtn cancel" onclick="cancelX(\''+mine.id+'\')" style="margin-top:6px;">Retirer ma proposition</button></div>';
-  return '<button class="xbtn accept" onclick="offerX(\''+r.id+'\')">✓ Je prends ce poste</button>'
+  var _ev=window._xMs?_xEveTxt(window._xMs,r.proposer_date):'';
+  return (_ev?'<div style="width:100%;font-size:11.5px;color:var(--warn);background:rgba(245,158,11,.1);border-radius:8px;padding:6px 9px;margin-bottom:6px;">⚠️ '+_xe(_ev)+'</div>':'')
+    +'<button class="xbtn accept" onclick="offerX(\''+r.id+'\')">✓ Je prends ce poste</button>'
     +(_cxOn()?'<button class="xbtn" onclick="counterX(\''+r.id+'\')" style="margin-left:4px">⇄ Proposer un de mes postes</button>':'')
     +'<button class="xbtn cancel" onclick="rejectX(\''+r.id+'\')" style="margin-left:4px">✕ Refuser</button>';
 }
@@ -4424,10 +4436,11 @@ async function offerX(id){
     else if((aPost.section==='nuit'||aPost.overnight)&&nextG){ give={dk:nextG.dk,pids:nextG.posts.slice(0,2).map(function(p){ return p.id; })}; mode='switch_j1'; }
   }catch(e){ toast('Impossible de lire votre planning : réessayez.',true); return; }
   var giveTxt=give?_cxPairTxt(give.pids[0],give.pids[1]):'';
+  var _eve=''; try{ _eve=_xEveTxt(await _cxMonths(),r.proposer_date); }catch(e){} // [2026-11-07] VEILLE_REPOS
   var q=mode==='reprise'
     ? 'Proposer à '+pName+' de prendre son poste '+postTxt+' du '+fmtDate(r.proposer_date)+' ?'
     : 'Vous travaillez '+(mode==='switch'?'ce jour-là':'le lendemain')+' ('+giveTxt+', '+fmtDate(give.dk)+').\n\nProposer à '+pName+' un switch : vous prenez son '+postTxt+' du '+fmtDate(r.proposer_date)+', il ou elle prend votre '+giveTxt+' du '+fmtDate(give.dk)+' ?';
-  if(!confirm(q+'\n\n'+pName+' choisira parmi les propositions reçues, puis le gestionnaire du planning valide.')) return;
+  if(!confirm((_eve?'⚠️ '+_eve+'\n\n':'')+q+'\n\n'+pName+' choisira parmi les propositions reçues, puis le gestionnaire du planning valide.')) return;
   var row=mode==='reprise'
     ? {hospital_id:CFG.hospital,proposer_id:me.id,type:'reprise',status:'open',proposer_date:r.proposer_date,proposer_post:r.proposer_post,
        proposer_post2:r.proposer_post2||null,target_doctor_id:r.proposer_id,linked_exchange_id:r.id,message:null}
