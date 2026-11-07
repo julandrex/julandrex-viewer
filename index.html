@@ -4188,7 +4188,13 @@ function counterX(id){
   var sendB=box.querySelector('[data-send]'), give=null;
   _cxMonths().then(function(ms){
     if(!box.isConnected) return;
-    _cxRender(box.querySelector('#cp-list'),_cxPostsOf(_cxLid(me),ms),'Vous n’avez aucun poste à venir dans le planning publié.','Un jour, un ou deux postes de ce jour-là.',function(x){
+    var _all=_cxPostsOf(_cxLid(me),ms), _lst=_all, _hint='Un jour, un ou deux postes de ce jour-là.';
+    var _same=_all.filter(function(g){ return g.dk===r.proposer_date; });
+    var _t=new Date(r.proposer_date+'T12:00:00'); _t.setDate(_t.getDate()+1); var _nx=_desidIso(_t);
+    var _ap=_cxDefs[r.proposer_post]||{}, _next=_all.filter(function(g){ return g.dk===_nx; });
+    if(_same.length){ _lst=_same; _hint='Vous travaillez déjà ce jour-là : seul un switch de votre poste du même jour est possible.'; }
+    else if((_ap.section==='nuit'||_ap.overnight)&&_next.length){ _lst=_next; _hint='Après cette nuit, vous travaillez le lendemain : seul un switch de votre poste du lendemain (J+1) est possible.'; }
+    _cxRender(box.querySelector('#cp-list'),_lst,'Vous n’avez aucun poste à venir dans le planning publié.',_hint,function(x){
       give=x; sendB.disabled=!x; sendB.style.opacity=x?'':'.5'; });
   });
   sendB.addEventListener('click',async function(){
@@ -4405,20 +4411,43 @@ async function _xRefresh(){
 }
 async function offerX(id){
   var r=(exchanges||[]).find(function(e){ return e.id===id; }); if(!r||!me) return;
-  var pName=_xDocName(r.proposer_id), postTxt=_cxPairTxt(r.proposer_post,r.proposer_post2);
-  if(!confirm('Proposer à '+pName+' de prendre son poste '+postTxt+' du '+fmtDate(r.proposer_date)+' ?\n\n'+pName+' choisira parmi les propositions reçues, puis le gestionnaire du planning valide.')) return;
+  var pName=_xDocName(r.proposer_id), postTxt=_cxPairTxt(r.proposer_post,r.proposer_post2), dLbl=_cxDateLbl(r.proposer_date);
+  // [2026-11-07] Est-ce que je travaille déjà ce jour-là (ou le lendemain d'une nuit) ? Alors c'est un switch, pas une reprise.
+  var give=null, mode='reprise';
   try{
-    var res=await sb.from('exchange_requests').insert({hospital_id:CFG.hospital,proposer_id:me.id,type:'reprise',status:'open',
-      proposer_date:r.proposer_date,proposer_post:r.proposer_post,proposer_post2:r.proposer_post2||null,target_doctor_id:r.proposer_id,linked_exchange_id:r.id,message:null});
-    if(res&&res.error) throw res.error;
-  }catch(e){ toast((e&&e.message)||String(e),true); return; }
+    var ms=await _cxMonths(), mine=_cxPostsOf(_cxLid(me),ms);
+    var same=mine.find(function(g){ return g.dk===r.proposer_date; });
+    var t=new Date(r.proposer_date+'T12:00:00'); t.setDate(t.getDate()+1); var next=_desidIso(t);
+    var aPost=_cxDefs[r.proposer_post]||((planning&&planning.posts)||[]).find(function(p){ return p.id===r.proposer_post; })||{};
+    var nextG=mine.find(function(g){ return g.dk===next; });
+    if(same){ give={dk:same.dk,pids:same.posts.slice(0,2).map(function(p){ return p.id; })}; mode='switch'; }
+    else if((aPost.section==='nuit'||aPost.overnight)&&nextG){ give={dk:nextG.dk,pids:nextG.posts.slice(0,2).map(function(p){ return p.id; })}; mode='switch_j1'; }
+  }catch(e){ toast('Impossible de lire votre planning : réessayez.',true); return; }
+  var giveTxt=give?_cxPairTxt(give.pids[0],give.pids[1]):'';
+  var q=mode==='reprise'
+    ? 'Proposer à '+pName+' de prendre son poste '+postTxt+' du '+fmtDate(r.proposer_date)+' ?'
+    : 'Vous travaillez '+(mode==='switch'?'ce jour-là':'le lendemain')+' ('+giveTxt+', '+fmtDate(give.dk)+').\n\nProposer à '+pName+' un switch : vous prenez son '+postTxt+' du '+fmtDate(r.proposer_date)+', il ou elle prend votre '+giveTxt+' du '+fmtDate(give.dk)+' ?';
+  if(!confirm(q+'\n\n'+pName+' choisira parmi les propositions reçues, puis le gestionnaire du planning valide.')) return;
+  var row=mode==='reprise'
+    ? {hospital_id:CFG.hospital,proposer_id:me.id,type:'reprise',status:'open',proposer_date:r.proposer_date,proposer_post:r.proposer_post,
+       proposer_post2:r.proposer_post2||null,target_doctor_id:r.proposer_id,linked_exchange_id:r.id,message:null}
+    : {hospital_id:CFG.hospital,proposer_id:me.id,type:'swap',status:'open',proposer_date:give.dk,proposer_post:give.pids[0],proposer_post2:give.pids[1]||null,
+       target_doctor_id:r.proposer_id,counter_date:r.proposer_date,counter_post:r.proposer_post,counter_post2:r.proposer_post2||null,linked_exchange_id:r.id,
+       message:mode==='switch'?'Switch du jour':'Switch J+1'};
+  try{ var res=await sb.from('exchange_requests').insert(row); if(res&&res.error) throw res.error; }
+  catch(e){ toast((e&&e.message)||String(e),true); return; }
   toast('✓ Proposition envoyée à '+pName+'.');
   try{ fetch(CFG.url+'/functions/v1/send-push',{method:'POST',headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
     body:JSON.stringify({hospital:CFG.hospital,doctor_ids:[String(r.proposer_id)],title:'🙋 Réponse à votre demande d’échange',
-      message:me.firstname+' '+me.lastname+' propose de prendre votre '+postTxt+' ('+fmtDate(r.proposer_date)+')',url:'https://julandrex.github.io/julandrex-viewer/'})}).catch(function(){}); }catch(e){}
+      message:me.firstname+' '+me.lastname+(mode==='reprise'?' propose de prendre votre '+postTxt+' ('+fmtDate(r.proposer_date)+')'
+        :' propose un switch : il prend votre '+postTxt+' ('+fmtDate(r.proposer_date)+') contre son '+giveTxt+' ('+fmtDate(give.dk)+')'),
+      url:'https://julandrex.github.io/julandrex-viewer/'})}).catch(function(){}); }catch(e){}
   try{ fetch(CFG.url+'/functions/v1/send-notification',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
     body:JSON.stringify({type:'exchange_requested',hospital_name:_jlxHospNom(),doctor_id:r.proposer_id,
-      data:{kind:'reprise',post_name:_cxPairTxt(r.proposer_post,r.proposer_post2,true),date:_cxDateLbl(r.proposer_date),message:'En réponse à votre demande d’échange : choisissez parmi les propositions reçues (menu ☰ → Mes échanges).'}})}).catch(function(){}); }catch(e){}
+      data:mode==='reprise'
+        ?{kind:'reprise',post_name:_cxPairTxt(r.proposer_post,r.proposer_post2,true),date:dLbl,message:'En réponse à votre demande d’échange : choisissez parmi les propositions reçues (menu ☰ → Mes échanges).'}
+        :{kind:'swap',post_name:_cxPairTxt(give.pids[0],give.pids[1],true),date:_cxDateLbl(give.dk),counter_post_name:_cxPairTxt(r.proposer_post,r.proposer_post2,true),counter_date:dLbl,
+          message:'En réponse à votre demande d’échange ('+(mode==='switch'?'switch du jour':'switch J+1')+') : choisissez parmi les propositions reçues (menu ☰ → Mes échanges).'}})}).catch(function(){}); }catch(e){}
   _xRefresh();
 }
 async function cancelX(id){
