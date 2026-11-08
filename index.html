@@ -2873,12 +2873,13 @@ function _dayPlanRender(ov,box,dk){
     if(!groups[k]){ groups[k]=[]; order.push(k); }
     var _qd=vPH(p,dk), rpAt='', rpSub=(_qd.start&&_qd.end)?_qd.start+'–'+_qd.end+(_qd._ho?' *':''):''; // [2026-10-27 horaires du jour]
     // [2026-10-02] REPRISE — poste d'un collègue (non partagé, jour non passé) : toucher pour proposer de le reprendre
-    if(!sh&&!vIsMe(did)&&dk>=auj&&docOf(did)){
+    // [2026-11-08] poste partagé aussi : la demande va au titulaire principal (seul reconnu par le serveur), le gestionnaire règle la suite
+    if(!vIsMe(did)&&!(sh&&vIsMe(sh.docId2))&&dk>=auj&&docOf(did)){
       var deja=(exchanges||[]).some(function(x){ return x&&x.proposer_id===me.id&&(x.status==='open'||x.status==='accepted')
         &&((x.type==='reprise'&&x.proposer_date===dk&&(x.proposer_post===p.id||x.proposer_post2===p.id))
           ||(x.type==='swap'&&x.counter_date===dk&&(x.counter_post===p.id||x.counter_post2===p.id))); });
       if(deja) rpSub+=(rpSub?' · ':'')+'⏳ demande en cours';
-      else { rpAt=' data-rp="'+E(p.id)+'" data-rpd="'+E(did)+'"'; hasRp=true; }
+      else { rpAt=' data-rp="'+E(p.id)+'" data-rpd="'+E(did)+'"'; hasRp=true; if(sh) rpSub+=(rpSub?' · ':'')+'poste partagé : demande au titulaire, le gestionnaire règle la suite'; }
     }
     groups[k].push(row(p.color,p.full||p.name,rpSub,names,rpAt));
   });
