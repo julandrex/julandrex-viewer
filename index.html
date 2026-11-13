@@ -2922,7 +2922,7 @@ function _dayPlanReprise(ov,box,dk,pid,did){
   var dt=new Date(dk+'T12:00:00');
   var dLbl=_DP_JOURS[dt.getDay()].toLowerCase()+' '+dt.getDate()+' '+MO[dt.getMonth()].toLowerCase()+' '+dt.getFullYear();
   var hName=((hold.firstname||'')+' '+(hold.lastname||'')).trim();
-  var abs=((planning&&planning.indispos)||[]).some(function(a){ return a&&(a.docId==me.local_id||a.docId==me.id)&&dk>=a.start&&dk<=(a.end||a.start)&&a.type!=='pref'&&a.type!=='unavail_post'; });
+  var abs=((planning&&planning.indispos)||[]).some(function(a){ return a&&(a.docId==me.local_id||a.docId==me.id)&&dk>=a.start&&dk<=(a.end||a.start)&&a.type!=='pref'&&a.type!=='unavail_post'&&a.type!=='repos'; });
   var btn='background:var(--bg3);border:1px solid var(--line);color:var(--t1);border-radius:9px;width:34px;height:34px;font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;font-family:inherit;';
   box.innerHTML='<div style="display:flex;align-items:center;gap:6px;">'
     +'<button type="button" data-back aria-label="Retour au planning du jour" style="'+btn+'">‹</button>'
@@ -3200,7 +3200,7 @@ function renderCalPerso(){
     var inds=(planning&&planning.indispos)||[];
     for(var ii=0;ii<inds.length;ii++){
       var ind=inds[ii];
-      if((ind.docId==me.local_id||ind.docId==me.id)&&dk>=ind.start&&dk<=ind.end&&ind.type!=='pref'){
+      if((ind.docId==me.local_id||ind.docId==me.id)&&dk>=ind.start&&dk<=ind.end&&ind.type!=='pref'&&ind.type!=='unavail_post'&&ind.type!=='repos'){ /* [2026-11-13] indispo de poste et repos souhaité ne s'affichent pas (ils sortaient en « Abs ») */
         dayInd=ind;break;
       }
     }
@@ -5305,7 +5305,7 @@ function _mpMine(pl,dk){
   return out;
 }
 var _MP_ABS={conge:'Congé',formation:'Formation',maladie:'Maladie',cs:'Congé scientifique',autre:'Absent',repos:'Repos souhaité',indispo:'Indisponible toute la journée'};
-function _mpAbs(pl,dk){ return ((pl&&pl.indispos)||[]).filter(function(i){ return vIsMe(i.docId)&&dk>=i.start&&dk<=(i.end||i.start)&&i.type!=='pref'&&i.type!=='unavail_post'; }); }
+function _mpAbs(pl,dk){ return ((pl&&pl.indispos)||[]).filter(function(i){ return vIsMe(i.docId)&&dk>=i.start&&dk<=(i.end||i.start)&&i.type!=='pref'&&i.type!=='unavail_post'&&i.type!=='repos'; }); }
 function _mpExc(dk){ return (((window._excShifts||{})[dk])||[]).filter(function(e){ return vIsMe(e.docId); }); }
 function _mpEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 async function _mpNextGuard(today){
