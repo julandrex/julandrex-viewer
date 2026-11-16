@@ -1273,6 +1273,7 @@ function logout(){
   _sessActive=false;
   sessionStorage.removeItem('jlx_me');
   _jlxDropTok(); _exchSnap=null;
+  try{ _jlxPurgeCache(); }catch(e){} // [2026-11-16 D10] plus aucun planning dans ce navigateur après la déconnexion
   try{ _jlxClearHosp(); }catch(e){} // [2026-10-26 lot 4b]
   me=null;planning=null;
   if(rtChannel){sb.removeChannel(rtChannel);rtChannel=null;}
@@ -2589,6 +2590,29 @@ function showMain(){
 // ══════════════════════════════════════════════════════════
 // DATA
 // ══════════════════════════════════════════════════════════
+// ── [2026-11-16 D10] Copie de secours des plannings : limitée à la session en cours ─────────────────────────────────────────────
+// Audit du 11/11/2026, point D10. Avant : chaque mois consulté était copié dans localStorage (jlx_c_<hôpital>_<année>_<mois>) avec
+// les noms des collègues et les absences, et y restait après la déconnexion et la fermeture de l'onglet : lisible ensuite par
+// n'importe qui sur un ordinateur partagé.
+// Maintenant : la copie est gardée dans sessionStorage (elle disparaît à la fermeture de l'onglet) et elle est effacée à la
+// déconnexion, au verrouillage pour inactivité et à la fin d'un aperçu. Les anciennes copies restées dans localStorage sont
+// effacées à chaque ouverture de la page. L'usage ne change pas : secours quand le réseau tombe pendant une session.
+// Retour arrière : JLX_CACHE_SESSION_ON=false (la copie retourne dans localStorage et n'est plus effacée).
+var JLX_CACHE_SESSION_ON=true;
+function _jlxCacheGet(k){ try{ return (JLX_CACHE_SESSION_ON?sessionStorage:localStorage).getItem(k); }catch(e){ return null; } }
+function _jlxCacheSet(k,v){ try{ (JLX_CACHE_SESSION_ON?sessionStorage:localStorage).setItem(k,v); }catch(e){} }
+// Efface toutes les copies de planning de ce navigateur. Renvoie le nombre de copies effacées.
+function _jlxPurgeCache(){
+  var n=0; if(!JLX_CACHE_SESSION_ON) return n;
+  ['localStorage','sessionStorage'].forEach(function(nom){
+    try{ var s=window[nom], ks=[], i, k; for(i=0;i<s.length;i++){ k=s.key(i); if(k&&k.indexOf('jlx_c_')===0) ks.push(k); }
+      ks.forEach(function(x){ s.removeItem(x); n++; }); }catch(e){}
+  });
+  return n;
+}
+// À l'ouverture : les copies laissées dans localStorage par une version précédente (ou par une session fermée sans déconnexion)
+if(JLX_CACHE_SESSION_ON){ try{ (function(){ var ks=[], i, k; for(i=0;i<localStorage.length;i++){ k=localStorage.key(i); if(k&&k.indexOf('jlx_c_')===0) ks.push(k); }
+  ks.forEach(function(x){ localStorage.removeItem(x); }); })(); }catch(e){} }
 var _loadSeq=0; // [2026-09-27] dernier chargement demandé (changements de mois rapides au glisser)
 async function loadAll(){
   var _ls=++_loadSeq;
@@ -2613,7 +2637,7 @@ async function loadAll(){
       window._sharedSavedAt=(er&&!er.error&&er.data&&er.data.savedAt)||window._sharedSavedAt||null;
       // [2026-09-13] Adresse du gestionnaire réglée dans l'admin (hospital_config.email_gestionnaire) ; l'adresse codée reste en secours
       if(er&&!er.error&&er.data&&er.data.email_gestionnaire&&/@/.test(er.data.email_gestionnaire)) CFG.gest_email=er.data.email_gestionnaire.trim();
-      if(planning&&doctors.length){try{localStorage.setItem(CK,JSON.stringify({planning:planning,doctors:doctors,exc:window._excShifts,shared:window._sharedShifts,ts:Date.now()}));}catch(ce){}}
+      if(planning&&doctors.length){try{_jlxCacheSet(CK,JSON.stringify({planning:planning,doctors:doctors,exc:window._excShifts,shared:window._sharedShifts,ts:Date.now()}));}catch(ce){}} // [2026-11-16 D10]
       logAccess('view_planning',cy+'-'+(cm+1<10?'0':'')+(cm+1));
       if(!planning){
         document.getElementById('grid-area').innerHTML='<div class="ld"><div>Planning non disponible pour ce mois.</div><div style="color:var(--t3)">Contactez le gestionnaire de planning.</div></div>';
@@ -2623,7 +2647,7 @@ async function loadAll(){
     }catch(e){
       if(_ls!==_loadSeq) return;
       var cached=null;
-      try{var raw=localStorage.getItem(CK);if(raw)cached=JSON.parse(raw);}catch(ce){}
+      try{var raw=_jlxCacheGet(CK);if(raw)cached=JSON.parse(raw);}catch(ce){} // [2026-11-16 D10]
       if(cached){
         doctors=cached.doctors||doctors;planning=cached.planning||null;window._excShifts=cached.exc||window._excShifts||{};window._sharedShifts=cached.shared||window._sharedShifts||{};
         var age=Math.round((Date.now()-cached.ts)/60000);
@@ -3867,6 +3891,7 @@ function lockSession(){
   // [2026-09-13] Session verrouillée = plus de reprise automatique au rechargement (retour à l'écran de connexion)
   try{sessionStorage.removeItem('jlx_me');}catch(e){}
   _jlxDropTok();
+  try{ _jlxPurgeCache(); }catch(e){} // [2026-11-16 D10] médecin parti sans se déconnecter : la copie de secours est effacée
   var ov=document.getElementById('session-overlay');if(ov){ov.style.display='';ov.classList.add('show');}
   var inp=document.getElementById('sess-pin-inp');if(inp){inp.value='';inp.focus();}
   document.getElementById('sess-pin-err').textContent='';
@@ -5068,6 +5093,7 @@ async function _vcEnd(msg){
   if(t&&sb){ try{ await Promise.race([sb.rpc('viewer_logout',{p_token:t}),new Promise(function(r){ setTimeout(r,1500); })]); }catch(e){} }
   _jlxSetTok(null);
   try{ ['jlx_imp','jlx_imp_by','jlx_imp_end','jlx_me','jlx_last'].forEach(function(k){ sessionStorage.removeItem(k); }); }catch(e){}
+  try{ _jlxPurgeCache(); }catch(e){} // [2026-11-16 D10]
   try{ _jlxClearHosp(); }catch(e){} // [2026-10-27 voir comme hors Citadelle]
   me=null;
   document.body.innerHTML='<div style="font-family:system-ui,sans-serif;color:#cbd5e1;background:#0f172a;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;">'
