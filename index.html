@@ -2905,7 +2905,7 @@ function _dayPlanRender(ov,box,dk){
       if(deja) rpSub+=(rpSub?' · ':'')+'⏳ demande en cours';
       else { rpAt=' data-rp="'+E(p.id)+'" data-rpd="'+E(did)+'"'; hasRp=true; if(sh) rpSub+=(rpSub?' · ':'')+'poste partagé : demande au titulaire, le gestionnaire règle la suite'; }
     }
-    groups[k].push(row(p.color,p.full||p.name,rpSub,names,rpAt));
+    groups[k].push(row(p.color,_qd.full||_qd.name,rpSub,names,rpAt));
   });
   var html='';
   SEC.concat([['autre','Autres postes']]).forEach(function(x){
@@ -2983,7 +2983,7 @@ function _xChevauche(ms,dk,take,exclDk,excl){
   });
   return out;
 }
-function _xOvlTxt(l,dk){ return l.map(function(o){ return (o.post.full||o.post.name||o.post.id)+(o.dk!==dk?' du '+fmtDate(o.dk):''); }).join(' + '); }
+function _xOvlTxt(l,dk){ return l.map(function(o){ return (vPDay(o.post,o.dk).full||o.post.name||o.post.id)+(o.dk!==dk?' du '+fmtDate(o.dk):''); }).join(' + '); }
 // Planning du jour, « Proposer une reprise » : en plus de mon poste (sans chevauchement), switch imposé (chevauchement le même jour)
 // ou impossible (chevauchement la veille / le lendemain, ou échange croisé non activé)
 function _dpOvl(box,ms,dk,pid,sendB){
@@ -3002,7 +3002,7 @@ function _dpOvl(box,ms,dk,pid,sendB){
     el.innerHTML='<div style="'+st+'color:var(--err);background:rgba(239,68,68,.1);">⛔ Vos horaires chevauchent ce poste ('+_dpE(_xOvlTxt(ovl,dk))+') : vous ne pouvez pas le prendre'+(same.length&&!_cxOn()?' (l’échange croisé n’est pas activé)':'')+'.</div>';
     sendB.disabled=true; sendB.style.opacity='.5';
   } else if(mesJ.length){
-    el.innerHTML='<div style="'+st+'color:var(--t2);background:var(--bg3);">ℹ️ Vous travaillez déjà ce jour-là ('+_dpE(_cxPairTxt(mesJ[0],mesJ[1]))+'), sans chevauchement d’horaires : ce poste viendrait <b>en plus</b> du vôtre.</div>';
+    el.innerHTML='<div style="'+st+'color:var(--t2);background:var(--bg3);">ℹ️ Vous travaillez déjà ce jour-là ('+_dpE(_cxPairTxt(mesJ[0],mesJ[1],false,dk))+'), sans chevauchement d’horaires : ce poste viendrait <b>en plus</b> du vôtre.</div>';
     if(!window._cxGive) sendB.textContent='Envoyer la proposition';
   } else { el.innerHTML=''; if(!window._cxGive) sendB.textContent='Envoyer la proposition'; }
 }
@@ -3020,7 +3020,7 @@ function _dayPlanReprise(ov,box,dk,pid,did){
     +'<div style="flex:1;text-align:center;"><div class="picker-title" style="margin:0;">Proposer une reprise</div></div>'
     +'<button type="button" data-close aria-label="Fermer" style="'+btn+'font-size:14px;">✕</button></div>'
     +'<div style="background:var(--bg3);border-left:4px solid '+_dpE(p.color||'#94a3b8')+';border-radius:10px;padding:11px 13px;margin-top:6px;">'
-    +'<div style="font-size:14px;font-weight:700;color:var(--t1);">'+_dpE(p.full||p.name)+'</div>'
+    +'<div style="font-size:14px;font-weight:700;color:var(--t1);">'+_dpE(vPDay(p,dk).full||p.name)+'</div>'
     +'<div style="font-size:12px;color:var(--t2);margin-top:2px;">'+_dpE(dLbl.charAt(0).toUpperCase()+dLbl.slice(1))+(function(q){ return q.start&&q.end?' · '+_dpE(q.start)+'–'+_dpE(q.end)+(q._ho?' (horaire du jour)':''):''; })(vPH(p,dk))+'</div>'
     +'<div style="font-size:12px;color:var(--t2);margin-top:2px;">Titulaire : <b style="color:var(--t1);">'+_dpE(hName)+'</b></div></div>'
     +'<div style="font-size:12.5px;color:var(--t2);line-height:1.5;margin-top:8px;">Vous proposez à <b>'+_dpE(hName)+'</b> de reprendre son poste. En cas d’accord, le gestionnaire du planning valide, puis le poste passe dans votre planning.</div>'
@@ -3072,14 +3072,14 @@ async function _dayPlanSend(ov,box,dk,p,hold,dLbl,msg,b){
     b.disabled=false; b.style.opacity=''; b.textContent=give?'Proposer l’échange':'Envoyer la proposition'; return;
   }
   var hName=((hold.firstname||'')+' '+(hold.lastname||'')).trim(), pName=p.full||p.name||p.id;
-  var takeTxt=_cxPairTxt(p.id,p2), takeTxtT=_cxPairTxt(p.id,p2,true);
+  var takeTxt=_cxPairTxt(p.id,p2,false,dk), takeTxtT=_cxPairTxt(p.id,p2,true,dk);
   toast((give?'⇄ Échange proposé à ':'🙋 Proposition envoyée à ')+hName+'.');
   try{ fetch(CFG.url+'/functions/v1/send-push',{method:'POST',headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
     body:JSON.stringify({hospital:CFG.hospital,doctor_ids:[String(hold.id)],title:give?'⇄ Proposition d’échange':'🙋 Proposition de reprise',
-      message:me.firstname+' '+me.lastname+(give?' vous propose un échange : vous prenez '+_cxPairTxt(give.pids[0],give.pids[1])+' ('+_cxDateLbl(give.dk)+') contre votre '+takeTxt+' ('+dLbl+')':' propose de reprendre votre poste — '+takeTxt+' ('+dLbl+')'),url:'https://julandrex.github.io/julandrex-viewer/'})}).catch(function(){}); }catch(e){}
+      message:me.firstname+' '+me.lastname+(give?' vous propose un échange : vous prenez '+_cxPairTxt(give.pids[0],give.pids[1],false,give.dk)+' ('+_cxDateLbl(give.dk)+') contre votre '+takeTxt+' ('+dLbl+')':' propose de reprendre votre poste — '+takeTxt+' ('+dLbl+')'),url:'https://julandrex.github.io/julandrex-viewer/'})}).catch(function(){}); }catch(e){}
   try{ fetch(CFG.url+'/functions/v1/send-notification',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
     body:JSON.stringify({type:'exchange_requested',hospital_name:_jlxHospNom(),doctor_id:hold.id,
-      data:give?{kind:'swap',post_name:_cxPairTxt(give.pids[0],give.pids[1],true),date:_cxDateLbl(give.dk),counter_post_name:takeTxtT,counter_date:dLbl,message:msg||null}
+      data:give?{kind:'swap',post_name:_cxPairTxt(give.pids[0],give.pids[1],true,give.dk),date:_cxDateLbl(give.dk),counter_post_name:takeTxtT,counter_date:dLbl,message:msg||null}
         :{kind:'reprise',post_name:takeTxtT,date:dLbl,message:msg||null}})}).catch(function(){}); }catch(e){}
   try{ var fr=await sb.from('exchange_requests').select('*').eq('hospital_id',CFG.hospital).neq('status','cancelled').order('created_at',{ascending:false});
     if(fr&&!fr.error){ exchanges=fr.data||[]; if(typeof renderBadge==='function') renderBadge(); } }catch(e){}
@@ -3091,13 +3091,14 @@ function _cxOn(){ return !!((typeof _jlxFeat!=='undefined'&&_jlxFeat&&_jlxFeat.e
 function _cxLid(d){ return d?(d.local_id!=null?d.local_id:d.id):null; }
 function _cxDateLbl(dk){ if(!dk) return ''; var t=new Date(dk+'T12:00:00'); return _DP_JOURS[t.getDay()].toLowerCase()+' '+t.getDate()+' '+MO[t.getMonth()].toLowerCase()+' '+t.getFullYear(); }
 var _cxDefs={};
-function _cxPostTxt(pid,withTime){
+function _cxPostTxt(pid,withTime,dk){ // [2026-11-22 N16-VENDREDI] dk : nom et horaire du poste ce jour-là
   if(!pid) return '';
   var p=((planning&&planning.posts)||[]).find(function(x){ return x.id===pid; })||_cxDefs[pid];
   if(!p) return pid;
+  if(dk) p=vPDay(p,dk);
   return (p.full||p.name||pid)+(withTime&&p.start&&p.end?' ('+p.start+'–'+p.end+')':'');
 }
-function _cxPairTxt(a,b,withTime){ return _cxPostTxt(a,withTime)+(b?' + '+_cxPostTxt(b,withTime):''); }
+function _cxPairTxt(a,b,withTime,dk){ return _cxPostTxt(a,withTime,dk)+(b?' + '+_cxPostTxt(b,withTime,dk):''); }
 // Plannings publiés du mois en cours et des 3 suivants (mis en cache le temps d'une fenêtre)
 function _cxMonths(){
   var now=new Date(), reqs=[];
@@ -3135,8 +3136,8 @@ function _cxRender(box,list,emptyMsg,hint,onSel){
       html+='<label data-cxdk="'+_dpE(g.dk)+'" data-cxpid="'+_dpE(p.id)+'" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;">'
         +'<input type="checkbox" style="width:18px;height:18px;accent-color:var(--acc);margin:0;flex-shrink:0;">'
         +'<span class="picker-dot" style="background:'+_dpE(p.color||'#94a3b8')+';width:8px;height:8px;"></span>'
-        +'<span style="font-size:12.5px;color:var(--t1);line-height:1.3;"><b>'+_dpE(fmtDate(g.dk))+'</b> · '+_dpE(p.full||p.name||p.id)
-        +(p.start&&p.end?' <span style="color:var(--t3);white-space:nowrap;">'+_dpE(p.start)+'–'+_dpE(p.end)+'</span>':'')+'</span></label>';
+        +'<span style="font-size:12.5px;color:var(--t1);line-height:1.3;"><b>'+_dpE(fmtDate(g.dk))+'</b> · '+_dpE(vPDay(p,g.dk).full||p.name||p.id)
+        +(p.start&&p.end?' <span style="color:var(--t3);white-space:nowrap;">'+_dpE(vPDay(p,g.dk).start)+'–'+_dpE(vPDay(p,g.dk).end)+'</span>':'')+'</span></label>';
     });
   });
   box.innerHTML=html+'</div>';
@@ -3179,7 +3180,7 @@ function _cxRefresh(){
 // Mes échanges : volet « en retour » d'un échange croisé
 function _rpSuffix(r){
   if(!r||r.type!=='swap') return '';
-  var nm=_dpE(_cxPairTxt(r.counter_post,r.counter_post2)), d=r.counter_date?fmtDate(r.counter_date):'';
+  var nm=_dpE(_cxPairTxt(r.counter_post,r.counter_post2,false,r.counter_date)), d=r.counter_date?fmtDate(r.counter_date):'';
   if(me&&r.proposer_id===me.id){
     var t=doctors.find(function(x){ return x.id===r.target_doctor_id; });
     return '<br>Vous recevez de <b>'+(t?_dpE(t.firstname+' '+t.lastname):'?')+'</b> :<br>'+nm+' · '+d;
@@ -3344,7 +3345,7 @@ function renderCalPerso(){
     }
     if(myPosts.length===1){
       var p0=myPosts[0];
-      var sc=p0.id==='u3-1'?'U3 tôt':p0.name;
+      var sc=p0.id==='u3-1'?'U3 tôt':vPDay(p0,dk).name; // [2026-11-22 N16-VENDREDI] « 18-09 » le vendredi
       cell.style.background=p0.color+'33';
       dspan.style.color=p0.color+'cc';
       var cspan=document.createElement('span'); cspan.className='cp-code';
@@ -3367,8 +3368,8 @@ function renderCalPerso(){
       }
     } else if(myPosts.length>=2){
       var p0=myPosts[0],p1=myPosts[1];
-      var sc0=p0.id==='u3-1'?'U3 tôt':p0.name;
-      var sc1=p1.id==='u3-1'?'U3 tôt':p1.name;
+      var sc0=p0.id==='u3-1'?'U3 tôt':vPDay(p0,dk).name;
+      var sc1=p1.id==='u3-1'?'U3 tôt':vPDay(p1,dk).name;
       cell.style.cssText+=';overflow:hidden;position:relative;background:transparent;';
       dspan.style.display='none';
       var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -4270,7 +4271,7 @@ function counterX(id){
   var r=(exchanges||[]).find(function(e){ return e.id===id; }); if(!r||!me) return;
   var prop=doctors.find(function(d){ return d.id===r.proposer_id; });
   var pName=prop?((prop.firstname||'')+' '+(prop.lastname||'')).trim():'le demandeur';
-  var dLbl=_cxDateLbl(r.proposer_date), takeTxt=_cxPairTxt(r.proposer_post,r.proposer_post2,true);
+  var dLbl=_cxDateLbl(r.proposer_date), takeTxt=_cxPairTxt(r.proposer_post,r.proposer_post2,true,r.proposer_date);
   var old=document.getElementById('cp-ov'); if(old&&old._close) old._close();
   var ov=document.createElement('div'); ov.className='picker-ov'; ov.id='cp-ov';
   var box=document.createElement('div'); box.className='picker-box'; box.style.cssText='width:min(440px,94vw);gap:4px;padding:14px 14px 10px;';
@@ -4320,11 +4321,11 @@ function counterX(id){
       err.textContent=(e&&e.message)||String(e); err.style.display='';
       sendB.disabled=false; sendB.style.opacity=''; sendB.textContent='Proposer l’échange'; return;
     }
-    var giveTxt=_cxPairTxt(give.pids[0],give.pids[1]), giveTxtT=_cxPairTxt(give.pids[0],give.pids[1],true);
+    var giveTxt=_cxPairTxt(give.pids[0],give.pids[1],false,give.dk), giveTxtT=_cxPairTxt(give.pids[0],give.pids[1],true,give.dk);
     toast('⇄ Contre-proposition envoyée à '+pName+'.');
     try{ fetch(CFG.url+'/functions/v1/send-push',{method:'POST',headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
       body:JSON.stringify({hospital:CFG.hospital,doctor_ids:[String(r.proposer_id)],title:'⇄ Réponse à votre demande d’échange',
-        message:me.firstname+' '+me.lastname+' prend votre '+_cxPairTxt(r.proposer_post,r.proposer_post2)+' ('+fmtDate(r.proposer_date)+') contre son '+giveTxt+' ('+fmtDate(give.dk)+')',
+        message:me.firstname+' '+me.lastname+' prend votre '+_cxPairTxt(r.proposer_post,r.proposer_post2,false,r.proposer_date)+' ('+fmtDate(r.proposer_date)+') contre son '+giveTxt+' ('+fmtDate(give.dk)+')',
         url:'https://julandrex.github.io/julandrex-viewer/'})}).catch(function(){}); }catch(e){}
     try{ fetch(CFG.url+'/functions/v1/send-notification',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
       body:JSON.stringify({type:'exchange_requested',hospital_name:_jlxHospNom(),doctor_id:r.proposer_id,
@@ -4425,7 +4426,7 @@ async function acceptX(id){
     // Push au proposeur
     try {
       if(xr) {
-        const _postName = _cxPairTxt(xr.proposer_post,xr.proposer_post2); // [2026-10-03] ACCEPT_DEUX_POSTES
+        const _postName = _cxPairTxt(xr.proposer_post,xr.proposer_post2,false,xr.proposer_date); // [2026-10-03] ACCEPT_DEUX_POSTES
         fetch(CFG.url+'/functions/v1/send-push',{
           method:'POST',
           headers:{'Authorization':'Bearer '+CFG.key,'Content-Type':'application/json'},
@@ -4433,7 +4434,7 @@ async function acceptX(id){
             hospital: CFG.hospital,
             doctor_ids: [String(xr.proposer_id)],
             title: xr.type==='reprise'?'✓ Reprise acceptée':(xr.type==='swap'?'✓ Échange accepté':'✓ Demande acceptée'), // [2026-10-02] REPRISE + ECHANGE_CROISE
-            message: me.firstname+' '+me.lastname+(xr.type==='reprise'?' accepte de vous céder son poste — ':' a accepté votre demande d’échange — ')+_postName+(xr.type==='swap'?' contre '+_cxPairTxt(xr.counter_post,xr.counter_post2)+' ('+fmtDate(xr.counter_date)+')':''),
+            message: me.firstname+' '+me.lastname+(xr.type==='reprise'?' accepte de vous céder son poste — ':' a accepté votre demande d’échange — ')+_postName+(xr.type==='swap'?' contre '+_cxPairTxt(xr.counter_post,xr.counter_post2,false,xr.counter_date)+' ('+fmtDate(xr.counter_date)+')':''),
             url: 'https://julandrex.github.io/julandrex-viewer/'
           })
         }).catch(()=>{});
@@ -4454,10 +4455,10 @@ async function acceptX(id){
           data:{
             acceptor_name:me.firstname+' '+me.lastname,
             proposer_name:proposer?proposer.firstname+' '+proposer.lastname:'?',
-            post_name:(xr.type==='swap'||xr.type==='reprise'||xr.proposer_post2)?_cxPairTxt(xr.proposer_post,xr.proposer_post2,true):(post?.full||post?.name||xr.proposer_post),
+            post_name:(xr.type==='swap'||xr.type==='reprise'||xr.proposer_post2)?_cxPairTxt(xr.proposer_post,xr.proposer_post2,true,xr.proposer_date):(post?.full||post?.name||xr.proposer_post),
             date:(xr.type==='swap'||xr.type==='reprise')?_cxDateLbl(xr.proposer_date):xr.proposer_date,
             kind:(xr.type==='reprise'||xr.type==='swap')?xr.type:undefined,
-            counter_post_name:xr.type==='swap'?_cxPairTxt(xr.counter_post,xr.counter_post2,true):undefined,
+            counter_post_name:xr.type==='swap'?_cxPairTxt(xr.counter_post,xr.counter_post2,true,xr.counter_date):undefined,
             counter_date:xr.type==='swap'?_cxDateLbl(xr.counter_date):undefined
           }
         })
@@ -4490,7 +4491,7 @@ function _xEveTxt(ms,dk){ // [2026-11-07] VEILLE_REPOS
   var t=new Date(dk+'T12:00:00'); t.setDate(t.getDate()-1); var ev=_desidIso(t);
   var g=_cxPostsOf(_cxLid(me),ms||[]).find(function(x){ return x.dk===ev; }); if(!g) return '';
   var rp=g.posts.filter(function(p){ return p.section==='nuit'||p.section==='soir'||p.overnight; }); if(!rp.length) return '';
-  return 'Vous travaillez la veille ('+rp.map(function(p){ return p.full||p.name||p.id; }).join(' + ')+', '+fmtDate(ev)+') : un repos est normalement prévu ce jour-là. Le gestionnaire pourrait refuser.';
+  return 'Vous travaillez la veille ('+rp.map(function(p){ return vPDay(p,ev).full||p.name||p.id; }).join(' + ')+', '+fmtDate(ev)+') : un repos est normalement prévu ce jour-là. Le gestionnaire pourrait refuser.';
 }
 function _xPropActs(r,isMe2,refused){
   if(!isMe2&&!window._xMs){ _cxMonths().then(function(ms){ if(!window._xMs){ window._xMs=ms; try{ renderPanel(); }catch(e){} } }); }
@@ -4505,7 +4506,7 @@ function _xPropActs(r,isMe2,refused){
       h+='<div style="font-size:11px;font-weight:700;color:var(--t2);margin:2px 0 6px;">'+kids.length+' proposition'+(kids.length>1?'s':'')+' reçue'+(kids.length>1?'s':'')+' — choisissez-en une</div>';
       kids.forEach(function(k){
         var who=_xe(_xDocName(k.proposer_id));
-        var what=k.type==='swap'?'prend votre poste et vous donne <b>'+_xe(_cxPairTxt(k.proposer_post,k.proposer_post2))+'</b> ('+_xe(fmtDate(k.proposer_date))+')':'prend votre poste (libre ce jour-là)';
+        var what=k.type==='swap'?'prend votre poste et vous donne <b>'+_xe(_cxPairTxt(k.proposer_post,k.proposer_post2,false,k.proposer_date))+'</b> ('+_xe(fmtDate(k.proposer_date))+')':'prend votre poste (libre ce jour-là)';
         h+='<div style="'+box+'margin-bottom:6px;"><b style="color:var(--t1);">'+who+'</b> '+what
           +(k.message?'<div style="color:var(--t3);font-style:italic;margin-top:3px;">« '+_xe(k.message)+' »</div>':'')
           +'<div style="display:flex;gap:6px;margin-top:7px;"><button class="xbtn accept" onclick="acceptX(\''+k.id+'\')">✓ Choisir</button>'
@@ -4530,7 +4531,7 @@ async function _xRefresh(){
 }
 async function offerX(id){
   var r=(exchanges||[]).find(function(e){ return e.id===id; }); if(!r||!me) return;
-  var pName=_xDocName(r.proposer_id), postTxt=_cxPairTxt(r.proposer_post,r.proposer_post2), dLbl=_cxDateLbl(r.proposer_date);
+  var pName=_xDocName(r.proposer_id), postTxt=_cxPairTxt(r.proposer_post,r.proposer_post2,false,r.proposer_date), dLbl=_cxDateLbl(r.proposer_date);
   // [2026-11-07] Est-ce que je travaille déjà ce jour-là (ou le lendemain d'une nuit) ? Alors c'est un switch, pas une reprise.
   var give=null, mode='reprise', enPlus=null;
   try{
@@ -4547,11 +4548,11 @@ async function offerX(id){
     else if(ovl.length){ toast('Vos horaires chevauchent ce poste ('+_xOvlTxt(ovl,r.proposer_date)+') : vous ne pouvez pas le prendre.',true); return; }
     else if(same) enPlus=same;
   }catch(e){ toast('Impossible de lire votre planning : réessayez.',true); return; }
-  var giveTxt=give?_cxPairTxt(give.pids[0],give.pids[1]):'';
+  var giveTxt=give?_cxPairTxt(give.pids[0],give.pids[1],false,give.dk):'';
   var _eve=''; try{ _eve=_xEveTxt(await _cxMonths(),r.proposer_date); }catch(e){} // [2026-11-07] VEILLE_REPOS
   var q=mode==='reprise'
     ? 'Proposer à '+pName+' de prendre son poste '+postTxt+' du '+fmtDate(r.proposer_date)+' ?'
-      +(enPlus?'\n\nVous travaillez déjà ce jour-là ('+_cxPairTxt(enPlus.posts[0].id,enPlus.posts[1]&&enPlus.posts[1].id)+') : les horaires ne se chevauchent pas, ce poste viendrait en plus du vôtre.':'') // [2026-11-21 R64]
+      +(enPlus?'\n\nVous travaillez déjà ce jour-là ('+_cxPairTxt(enPlus.posts[0].id,enPlus.posts[1]&&enPlus.posts[1].id,false,r.proposer_date)+') : les horaires ne se chevauchent pas, ce poste viendrait en plus du vôtre.':'') // [2026-11-21 R64]
     : 'Vous travaillez '+(mode==='switch'?'ce jour-là':'le lendemain')+' ('+giveTxt+', '+fmtDate(give.dk)+').\n\nProposer à '+pName+' un switch : vous prenez son '+postTxt+' du '+fmtDate(r.proposer_date)+', il ou elle prend votre '+giveTxt+' du '+fmtDate(give.dk)+' ?';
   if(!confirm((_eve?'⚠️ '+_eve+'\n\n':'')+q+'\n\n'+pName+' choisira parmi les propositions reçues, puis le gestionnaire du planning valide.')) return;
   var row=mode==='reprise'
@@ -4571,8 +4572,8 @@ async function offerX(id){
   try{ fetch(CFG.url+'/functions/v1/send-notification',{method:'POST',headers:{'Content-Type':'application/json','apikey':CFG.key},
     body:JSON.stringify({type:'exchange_requested',hospital_name:_jlxHospNom(),doctor_id:r.proposer_id,
       data:mode==='reprise'
-        ?{kind:'reprise',post_name:_cxPairTxt(r.proposer_post,r.proposer_post2,true),date:dLbl,message:'En réponse à votre demande d’échange : choisissez parmi les propositions reçues (menu ☰ → Mes échanges).'}
-        :{kind:'swap',post_name:_cxPairTxt(give.pids[0],give.pids[1],true),date:_cxDateLbl(give.dk),counter_post_name:_cxPairTxt(r.proposer_post,r.proposer_post2,true),counter_date:dLbl,
+        ?{kind:'reprise',post_name:_cxPairTxt(r.proposer_post,r.proposer_post2,true,r.proposer_date),date:dLbl,message:'En réponse à votre demande d’échange : choisissez parmi les propositions reçues (menu ☰ → Mes échanges).'}
+        :{kind:'swap',post_name:_cxPairTxt(give.pids[0],give.pids[1],true,give.dk),date:_cxDateLbl(give.dk),counter_post_name:_cxPairTxt(r.proposer_post,r.proposer_post2,true,r.proposer_date),counter_date:dLbl,
           message:'En réponse à votre demande d’échange ('+(mode==='switch'?'switch du jour':'switch J+1')+') : choisissez parmi les propositions reçues (menu ☰ → Mes échanges).'}})}).catch(function(){}); }catch(e){}
   _xRefresh();
 }
@@ -4910,11 +4911,11 @@ async function submitExchange(){
     toast(targetDocId?'Demande envoyée au médecin ciblé !':targetIds?'Demande envoyée aux '+targetIds.length+' médecins disponibles !':_srvIds?'Demande envoyée aux '+_srvIds.length+' médecins présents ce jour-là !':'Demande envoyée à tous les médecins !');
     // Push notification au(x) destinataire(s)
     try {
-      const _postName = planning?.posts?.find(p=>p.id===mPost)?.full || mPost;
+      const _postName = (function(){ const q=planning?.posts?.find(p=>p.id===mPost); return q?(vPDay(q,mDate).full||mPost):mPost; })();
       const _pushPayload = {
         hospital: CFG.hospital,
         title: '🔄 Demande d’échange',
-        message: me.firstname+' '+me.lastname+' vous propose un échange — '+_postName+(_cx?' contre '+_cxPairTxt(_cx.pids[0],_cx.pids[1])+' ('+_cxDateLbl(_cx.dk)+')':''),
+        message: me.firstname+' '+me.lastname+' vous propose un échange — '+_postName+(_cx?' contre '+_cxPairTxt(_cx.pids[0],_cx.pids[1],false,_cx.dk)+' ('+_cxDateLbl(_cx.dk)+')':''),
         url: 'https://julandrex.github.io/julandrex-viewer/'
       };
       // [2026-09-13] Toujours une liste explicite : sans doctor_ids, send-push envoie à TOUS
@@ -4934,8 +4935,8 @@ async function submitExchange(){
     const _notifData={
       type:'exchange_requested',
       hospital_name:_jlxHospNom(),
-      data:_cx?{proposer_name:me.firstname+' '+me.lastname,kind:'swap',post_name:_cxPairTxt(mPost,_cxSib,true),date:_cxDateLbl(mDate),
-        counter_post_name:_cxPairTxt(_cx.pids[0],_cx.pids[1],true),counter_date:_cxDateLbl(_cx.dk),message:document.getElementById('m-msg').value.trim()||null}
+      data:_cx?{proposer_name:me.firstname+' '+me.lastname,kind:'swap',post_name:_cxPairTxt(mPost,_cxSib,true,mDate),date:_cxDateLbl(mDate),
+        counter_post_name:_cxPairTxt(_cx.pids[0],_cx.pids[1],true,_cx.dk),counter_date:_cxDateLbl(_cx.dk),message:document.getElementById('m-msg').value.trim()||null}
         :{proposer_name:me.firstname+' '+me.lastname,post_name:post?.full||post?.name||mPost,date:mDate,message:document.getElementById('m-msg').value.trim()||null}
     };
     // [2026-09-23] Le serveur trouve lui-même les adresses (ciblé : ce médecin ; ouvert : tous les collègues)
