@@ -2927,18 +2927,85 @@ function _dayPlanRender(ov,box,dk){
     +(fer?'<div style="font-size:11px;color:var(--warn);">Jour férié</div>':'')+'</div>'
     +'<button type="button" data-nav="1" aria-label="Jour suivant" style="'+btn+(d>=last?'opacity:.3;cursor:default;':'')+'">›</button>'
     +'<button type="button" data-close aria-label="Fermer" style="'+btn+'font-size:14px;">✕</button></div>'
+    +_dpMineHtml(dk,auj,E) // [2026-11-21 R64]
     +(hasRp?'<div style="font-size:11px;color:var(--t3);text-align:center;margin:2px 0 0;">Touchez le poste d’un collègue pour lui proposer de le reprendre.</div>':'')
     +'<div>'+html+'</div>';
   box.querySelectorAll('[data-nav]').forEach(function(b){ b.addEventListener('click',function(){
     var nd=d+(+b.getAttribute('data-nav')); if(nd<1||nd>last) return;
     _dayPlanRender(ov,box,dkStr(y,m,nd)); box.scrollTop=0; }); });
   box.querySelector('[data-close]').addEventListener('click',function(){ ov._close(); });
+  var _mx=box.querySelector('[data-myx]'); if(_mx) _mx.addEventListener('click',function(){ ov._close(); _dpMyExch(dk); }); // [2026-11-21 R64]
   box.querySelectorAll('[data-rp]').forEach(function(el){ el.addEventListener('click',function(){
     _dayPlanReprise(ov,box,dk,el.getAttribute('data-rp'),el.getAttribute('data-rpd')); }); });
 }
 // ── [2026-10-02] REPRISE — « Je vous propose de reprendre votre poste » : demande d'échange de type 'reprise'
 // adressée au titulaire. Il accepte ou refuse dans « Mes échanges » ; le gestionnaire valide ensuite.
 function _dpE(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+// ── [2026-11-21 R64] Mon poste du jour en tête du Planning du jour, avec le bouton d'échange (avant : lancé d'un clic sur la case)
+var _cpMine={};
+function _dpMineHtml(dk,auj,E){
+  var mine=_cpMine[dk]||[]; if(!mine.length) return '';
+  return '<div data-mine style="background:var(--bg3);border-left:4px solid '+E(mine[0].color||'#94a3b8')+';border-radius:10px;padding:9px 12px;margin-top:6px;">'
+    +'<div style="font-size:10.5px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;">Votre poste ce jour-là</div>'
+    +mine.map(function(p){ var q=p._split?p:vPH(p,dk); return '<div style="font-size:13px;font-weight:700;color:var(--t1);margin-top:2px;">'+E(q.full||q.name)
+      +(q.start&&q.end?' <span style="font-weight:500;color:var(--t2);white-space:nowrap;">· '+E(q.start)+'–'+E(q.end)+'</span>':'')+'</div>'; }).join('')
+    +(dk>=auj?'<button type="button" data-myx style="margin-top:8px;width:100%;background:var(--acc);border:none;color:#fff;border-radius:9px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">⇄ Proposer un échange de mon poste</button>':'')
+    +'</div>';
+}
+function _dpMyExch(dk){ // même suite qu'avant un clic sur la case : deux postes, poste partagé, un poste
+  var mine=_cpMine[dk]||[]; if(!mine.length) return;
+  if(mine.length>=2) openPickerModal(dk,mine[0],mine[1],false);
+  else if(mine[0]._split) openPickerModal(dk,mine[0],null,false);
+  else openModal(dk,mine[0].id);
+}
+// ── [2026-11-21 R64] Chevauchement d'horaires (même règle que le serveur, _exch_chevauche) : décision de G. Sorce, on peut
+// prendre un poste EN PLUS du sien si les horaires ne se chevauchent pas. Postes de la veille et du lendemain compris.
+function _xMin(t){ var m=/^(\d{1,2}):(\d{2})$/.exec(String(t||'')); return m?(+m[1])*60+(+m[2]):null; }
+function _xPlage(p,dk,off){ off=off||0; var q=p?vPH(p,dk):null, s=_xMin(q&&q.start), e=_xMin(q&&q.end);
+  return (s==null||e==null)?[off,off+1440]:[off+s,off+e+(e<=s?1440:0)]; }
+function _xDayOf(ms,dk){
+  var y=+dk.slice(0,4), mo=+dk.slice(5,7)-1, src=null;
+  (ms||[]).concat(planning?[{year:cy,month:cm,shifts:planning.shifts,posts:planning.posts}]:[]).forEach(function(pm){
+    if(!src&&pm&&+pm.year===y&&+pm.month===mo&&pm.shifts) src=pm; });
+  return src?{day:src.shifts[dk]||{},posts:src.posts||[]}:{day:{},posts:[]};
+}
+// mes postes (veille, jour, lendemain de dk) qui chevauchent un des postes « take » de dk ; exclDk/excl : postes que je donne
+function _xChevauche(ms,dk,take,exclDk,excl){
+  var lid=_cxLid(me), out=[], T=_xDayOf(ms,dk);
+  var tp=(take||[]).filter(Boolean).map(function(pid){ return _xPlage(T.posts.find(function(x){ return x.id===pid; })||_cxDefs[pid],dk,0); });
+  [-1,0,1].forEach(function(off){
+    var t=new Date(dk+'T12:00:00'); t.setDate(t.getDate()+off); var d=_desidIso(t), D=_xDayOf(ms,d);
+    Object.keys(D.day).forEach(function(pid){
+      if(String(D.day[pid])!==String(lid)||(d===exclDk&&(excl||[]).indexOf(pid)>=0)) return;
+      var p=D.posts.find(function(x){ return x.id===pid; })||_cxDefs[pid]||{id:pid,name:pid}, r=_xPlage(p,d,off*1440);
+      if(tp.some(function(q){ return r[0]<q[1]&&q[0]<r[1]; })) out.push({dk:d,post:p});
+    });
+  });
+  return out;
+}
+function _xOvlTxt(l,dk){ return l.map(function(o){ return (o.post.full||o.post.name||o.post.id)+(o.dk!==dk?' du '+fmtDate(o.dk):''); }).join(' + '); }
+// Planning du jour, « Proposer une reprise » : en plus de mon poste (sans chevauchement), switch imposé (chevauchement le même jour)
+// ou impossible (chevauchement la veille / le lendemain, ou échange croisé non activé)
+function _dpOvl(box,ms,dk,pid,sendB){
+  var el=box.querySelector('#dp-ovl'); if(!el||!sendB) return;
+  var p2el=box.querySelector('#dp-rp-p2'), take=[pid].concat(p2el&&p2el.checked?[p2el.value]:[]);
+  var ovl=_xChevauche(ms,dk,take,null,[]), same=ovl.filter(function(o){ return o.dk===dk; });
+  var day=_xDayOf(ms,dk).day, lid=_cxLid(me), mesJ=Object.keys(day).filter(function(q){ return String(day[q])===String(lid); });
+  var st='font-size:12px;border-radius:8px;padding:7px 10px;margin-top:8px;line-height:1.45;', cx=box.querySelector('#dp-cx-list');
+  window._dpForce=null; sendB.disabled=false; sendB.style.opacity=''; if(cx&&cx.parentNode) cx.parentNode.style.display='';
+  if(same.length&&same.length===ovl.length&&_cxOn()){
+    window._dpForce={dk:dk,pids:same.slice(0,2).map(function(o){ return o.post.id; })};
+    if(cx&&cx.parentNode) cx.parentNode.style.display='none';
+    el.innerHTML='<div style="'+st+'color:var(--t1);background:rgba(59,130,246,.12);">⇄ Vos horaires ce jour-là chevauchent ce poste : seul un <b>switch</b> est possible — vous lui donnez votre <b>'+_dpE(_xOvlTxt(same,dk))+'</b>.</div>';
+    sendB.textContent='Proposer le switch';
+  } else if(ovl.length){
+    el.innerHTML='<div style="'+st+'color:var(--err);background:rgba(239,68,68,.1);">⛔ Vos horaires chevauchent ce poste ('+_dpE(_xOvlTxt(ovl,dk))+') : vous ne pouvez pas le prendre'+(same.length&&!_cxOn()?' (l’échange croisé n’est pas activé)':'')+'.</div>';
+    sendB.disabled=true; sendB.style.opacity='.5';
+  } else if(mesJ.length){
+    el.innerHTML='<div style="'+st+'color:var(--t2);background:var(--bg3);">ℹ️ Vous travaillez déjà ce jour-là ('+_dpE(_cxPairTxt(mesJ[0],mesJ[1]))+'), sans chevauchement d’horaires : ce poste viendrait <b>en plus</b> du vôtre.</div>';
+    if(!window._cxGive) sendB.textContent='Envoyer la proposition';
+  } else { el.innerHTML=''; if(!window._cxGive) sendB.textContent='Envoyer la proposition'; }
+}
 function _dayPlanReprise(ov,box,dk,pid,did){
   var p=(planning.posts||[]).find(function(x){ return x.id===pid; })||{id:pid,name:pid};
   var hold=null; for(var i=0;i<doctors.length;i++){ var x=doctors[i]; if(String(x.local_id!=null?x.local_id:x.id)===String(did)){ hold=x; break; } }
@@ -2958,6 +3025,7 @@ function _dayPlanReprise(ov,box,dk,pid,did){
     +'<div style="font-size:12px;color:var(--t2);margin-top:2px;">Titulaire : <b style="color:var(--t1);">'+_dpE(hName)+'</b></div></div>'
     +'<div style="font-size:12.5px;color:var(--t2);line-height:1.5;margin-top:8px;">Vous proposez à <b>'+_dpE(hName)+'</b> de reprendre son poste. En cas d’accord, le gestionnaire du planning valide, puis le poste passe dans votre planning.</div>'
     +(abs?'<div style="font-size:12px;color:var(--warn);background:rgba(245,158,11,.1);border-radius:8px;padding:7px 10px;margin-top:8px;">⚠️ Vous êtes noté(e) absent(e) ce jour-là : le gestionnaire en tiendra compte.</div>':'')
+    +'<div id="dp-ovl"></div>' // [2026-11-21 R64] en plus de mon poste / switch imposé / impossible
     +(function(){ // [2026-10-02] ECHANGE_CROISE — autre poste du titulaire ce jour-là
       var day=(planning.shifts||{})[dk]||{}, o=Object.keys(day).filter(function(q){ return q!==pid&&String(day[q])===String(did)&&!vShare(dk,q); })[0];
       if(!o) return '';
@@ -2983,12 +3051,15 @@ function _dayPlanReprise(ov,box,dk,pid,did){
         window._cxGive=x; var b=box.querySelector('[data-send]'); if(b&&!b.disabled) b.textContent=x?'Proposer l’échange':'Envoyer la proposition'; });
     });
   }
+  window._dpForce=null; // [2026-11-21 R64]
+  var _ovlUpd=function(){ _cxMonths().then(function(ms){ if(box.contains(sendB)) _dpOvl(box,ms,dk,pid,sendB); },function(){}); };
+  _ovlUpd(); var _p2c=box.querySelector('#dp-rp-p2'); if(_p2c) _p2c.addEventListener('change',_ovlUpd);
   sendB.addEventListener('click',function(){ _dayPlanSend(ov,box,dk,p,hold,dLbl,(box.querySelector('#dp-rp-msg').value||'').trim(),sendB); });
 }
 async function _dayPlanSend(ov,box,dk,p,hold,dLbl,msg,b){
   if(b.disabled) return; b.disabled=true; b.style.opacity='.6'; b.textContent='Envoi…';
   var err=box.querySelector('#dp-rp-err'); if(err) err.style.display='none';
-  var p2el=box.querySelector('#dp-rp-p2'), p2=(p2el&&p2el.checked)?p2el.value:null, give=window._cxGive||null; // [2026-10-02] ECHANGE_CROISE
+  var p2el=box.querySelector('#dp-rp-p2'), p2=(p2el&&p2el.checked)?p2el.value:null, give=window._dpForce||window._cxGive||null; /* [2026-11-21 R64] switch imposé */ // [2026-10-02] ECHANGE_CROISE
   try{
     var res=await sb.from('exchange_requests').insert(give
       ?{hospital_id:CFG.hospital,proposer_id:me.id,proposer_date:give.dk,proposer_post:give.pids[0],proposer_post2:give.pids[1]||null,
@@ -3170,6 +3241,7 @@ function excShort(label){
 }
 function renderCalPerso(){
   if(!planning||!me) return;
+  _cpMine={}; // [2026-11-21 R64] mes postes de chaque jour du mois affiché (Planning du jour)
   var shifts=planning.shifts||{};
   var posts=planning.posts||[];
   var d2=new Date(cy,cm+1,0).getDate();
@@ -3273,12 +3345,10 @@ function renderCalPerso(){
       cell.appendChild(cspan);
       if(p0._exc){
         cspan.style.fontSize='11px';
-        cell.title=excDetail;
-        (function(msg){cell.addEventListener('click',function(){toast(msg);});})(excDetail);
+        cell.title=excDetail; // [2026-11-21 R64] clic : Planning du jour (plus de simple bulle)
       }else{
       var _q0=vPH(p0,dk); cell.title=_q0.full+' · '+_q0.start+'–'+_q0.end+(_q0._ho?' (horaire du jour)':''); // [2026-10-27 horaires du jour]
-      if(p0._split){ (function(d2,q0,ip){cell.addEventListener('click',function(){openPickerModal(d2,q0,null,ip);});})(dk,p0,isPast); }
-      else if(!isPast){ (function(d2,pid){cell.addEventListener('click',function(){openModal(d2,pid);});})(dk,p0.id); }
+      // [2026-11-21 R64] le clic ouvre le Planning du jour (voir plus bas) : plus d'échange lancé d'emblée (un poste)
       }
     } else if(myPosts.length>=2){
       var p0=myPosts[0],p1=myPosts[1];
@@ -3325,19 +3395,13 @@ function renderCalPerso(){
       cell.appendChild(s0);cell.appendChild(s1);
       // [2026-09-22] Infobulle détaillée : le médecin doit voir ses HORAIRES, surtout sur un poste scindé
       cell.title=myPosts.map(function(p){ if(p._exc) return p.full+' · '+p.hours+' h'; var q=vPH(p,dk); return q.full+' · '+q.start+'–'+q.end+(q._ho?' (horaire du jour)':''); }).join('\n'); // [2026-10-27 horaires du jour]
-      if(realPosts.length>=2){
-        if(!isPast||realPosts[0]._split||realPosts[1]._split){
-          (function(d2,q0,q1,ip){cell.addEventListener('click',function(){openPickerModal(d2,q0,q1,ip);});})(dk,realPosts[0],realPosts[1],isPast);
-        }
-      }else if(realPosts.length===1){
-        if(realPosts[0]._split){ (function(d2,q0,ip){cell.addEventListener('click',function(){openPickerModal(d2,q0,null,ip);});})(dk,realPosts[0],isPast); }
-        else if(!isPast){ (function(d2,pid){cell.addEventListener('click',function(){openModal(d2,pid);});})(dk,realPosts[0].id); }
-      }else{
-        (function(msg){cell.addEventListener('click',function(){toast(msg);});})(excDetail);
-      }
+      // [2026-11-21 R64] le clic ouvre le Planning du jour (voir plus bas) : plus d'échange lancé d'emblée (deux postes)
     }
     // [2026-10-02] PLANNING_JOUR — case sans poste (jour libre, absence) : planning complet du jour
-    if(!myPosts.length){ cell.style.cursor='pointer'; (function(d2){cell.addEventListener('click',function(){openDayPlanning(d2);});})(dk); }
+    // [2026-11-21 R64] demande de G. Sorce : TOUTE case ouvre le Planning du jour, même avec un poste (avant : un poste ouvrait
+    // d'emblée « proposer un échange » et empêchait de reprendre le poste d'un collègue) ; mon échange se lance de là.
+    _cpMine[dk]=realPosts;
+    cell.style.cursor='pointer'; (function(d2){cell.addEventListener('click',function(){openDayPlanning(d2);});})(dk);
     if(fer){ cell.title='Jour férié'+(cell.title?'\n'+cell.title:''); } // CALPERSO_FERIES
         grid.appendChild(cell);
   }
@@ -4221,7 +4285,9 @@ function counterX(id){
     var _same=_all.filter(function(g){ return g.dk===r.proposer_date; });
     var _t=new Date(r.proposer_date+'T12:00:00'); _t.setDate(_t.getDate()+1); var _nx=_desidIso(_t);
     var _ap=_cxDefs[r.proposer_post]||{}, _next=_all.filter(function(g){ return g.dk===_nx; });
-    if(_same.length){ _lst=_same; _hint='Vous travaillez déjà ce jour-là : seul un switch de votre poste du même jour est possible.'; }
+    // [2026-11-21 R64] switch du jour imposé seulement si mes horaires de ce jour-là chevauchent le poste demandé
+    var _ovS=_xChevauche(ms,r.proposer_date,[r.proposer_post,r.proposer_post2],null,[]).filter(function(o){ return o.dk===r.proposer_date; });
+    if(_same.length&&_ovS.length){ _lst=_same; _hint='Vos horaires de ce jour-là chevauchent ce poste : seul un switch de votre poste du même jour est possible.'; }
     else if((_ap.section==='nuit'||_ap.overnight)&&_next.length){ _lst=_next; _hint='Après cette nuit, vous travaillez le lendemain : seul un switch de votre poste du lendemain (J+1) est possible.'; }
     _cxRender(box.querySelector('#cp-list'),_lst,'Vous n’avez aucun poste à venir dans le planning publié.',_hint,function(x){
       give=x; sendB.disabled=!x; sendB.style.opacity=x?'':'.5'; });
@@ -4451,20 +4517,26 @@ async function offerX(id){
   var r=(exchanges||[]).find(function(e){ return e.id===id; }); if(!r||!me) return;
   var pName=_xDocName(r.proposer_id), postTxt=_cxPairTxt(r.proposer_post,r.proposer_post2), dLbl=_cxDateLbl(r.proposer_date);
   // [2026-11-07] Est-ce que je travaille déjà ce jour-là (ou le lendemain d'une nuit) ? Alors c'est un switch, pas une reprise.
-  var give=null, mode='reprise';
+  var give=null, mode='reprise', enPlus=null;
   try{
     var ms=await _cxMonths(), mine=_cxPostsOf(_cxLid(me),ms);
     var same=mine.find(function(g){ return g.dk===r.proposer_date; });
     var t=new Date(r.proposer_date+'T12:00:00'); t.setDate(t.getDate()+1); var next=_desidIso(t);
     var aPost=_cxDefs[r.proposer_post]||((planning&&planning.posts)||[]).find(function(p){ return p.id===r.proposer_post; })||{};
     var nextG=mine.find(function(g){ return g.dk===next; });
-    if(same){ give={dk:same.dk,pids:same.posts.slice(0,2).map(function(p){ return p.id; })}; mode='switch'; }
+    // [2026-11-21 R64] règle assouplie (décision de G. Sorce) : je peux prendre ce poste EN PLUS du mien si nos horaires ne se
+    // chevauchent pas ; chevauchement le même jour → switch du jour (je donne le poste qui chevauche). Règle J+1 inchangée.
+    var ovl=_xChevauche(ms,r.proposer_date,[r.proposer_post,r.proposer_post2],null,[]), ovS=ovl.filter(function(o){ return o.dk===r.proposer_date; });
+    if(ovS.length&&ovS.length===ovl.length){ give={dk:r.proposer_date,pids:ovS.slice(0,2).map(function(o){ return o.post.id; })}; mode='switch'; }
     else if((aPost.section==='nuit'||aPost.overnight)&&nextG){ give={dk:nextG.dk,pids:nextG.posts.slice(0,2).map(function(p){ return p.id; })}; mode='switch_j1'; }
+    else if(ovl.length){ toast('Vos horaires chevauchent ce poste ('+_xOvlTxt(ovl,r.proposer_date)+') : vous ne pouvez pas le prendre.',true); return; }
+    else if(same) enPlus=same;
   }catch(e){ toast('Impossible de lire votre planning : réessayez.',true); return; }
   var giveTxt=give?_cxPairTxt(give.pids[0],give.pids[1]):'';
   var _eve=''; try{ _eve=_xEveTxt(await _cxMonths(),r.proposer_date); }catch(e){} // [2026-11-07] VEILLE_REPOS
   var q=mode==='reprise'
     ? 'Proposer à '+pName+' de prendre son poste '+postTxt+' du '+fmtDate(r.proposer_date)+' ?'
+      +(enPlus?'\n\nVous travaillez déjà ce jour-là ('+_cxPairTxt(enPlus.posts[0].id,enPlus.posts[1]&&enPlus.posts[1].id)+') : les horaires ne se chevauchent pas, ce poste viendrait en plus du vôtre.':'') // [2026-11-21 R64]
     : 'Vous travaillez '+(mode==='switch'?'ce jour-là':'le lendemain')+' ('+giveTxt+', '+fmtDate(give.dk)+').\n\nProposer à '+pName+' un switch : vous prenez son '+postTxt+' du '+fmtDate(r.proposer_date)+', il ou elle prend votre '+giveTxt+' du '+fmtDate(give.dk)+' ?';
   if(!confirm((_eve?'⚠️ '+_eve+'\n\n':'')+q+'\n\n'+pName+' choisira parmi les propositions reçues, puis le gestionnaire du planning valide.')) return;
   var row=mode==='reprise'
@@ -4535,6 +4607,12 @@ function _fillDayDist(dk){
     entries.push({post:post,doc:doc,isMe:isMe2});
   });
   entries.sort(function(a,b){return (a.post.start||'').localeCompare(b.post.start||'');});
+  // [2026-11-21 R66] postes exceptionnels du jour (SIMU, Admin, Projets…) : listés après les postes du planning
+  ((window._excShifts||{})[dk]||[]).forEach(function(x){
+    if(!x||x.docId==null) return;
+    var doc=doctors.find(function(d){return d.id==x.docId||d.local_id==x.docId;});
+    entries.push({post:{id:'__exc',name:_vEsc(x.label||'Poste exceptionnel'),color:x.color||'#f59e0b'},doc:doc,isMe:!!vIsMe(x.docId),exc:true});
+  });
   if(!entries.length){el.style.display='none';return;}
   var DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
   var dt=new Date(dk+'T12:00:00');
