@@ -3203,7 +3203,22 @@ function _rpInfo(r){
 function vIsMe(id){ return me&&(id==me.local_id||id==me.id); }
 // [2026-10-27 horaires du jour] Horaire du jour : planning.hours_override = { 'AAAA-MM-JJ': { poste: { start, end } } }
 function vHO(dk,pid){ var x=null; [planning&&planning.hours_override, window._qHO].forEach(function(h){ if(!x&&h&&h[dk]&&h[dk][pid]) x=h[dk][pid]; }); return (x&&(x.start||x.end))?x:null; }
-function vPH(p,dk){ var o=(p&&dk)?vHO(dk,p.id):null; return o?Object.assign({},p,{start:o.start||p.start,end:o.end||p.end,_ho:true}):p; }
+// [2026-11-21 N16-VENDREDI] Horaire du poste CE jour-là (startByDow / endByDow / endOnHoliday publiés par le gestionnaire), puis horaire du jour (vHO).
+// Quand l'heure de début change (n16 le vendredi), le nom suit l'horaire comme dans le gestionnaire : « 18-09 / Garde 18h–09h ».
+function vPDay(p,dk){
+  if(!p||!dk||p._split||!p.start) return p;
+  var w=new Date(dk+'T12:00:00').getDay(), fer=(typeof isFerie==='function')&&isFerie(dk);
+  var d1=new Date(dk+'T12:00:00'); d1.setDate(d1.getDate()+1); var nk=d1.toISOString().slice(0,10);
+  var s=(!fer&&p.startByDow&&p.startByDow[w])||p.start;
+  var e=(p.endOnHoliday&&(typeof isFerie==='function')&&isFerie(nk))?p.endOnHoliday:((!fer&&p.endByDow&&p.endByDow[w])||p.end);
+  if(s===p.start&&e===p.end) return p;
+  var q=Object.assign({},p,{start:s,end:e});
+  if(s!==p.start){ var hh=function(t){ return String(t||'').slice(0,2); };
+    if(String(p.name||'')===hh(p.start)+'-'+hh(p.end)) q.name=hh(s)+'-'+hh(e);
+    var re=new RegExp(hh(p.start)+'h\\s*[–-]\\s*'+hh(p.end)+'h'); if(re.test(String(p.full||''))) q.full=String(p.full).replace(re,hh(s)+'h–'+hh(e)+'h'); }
+  return q;
+}
+function vPH(p,dk){ p=vPDay(p,dk); var o=(p&&dk)?vHO(dk,p.id):null; return o?Object.assign({},p,{start:o.start||p.start,end:o.end||p.end,_ho:true}):p; }
 function vShare(dk,pid){ var d=window._sharedShifts&&window._sharedShifts[dk]; var x=d&&d[pid]; return (x&&x.docId2!=null)?x:null; }
 function vShareSpans(post,sh){
   var mn=function(t){ var p=String(t||'00:00').split(':'); return (+p[0]||0)*60+(+p[1]||0); };
@@ -4574,15 +4589,14 @@ async function cancelX(id){
 // ══════════════════════════════════════════════════════════
 // [2026-10-10] EXCH_MODAL_V2 — libellé court (U3 tôt) et heures du poste
 function _vPostShort(p){ return p?(p.id==='u3-1'?'U3 tôt':(p.name||p.id)):''; }
-function _vPostTimes(p,dk){ if(!p) return ''; var w=new Date(dk+'T12:00:00').getDay();
-  var a=(p.startByDow&&p.startByDow[w])||p.start, b=(p.endByDow&&p.endByDow[w])||p.end; return (a&&b)?a+' – '+b:''; }
+function _vPostTimes(p,dk){ if(!p) return ''; var q=vPDay(p,dk); var a=q.start, b=q.end; return (a&&b)?a+' – '+b:''; } // [2026-11-21 N16-VENDREDI] jours fériés compris
 function _vEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function openModal(dk,pid){
   _cxCache={}; _cxSel=null; // [2026-10-02] ECHANGE_CROISE
   mDate=dk;mPost=pid;
   const post=planning?.posts?.find(p=>p.id===pid);
   const _hrs=_vPostTimes(post,dk);
-  document.getElementById('ms').innerHTML=_vEsc(post?post.full||post.name:pid)+' · '+_vEsc(fmtDate(dk))
+  document.getElementById('ms').innerHTML=_vEsc(post?(vPDay(post,dk).full||post.name):pid)+' · '+_vEsc(fmtDate(dk))
     +(_hrs?' · <span style="color:#fbbf24;font-weight:800;white-space:nowrap;">🕘 '+_vEsc(_hrs)+'</span>':'');
   document.getElementById('m-msg').value='';
   setTarget('all');
